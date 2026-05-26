@@ -555,8 +555,18 @@ function Dashboard() {
             comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
-          <KpiCard label="Churn" value={kpis.counts.CHURN} accent="red" icon={TrendingDown} />
-          <KpiCard label="Finalizados" value={kpis.counts.FINALIZADO} accent="zinc" icon={Flag} />
+          <KpiCard
+            label={`Churn em ${comparacaoMes.mes.label}`}
+            value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.churn ?? 0}
+            accent="red"
+            icon={TrendingDown}
+          />
+          <KpiCard
+            label={`Finalizados em ${comparacaoMes.mes.label}`}
+            value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.finalizou ?? 0}
+            accent="zinc"
+            icon={Flag}
+          />
           <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
           <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
         </div>
