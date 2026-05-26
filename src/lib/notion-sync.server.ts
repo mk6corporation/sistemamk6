@@ -286,6 +286,7 @@ export async function runNotionSync(): Promise<SyncResult> {
           removidosAgora.map((r) => r.notion_page_id),
         );
       if (rmErr) throw new Error(`Erro marcando removidos: ${rmErr.message}`);
+      removidos = removidosAgora.length;
 
       for (const r of removidosAgora) {
         mudancasParaInserir.push({
