@@ -360,11 +360,26 @@ function Dashboard() {
   }, []);
 
   const evolucaoMensal = useMemo(() => {
+    const todas = mudancasQuery.data ?? [];
     return mesesUltimos12.map(({ key, labelCurto, date }) => {
       const snap = snapshotAt(date);
-      return { key, label: labelCurto, ...snap };
+      const ano = date.getFullYear();
+      const mIdx = date.getMonth();
+      let churn = 0;
+      let finalizou = 0;
+      let novos = 0;
+      for (const m of todas) {
+        const dt = new Date(m.detectada_em);
+        if (dt.getFullYear() !== ano || dt.getMonth() !== mIdx) continue;
+        if (filtroOperacional !== "todos" && !idsClientesFiltrados.has(m.notion_page_id)) continue;
+        if (m.tipo_mudanca === "churn") churn += 1;
+        else if (m.tipo_mudanca === "finalizou") finalizou += 1;
+        else if (m.tipo_mudanca === "novo_cliente") novos += 1;
+      }
+      return { key, label: labelCurto, ...snap, churn, finalizou, novos };
     });
-  }, [mesesUltimos12, snapshotAt]);
+  }, [mesesUltimos12, snapshotAt, mudancasQuery.data, filtroOperacional, idsClientesFiltrados]);
+
 
   // ===== Comparação do mês selecionado =====
   const comparacaoMes = useMemo(() => {
