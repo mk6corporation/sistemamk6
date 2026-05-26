@@ -169,6 +169,11 @@ function Dashboard() {
   const syncFn = useServerFn(triggerNotionSync);
   const [lastResult, setLastResult] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
+  const hojeRef = new Date();
+  const [mesSelecionado, setMesSelecionado] = useState<string>(
+    `${hojeRef.getFullYear()}-${String(hojeRef.getMonth()).padStart(2, "0")}`,
+  );
+
 
   const mutation = useMutation({
     mutationFn: () => syncFn(),
@@ -298,31 +303,17 @@ function Dashboard() {
       });
   }, [mudancasRelevantes]);
 
-  // ===== Evolução mensal (snapshot do dia 01 dos últimos 12 meses) =====
-  const evolucaoMensal = useMemo(() => {
+  // ===== Snapshot helper =====
+  const snapshotAt = useMemo(() => {
     const todasMudancas = mudancasQuery.data ?? [];
-    // Mudanças que alteram estagio, ordenadas desc
     const mudancasEstagio = todasMudancas
       .filter((m) => TIPOS_QUE_MUDAM_ESTAGIO.has(m.tipo_mudanca))
       .sort((a, b) =>
         new Date(b.detectada_em).getTime() - new Date(a.detectada_em).getTime(),
       );
 
-    // Gerar lista dos últimos 12 dias-01 (mais antigo → mais recente)
-    const hoje = new Date();
-    const meses: { key: string; label: string; date: Date }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      meses.push({
-        key: `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`,
-        label: `${MESES_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(2)}`,
-        date: d,
-      });
-    }
-
-    return meses.map(({ key, label, date }) => {
+    return (date: Date) => {
       const T = date.getTime();
-      // Estado por cliente no dia T: começa pelo atual e desfaz mudanças posteriores
       const estagioPor: Record<string, string | null> = {};
       for (const c of clientesFiltrados) {
         estagioPor[c.notion_page_id] = c.estagio;
@@ -334,11 +325,9 @@ function Dashboard() {
           }
         }
       }
-
       let ativos = 0;
       let acelPro = 0;
       for (const c of clientesFiltrados) {
-        // Existência no dia T
         if (c.inicio_contrato && new Date(c.inicio_contrato).getTime() > T) continue;
         if (c.removido_em && new Date(c.removido_em).getTime() <= T) continue;
         const cat = estagioToCategoria(estagioPor[c.notion_page_id] ?? null);
@@ -346,15 +335,45 @@ function Dashboard() {
         ativos += 1;
         if (c.plano === "Aceleração Turismo PRO") acelPro += 1;
       }
-      return {
-        key,
-        label,
-        ativos,
-        acelPro,
-        outros: ativos - acelPro,
-      };
-    });
+      return { ativos, acelPro, outros: ativos - acelPro };
+    };
   }, [clientesFiltrados, mudancasQuery.data]);
+
+  // ===== Evolução mensal (últimos 12 meses, dia 01) =====
+  const mesesUltimos12 = useMemo(() => {
+    const hoje = new Date();
+    const arr: { key: string; label: string; labelCurto: string; date: Date }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      arr.push({
+        key: `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`,
+        label: formatMes(d),
+        labelCurto: `${MESES_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(2)}`,
+        date: d,
+      });
+    }
+    return arr;
+  }, []);
+
+  const evolucaoMensal = useMemo(() => {
+    return mesesUltimos12.map(({ key, labelCurto, date }) => {
+      const snap = snapshotAt(date);
+      return { key, label: labelCurto, ...snap };
+    });
+  }, [mesesUltimos12, snapshotAt]);
+
+  // ===== Comparação do mês selecionado =====
+  const comparacaoMes = useMemo(() => {
+    const mes = mesesUltimos12.find((m) => m.key === mesSelecionado) ?? mesesUltimos12[mesesUltimos12.length - 1];
+    const inicio = snapshotAt(mes.date);
+    const proximoMes = new Date(mes.date.getFullYear(), mes.date.getMonth() + 1, 1);
+    const agora = new Date();
+    const ehMesAtual = proximoMes.getTime() > agora.getTime();
+    const fimDate = ehMesAtual ? agora : proximoMes;
+    const fim = snapshotAt(fimDate);
+    return { mes, inicio, fim, ehMesAtual };
+  }, [mesSelecionado, mesesUltimos12, snapshotAt]);
+
 
   const ultimaSync = runsQuery.data?.[0] as any;
 
@@ -431,13 +450,44 @@ function Dashboard() {
               Limpar
             </Button>
           )}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Mês de análise:</span>
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[...mesesUltimos12].reverse().map((m) => (
+                  <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
-          <KpiCard label="Ativos" value={kpis.counts.ATIVO} accent="emerald" icon={TrendingUp} />
-          <KpiCard label="Jorney + Outros" value={kpis.outrosAtivos} accent="emerald" icon={TrendingUp} />
-          <KpiCard label="Aceleração Turismo Pro" value={kpis.aceleracaoPro} accent="emerald" icon={Sparkles} />
+          <KpiCard
+            label="Ativos"
+            value={kpis.counts.ATIVO}
+            accent="emerald"
+            icon={TrendingUp}
+            comparacao={{ inicio: comparacaoMes.inicio.ativos, fim: comparacaoMes.fim.ativos, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
+          <KpiCard
+            label="Jorney + Outros"
+            value={kpis.outrosAtivos}
+            accent="emerald"
+            icon={TrendingUp}
+            comparacao={{ inicio: comparacaoMes.inicio.outros, fim: comparacaoMes.fim.outros, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
+          <KpiCard
+            label="Aceleração Turismo Pro"
+            value={kpis.aceleracaoPro}
+            accent="emerald"
+            icon={Sparkles}
+            comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
           <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
           <KpiCard label="Churn" value={kpis.counts.CHURN} accent="red" icon={TrendingDown} />
           <KpiCard label="Finalizados" value={kpis.counts.FINALIZADO} accent="zinc" icon={Flag} />
@@ -691,11 +741,13 @@ function KpiCard({
   value,
   accent,
   icon: Icon,
+  comparacao,
 }: {
   label: string;
   value: string | number;
   accent: "emerald" | "amber" | "red" | "zinc";
   icon: any;
+  comparacao?: { inicio: number; fim: number; ehMesAtual: boolean };
 }) {
   const colors: Record<string, string> = {
     emerald: "text-emerald-600 bg-emerald-500/10",
@@ -703,19 +755,40 @@ function KpiCard({
     red: "text-red-600 bg-red-500/10",
     zinc: "text-zinc-600 bg-zinc-500/10",
   };
+  const delta = comparacao ? comparacao.fim - comparacao.inicio : 0;
+  const deltaColor =
+    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+  const deltaSign = delta > 0 ? "+" : "";
   return (
     <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={`rounded-md p-2 ${colors[accent]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
-            {label}
+      <CardContent className="flex flex-col gap-2 p-4">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-md p-2 ${colors[accent]}`}>
+            <Icon className="h-5 w-5" />
           </div>
-          <div className="text-xl font-semibold tabular-nums">{value}</div>
+          <div className="min-w-0">
+            <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+              {label}
+            </div>
+            <div className="text-xl font-semibold tabular-nums">{value}</div>
+          </div>
         </div>
+        {comparacao && (
+          <div className="flex items-center justify-between border-t pt-2 text-xs tabular-nums">
+            <span className="text-muted-foreground">
+              Início: <span className="font-medium text-foreground">{comparacao.inicio}</span>
+            </span>
+            <span className="text-muted-foreground">
+              {comparacao.ehMesAtual ? "Hoje" : "Fim"}:{" "}
+              <span className="font-medium text-foreground">{comparacao.fim}</span>
+            </span>
+            <span className={`font-semibold ${deltaColor}`}>
+              {deltaSign}{delta}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
+
