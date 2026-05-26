@@ -53,7 +53,11 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ComposedChart,
+  Bar,
+  ReferenceLine,
 } from "recharts";
+
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
