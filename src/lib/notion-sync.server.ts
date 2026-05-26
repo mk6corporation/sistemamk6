@@ -165,7 +165,9 @@ export async function runNotionSync(): Promise<SyncResult> {
 
     for (const page of pages) {
       const nome = extractTitle(page.properties["Cliente"]);
-      if (!nome) continue; // ignora linhas vazias
+      if (!nome) continue; // ignora linhas vazias sem título
+
+      pageIdsNoNotion.add(page.id);
 
       const estagio = extractStatus(page.properties["Status do Cliente"]);
       const categoria = classificarCategoria(estagio);
@@ -185,6 +187,7 @@ export async function runNotionSync(): Promise<SyncResult> {
         valor_mensal,
         notion_last_edited_time: page.last_edited_time,
         last_synced_at: new Date().toISOString(),
+        removido_em: null, // se reapareceu, "ressuscita"
       });
 
       const anterior = snapshotMap.get(page.id);
@@ -192,7 +195,7 @@ export async function runNotionSync(): Promise<SyncResult> {
         // Cliente novo
         novos += 1;
         mudancasParaInserir.push({
-          cliente_id: null, // preenchido após upsert
+          cliente_id: null,
           notion_page_id: page.id,
           nome_cliente: nome,
           estagio_anterior: null,
@@ -200,6 +203,19 @@ export async function runNotionSync(): Promise<SyncResult> {
           categoria_anterior: null,
           categoria_nova: categoria,
           tipo_mudanca: "novo_cliente",
+          notion_edited_at: page.last_edited_time,
+        });
+      } else if (anterior.removido_em) {
+        // Cliente que tinha sido removido reapareceu no Notion
+        mudancasParaInserir.push({
+          cliente_id: anterior.id,
+          notion_page_id: page.id,
+          nome_cliente: nome,
+          estagio_anterior: anterior.estagio,
+          estagio_novo: estagio,
+          categoria_anterior: anterior.categoria,
+          categoria_nova: categoria,
+          tipo_mudanca: "restaurado_no_notion",
           notion_edited_at: page.last_edited_time,
         });
       } else if (anterior.estagio !== estagio) {
@@ -218,6 +234,20 @@ export async function runNotionSync(): Promise<SyncResult> {
       }
 
       processados += 1;
+    }
+
+    // ===== Detectar exclusões (no banco mas não no Notion) =====
+    const removidosAgora: Array<{ id: string; notion_page_id: string; nome: string; estagio: string | null; categoria: string | null }> = [];
+    for (const [pageId, anterior] of snapshotMap) {
+      if (pageIdsNoNotion.has(pageId)) continue;
+      if (anterior.removido_em) continue; // já estava marcado
+      removidosAgora.push({
+        id: anterior.id,
+        notion_page_id: pageId,
+        nome: anterior.nome,
+        estagio: anterior.estagio,
+        categoria: anterior.categoria,
+      });
     }
 
     // Upsert clientes
