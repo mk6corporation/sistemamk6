@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { triggerNotionSync } from "@/lib/sync.functions";
 import { Button } from "@/components/ui/button";
@@ -13,31 +13,157 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Loader2,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  PauseCircle,
+  Flag,
+  UserPlus,
+  ArrowRightLeft,
+  Trash2,
+  Sparkles,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  component: SyncTestPage,
+  component: Dashboard,
 });
 
-const CATEGORIA_VARIANT: Record<string, string> = {
-  ATIVO: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  PAUSADO: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  CHURN: "bg-red-500/15 text-red-700 dark:text-red-400",
-  FINALIZADO: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400",
-  OUTRO: "bg-zinc-500/10 text-muted-foreground",
+// ===== Types =====
+type Cliente = {
+  id: string;
+  notion_page_id: string;
+  nome: string;
+  estagio: string | null;
+  categoria: string | null;
+  plano: string | null;
+  operacional: Array<{ id: string; name: string; avatar_url: string | null }> | null;
+  inicio_contrato: string | null;
+  valor_mensal: number | null;
+  removido_em: string | null;
+  notion_last_edited_time: string | null;
 };
 
-function SyncTestPage() {
+type Mudanca = {
+  id: string;
+  cliente_id: string | null;
+  notion_page_id: string;
+  nome_cliente: string;
+  estagio_anterior: string | null;
+  estagio_novo: string | null;
+  categoria_anterior: string | null;
+  categoria_nova: string | null;
+  tipo_mudanca: string;
+  detectada_em: string;
+  notion_edited_at: string | null;
+};
+
+// ===== UI helpers =====
+const CATEGORIA_STYLE: Record<string, string> = {
+  ATIVO: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+  PAUSADO: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  CHURN: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20",
+  FINALIZADO: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-500/20",
+  OUTRO: "bg-zinc-500/10 text-muted-foreground border-border",
+};
+
+const TIPO_LABEL: Record<string, { label: string; icon: any; className: string }> = {
+  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-emerald-600" },
+  churn: { label: "Churn", icon: TrendingDown, className: "text-red-600" },
+  pausou: { label: "Pausou", icon: PauseCircle, className: "text-amber-600" },
+  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-600" },
+  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-emerald-600" },
+  mudanca_estagio: { label: "Mudança de estágio", icon: ArrowRightLeft, className: "text-muted-foreground" },
+  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-red-600" },
+  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-emerald-600" },
+};
+
+const TIPOS_RELEVANTES = new Set([
+  "novo_cliente",
+  "churn",
+  "pausou",
+  "finalizou",
+  "recuperou",
+  "removido_do_notion",
+  "restaurado_no_notion",
+]);
+
+const MESES_PT = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function formatMes(d: Date) {
+  return `${MESES_PT[d.getMonth()]} / ${d.getFullYear()}`;
+}
+
+function formatMoney(v: number | null | undefined) {
+  if (v == null) return "—";
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatData(s: string | null) {
+  if (!s) return "—";
+  return new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+// ===== Page =====
+function Dashboard() {
   const qc = useQueryClient();
   const syncFn = useServerFn(triggerNotionSync);
   const [lastResult, setLastResult] = useState<any>(null);
+  const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
+  const [filtroPlano, setFiltroPlano] = useState<string>("todos");
 
   const mutation = useMutation({
     mutationFn: () => syncFn(),
     onSuccess: (data) => {
       setLastResult(data);
-      qc.invalidateQueries({ queryKey: ["sync_runs"] });
-      qc.invalidateQueries({ queryKey: ["clientes_summary"] });
+      qc.invalidateQueries();
+    },
+  });
+
+  const clientesQuery = useQuery({
+    queryKey: ["clientes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("*")
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as Cliente[];
+    },
+  });
+
+  const mudancasQuery = useQuery({
+    queryKey: ["mudancas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("mudancas_estagio")
+        .select("*")
+        .order("detectada_em", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as Mudanca[];
     },
   });
 
@@ -48,174 +174,360 @@ function SyncTestPage() {
         .from("sync_runs")
         .select("*")
         .order("iniciado_em", { ascending: false })
-        .limit(10);
+        .limit(1);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
-  const summaryQuery = useQuery({
-    queryKey: ["clientes_summary"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("clientes").select("categoria");
-      if (error) throw error;
-      const counts: Record<string, number> = {
-        ATIVO: 0,
-        PAUSADO: 0,
-        CHURN: 0,
-        FINALIZADO: 0,
-        OUTRO: 0,
-      };
-      for (const c of data ?? []) {
-        const key = (c.categoria as string) ?? "OUTRO";
-        counts[key] = (counts[key] ?? 0) + 1;
+  const clientes = clientesQuery.data ?? [];
+  const ativos = clientes.filter((c) => !c.removido_em);
+
+  // Filter options
+  const operacionais = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of ativos) {
+      for (const op of c.operacional ?? []) {
+        if (op?.id && op?.name) map.set(op.id, op.name);
       }
-      return { total: data?.length ?? 0, counts };
-    },
-  });
+    }
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [ativos]);
+
+  const planos = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of ativos) if (c.plano) set.add(c.plano);
+    return Array.from(set).sort();
+  }, [ativos]);
+
+  // Filtered clients
+  const clientesFiltrados = useMemo(() => {
+    return ativos.filter((c) => {
+      if (filtroPlano !== "todos" && c.plano !== filtroPlano) return false;
+      if (filtroOperacional !== "todos") {
+        const has = (c.operacional ?? []).some((op) => op.id === filtroOperacional);
+        if (!has) return false;
+      }
+      return true;
+    });
+  }, [ativos, filtroPlano, filtroOperacional]);
+
+  // KPIs
+  const kpis = useMemo(() => {
+    const counts: Record<string, number> = {
+      ATIVO: 0, PAUSADO: 0, CHURN: 0, FINALIZADO: 0, OUTRO: 0,
+    };
+    let mrr = 0;
+    let avisoChurn = 0;
+    for (const c of clientesFiltrados) {
+      const key = c.categoria ?? "OUTRO";
+      counts[key] = (counts[key] ?? 0) + 1;
+      if (key === "ATIVO" && c.valor_mensal) mrr += Number(c.valor_mensal);
+      if (c.estagio === "Aviso de Churn") avisoChurn += 1;
+    }
+    return { counts, mrr, avisoChurn, total: clientesFiltrados.length };
+  }, [clientesFiltrados]);
+
+  // Feed by month
+  const idsClientesFiltrados = useMemo(
+    () => new Set(clientesFiltrados.map((c) => c.notion_page_id)),
+    [clientesFiltrados],
+  );
+
+  const mudancasRelevantes = useMemo(() => {
+    const list = (mudancasQuery.data ?? []).filter(
+      (m) =>
+        TIPOS_RELEVANTES.has(m.tipo_mudanca) &&
+        (filtroPlano === "todos" && filtroOperacional === "todos"
+          ? true
+          : idsClientesFiltrados.has(m.notion_page_id)),
+    );
+    return list;
+  }, [mudancasQuery.data, idsClientesFiltrados, filtroPlano, filtroOperacional]);
+
+  const feedPorMes = useMemo(() => {
+    const buckets = new Map<string, Mudanca[]>();
+    for (const m of mudancasRelevantes) {
+      const d = new Date(m.detectada_em);
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
+      const arr = buckets.get(key) ?? [];
+      arr.push(m);
+      buckets.set(key, arr);
+    }
+    return Array.from(buckets.entries())
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([key, items]) => {
+        const [y, mo] = key.split("-").map(Number);
+        const stats: Record<string, number> = {};
+        for (const it of items) {
+          stats[it.tipo_mudanca] = (stats[it.tipo_mudanca] ?? 0) + 1;
+        }
+        return { key, label: formatMes(new Date(y, mo, 1)), items, stats };
+      });
+  }, [mudancasRelevantes]);
+
+  const ultimaSync = runsQuery.data?.[0] as any;
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">MK6 — Sincronização Notion</h1>
-          <p className="text-muted-foreground">
-            Painel temporário de teste da Fase 2. Use o botão abaixo para puxar os clientes do
-            Notion e popular o banco interno.
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+        {/* Header */}
+        <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              MK6 — Painel de Clientes
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Sincronizado com o Notion · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
+            </p>
+          </div>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            size="lg"
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sincronizar agora
+              </>
+            )}
+          </Button>
         </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Executar sincronização</CardTitle>
-            <CardDescription>
-              Lê todas as linhas do database <span className="font-mono">Banco de Dados - Clientes</span>{" "}
-              no Notion, faz upsert e registra mudanças de estágio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {lastResult && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            {lastResult.status === "success" ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            )}
+            <span className="font-medium">Última execução:</span>
+            <span>{lastResult.clientes_processados} processados</span>
+            <span>· +{lastResult.clientes_novos} novos</span>
+            <span>· −{lastResult.clientes_removidos ?? 0} removidos</span>
+            <span>· {lastResult.mudancas_detectadas} mudanças</span>
+            {lastResult.erro && (
+              <span className="text-red-600">· {lastResult.erro}</span>
+            )}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-muted-foreground">Filtros:</span>
+          <Select value={filtroOperacional} onValueChange={setFiltroOperacional}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Operacional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os operacionais</SelectItem>
+              {operacionais.map(([id, name]) => (
+                <SelectItem key={id} value={id}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filtroPlano} onValueChange={setFiltroPlano}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Plano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os planos</SelectItem>
+              {planos.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filtroOperacional !== "todos" || filtroPlano !== "todos") && (
             <Button
-              size="lg"
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending}
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFiltroOperacional("todos");
+                setFiltroPlano("todos");
+              }}
             >
-              {mutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sincronizar agora
-                </>
-              )}
+              Limpar
             </Button>
+          )}
+        </div>
 
-            {lastResult && (
-              <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-                <div className="flex items-center gap-2 font-medium">
-                  {lastResult.status === "success" ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  )}
-                  Último resultado: {lastResult.status}
-                </div>
-                <div className="mt-2 grid grid-cols-3 gap-3 text-muted-foreground">
-                  <div>
-                    <div className="text-xs uppercase">Processados</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {lastResult.clientes_processados}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs uppercase">Novos</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {lastResult.clientes_novos}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs uppercase">Mudanças</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {lastResult.mudancas_detectadas}
-                    </div>
-                  </div>
-                </div>
-                {lastResult.erro && (
-                  <pre className="mt-2 whitespace-pre-wrap text-xs text-red-600">
-                    {lastResult.erro}
-                  </pre>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <KpiCard label="Ativos" value={kpis.counts.ATIVO} accent="emerald" icon={TrendingUp} />
+          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
+          <KpiCard label="Churn" value={kpis.counts.CHURN} accent="red" icon={TrendingDown} />
+          <KpiCard label="Finalizados" value={kpis.counts.FINALIZADO} accent="zinc" icon={Flag} />
+          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
+          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo atual</CardTitle>
-            <CardDescription>Snapshot dos clientes salvos no banco interno</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {summaryQuery.isLoading ? (
+        <Tabs defaultValue="feed" className="w-full">
+          <TabsList>
+            <TabsTrigger value="feed">Feed de mudanças</TabsTrigger>
+            <TabsTrigger value="clientes">Clientes ({clientesFiltrados.length})</TabsTrigger>
+          </TabsList>
+
+          {/* Feed */}
+          <TabsContent value="feed" className="space-y-6">
+            {mudancasQuery.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : feedPorMes.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                  Nenhuma mudança relevante ainda. Rode uma sincronização.
+                </CardContent>
+              </Card>
             ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="text-sm">
-                  Total: {summaryQuery.data?.total ?? 0}
-                </Badge>
-                {Object.entries(summaryQuery.data?.counts ?? {}).map(([k, v]) => (
-                  <Badge
-                    key={k}
-                    className={`text-sm ${CATEGORIA_VARIANT[k] ?? CATEGORIA_VARIANT.OUTRO}`}
-                  >
-                    {k}: {v}
-                  </Badge>
-                ))}
-              </div>
+              feedPorMes.map((mes) => (
+                <Card key={mes.key}>
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="capitalize">{mes.label}</CardTitle>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(mes.stats).map(([tipo, qtd]) => {
+                          const meta = TIPO_LABEL[tipo];
+                          if (!meta) return null;
+                          return (
+                            <Badge key={tipo} variant="outline" className="gap-1">
+                              <meta.icon className={`h-3 w-3 ${meta.className}`} />
+                              {meta.label}: {qtd}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <CardDescription>{mes.items.length} eventos no mês</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {mes.items.map((it) => {
+                      const meta = TIPO_LABEL[it.tipo_mudanca] ?? TIPO_LABEL.mudanca_estagio;
+                      const Icon = meta.icon;
+                      return (
+                        <div
+                          key={it.id}
+                          className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/20 p-3 text-sm"
+                        >
+                          <Icon className={`h-4 w-4 shrink-0 ${meta.className}`} />
+                          <span className="font-medium">{it.nome_cliente}</span>
+                          <Badge variant="outline" className={meta.className}>
+                            {meta.label}
+                          </Badge>
+                          {it.estagio_anterior && it.estagio_novo && (
+                            <span className="text-xs text-muted-foreground">
+                              {it.estagio_anterior} → {it.estagio_novo}
+                            </span>
+                          )}
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {formatData(it.detectada_em)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Últimas sincronizações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {runsQuery.isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (runsQuery.data?.length ?? 0) === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma sincronização ainda.</p>
-            ) : (
-              <div className="space-y-2">
-                {runsQuery.data!.map((r: any) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between rounded-md border bg-muted/20 p-3 text-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      {r.status === "success" ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      ) : r.status === "error" ? (
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                      ) : (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+          {/* Clientes */}
+          <TabsContent value="clientes">
+            <Card>
+              <CardContent className="p-0">
+                {clientesQuery.isLoading ? (
+                  <div className="p-6">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Estágio</TableHead>
+                        <TableHead>Plano</TableHead>
+                        <TableHead>Operacional</TableHead>
+                        <TableHead className="text-right">MRR</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clientesFiltrados.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.nome}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={CATEGORIA_STYLE[c.categoria ?? "OUTRO"]}
+                            >
+                              {c.categoria ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {c.estagio ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-sm">{c.plano ?? "—"}</TableCell>
+                          <TableCell className="text-sm">
+                            {(c.operacional ?? []).map((o) => o.name).join(", ") || "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-sm tabular-nums">
+                            {formatMoney(c.valor_mensal)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {clientesFiltrados.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                            Nenhum cliente com esses filtros.
+                          </TableCell>
+                        </TableRow>
                       )}
-                      <span>{new Date(r.iniciado_em).toLocaleString("pt-BR")}</span>
-                    </div>
-                    <div className="flex gap-4 text-muted-foreground">
-                      <span>{r.clientes_processados} processados</span>
-                      <span>+{r.clientes_novos} novos</span>
-                      <span>{r.mudancas_detectadas} mudanças</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  accent,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  accent: "emerald" | "amber" | "red" | "zinc";
+  icon: any;
+}) {
+  const colors: Record<string, string> = {
+    emerald: "text-emerald-600 bg-emerald-500/10",
+    amber: "text-amber-600 bg-amber-500/10",
+    red: "text-red-600 bg-red-500/10",
+    zinc: "text-zinc-600 bg-zinc-500/10",
+  };
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className={`rounded-md p-2 ${colors[accent]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          <div className="text-xl font-semibold tabular-nums">{value}</div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
