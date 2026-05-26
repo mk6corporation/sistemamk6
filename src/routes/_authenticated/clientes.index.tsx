@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/clientes/")({
   component: ClientesBase,
 });
 
+type OperacionalMember = { id?: string; name?: string };
+
 type Cliente = {
   id: string;
   nome: string;
@@ -28,7 +31,16 @@ type Cliente = {
   valor_mensal: number | null;
   inicio_contrato: string | null;
   removido_em: string | null;
+  operacional: OperacionalMember[] | null;
 };
+
+function normalize(s: string | null | undefined) {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
 
 const CATEGORIA_STYLE: Record<string, string> = {
   ATIVO: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
