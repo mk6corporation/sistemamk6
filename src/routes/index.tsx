@@ -673,7 +673,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="ativos"
                         name="Ativos (total)"
-                        stroke="#10b981"
+                        stroke="#ef4444"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -681,7 +681,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="outros"
                         name="Jorney + Outros"
-                        stroke="#3b82f6"
+                        stroke="#f87171"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -689,7 +689,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="acelPro"
                         name="Aceleração Turismo Pro"
-                        stroke="#f59e0b"
+                        stroke="#991b1b"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -697,7 +697,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="churn"
                         name="Churn"
-                        stroke="#ef4444"
+                        stroke="#525252"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -705,7 +705,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="finalizou"
                         name="Projetos finalizados"
-                        stroke="#71717a"
+                        stroke="#404040"
                         strokeWidth={2}
                         strokeDasharray="4 4"
                         dot={{ r: 3 }}
