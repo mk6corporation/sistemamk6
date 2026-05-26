@@ -635,7 +635,6 @@ function Dashboard() {
         <Tabs defaultValue="evolucao" className="w-full">
           <TabsList>
             <TabsTrigger value="evolucao">Evolução mensal</TabsTrigger>
-            <TabsTrigger value="feed">Feed de mudanças</TabsTrigger>
             <TabsTrigger value="clientes">Clientes ({clientesFiltrados.length})</TabsTrigger>
           </TabsList>
 
