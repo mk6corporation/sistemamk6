@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -864,8 +864,12 @@ function Dashboard() {
                     </TableHeader>
                     <TableBody>
                       {clientesFiltrados.map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium">{c.nome}</TableCell>
+                        <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            <Link to="/clientes/$clienteId" params={{ clienteId: c.id }} className="hover:underline">
+                              {c.nome}
+                            </Link>
+                          </TableCell>
                           <TableCell>
                             <Badge
                               variant="outline"
