@@ -42,7 +42,18 @@ import {
   ArrowRightLeft,
   Trash2,
   Sparkles,
+  LineChart as LineChartIcon,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -126,6 +137,32 @@ function formatData(s: string | null) {
   return new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
+function estagioToCategoria(estagio: string | null): string {
+  if (!estagio) return "OUTRO";
+  if (estagio === "Pausado") return "PAUSADO";
+  if (estagio === "Churn") return "CHURN";
+  if (estagio === "Projeto Finalizado (Não Churn)") return "FINALIZADO";
+  if (
+    estagio === "Cliente" ||
+    estagio === "Financeiro" ||
+    estagio === "Contrato Assinado" ||
+    estagio === "Aviso de Churn" ||
+    estagio === "Formulário de Cliente"
+  ) {
+    return "ATIVO";
+  }
+  return "OUTRO";
+}
+
+// Tipos de mudança que efetivamente alteram o estágio (para reconstrução histórica)
+const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
+  "mudanca_estagio",
+  "pausou",
+  "churn",
+  "finalizou",
+  "recuperou",
+]);
+
 // ===== Page =====
 function Dashboard() {
   const qc = useQueryClient();
@@ -160,7 +197,7 @@ function Dashboard() {
         .from("mudancas_estagio")
         .select("*")
         .order("detectada_em", { ascending: false })
-        .limit(500);
+        .limit(5000);
       if (error) throw error;
       return (data ?? []) as Mudanca[];
     },
@@ -261,6 +298,64 @@ function Dashboard() {
       });
   }, [mudancasRelevantes]);
 
+  // ===== Evolução mensal (snapshot do dia 01 dos últimos 12 meses) =====
+  const evolucaoMensal = useMemo(() => {
+    const todasMudancas = mudancasQuery.data ?? [];
+    // Mudanças que alteram estagio, ordenadas desc
+    const mudancasEstagio = todasMudancas
+      .filter((m) => TIPOS_QUE_MUDAM_ESTAGIO.has(m.tipo_mudanca))
+      .sort((a, b) =>
+        new Date(b.detectada_em).getTime() - new Date(a.detectada_em).getTime(),
+      );
+
+    // Gerar lista dos últimos 12 dias-01 (mais antigo → mais recente)
+    const hoje = new Date();
+    const meses: { key: string; label: string; date: Date }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      meses.push({
+        key: `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`,
+        label: `${MESES_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(2)}`,
+        date: d,
+      });
+    }
+
+    return meses.map(({ key, label, date }) => {
+      const T = date.getTime();
+      // Estado por cliente no dia T: começa pelo atual e desfaz mudanças posteriores
+      const estagioPor: Record<string, string | null> = {};
+      for (const c of clientesFiltrados) {
+        estagioPor[c.notion_page_id] = c.estagio;
+      }
+      for (const m of mudancasEstagio) {
+        if (new Date(m.detectada_em).getTime() > T) {
+          if (m.notion_page_id in estagioPor) {
+            estagioPor[m.notion_page_id] = m.estagio_anterior;
+          }
+        }
+      }
+
+      let ativos = 0;
+      let acelPro = 0;
+      for (const c of clientesFiltrados) {
+        // Existência no dia T
+        if (c.inicio_contrato && new Date(c.inicio_contrato).getTime() > T) continue;
+        if (c.removido_em && new Date(c.removido_em).getTime() <= T) continue;
+        const cat = estagioToCategoria(estagioPor[c.notion_page_id] ?? null);
+        if (cat !== "ATIVO") continue;
+        ativos += 1;
+        if (c.plano === "Aceleração Turismo PRO") acelPro += 1;
+      }
+      return {
+        key,
+        label,
+        ativos,
+        acelPro,
+        outros: ativos - acelPro,
+      };
+    });
+  }, [clientesFiltrados, mudancasQuery.data]);
+
   const ultimaSync = runsQuery.data?.[0] as any;
 
   return (
@@ -350,11 +445,121 @@ function Dashboard() {
           <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
         </div>
 
-        <Tabs defaultValue="feed" className="w-full">
+        <Tabs defaultValue="evolucao" className="w-full">
           <TabsList>
+            <TabsTrigger value="evolucao">Evolução mensal</TabsTrigger>
             <TabsTrigger value="feed">Feed de mudanças</TabsTrigger>
             <TabsTrigger value="clientes">Clientes ({clientesFiltrados.length})</TabsTrigger>
           </TabsList>
+
+          {/* Evolução mensal */}
+          <TabsContent value="evolucao" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <LineChartIcon className="h-5 w-5 text-muted-foreground" />
+                  <CardTitle>Ativos no dia 01 — últimos 12 meses</CardTitle>
+                </div>
+                <CardDescription>
+                  Snapshot reconstruído a partir do histórico de mudanças. Meses anteriores ao
+                  início do sync ({ultimaSync ? formatData(ultimaSync.iniciado_em) : "—"}) refletem
+                  o estado atual filtrado por <code>início de contrato</code>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[320px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={evolucaoMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="ativos"
+                        name="Ativos (total)"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="outros"
+                        name="Jorney + Outros"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="acelPro"
+                        name="Aceleração Turismo Pro"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalhamento mês a mês</CardTitle>
+                <CardDescription>
+                  Variação em relação ao mês anterior entre parênteses.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mês</TableHead>
+                      <TableHead className="text-right">Ativos (total)</TableHead>
+                      <TableHead className="text-right">Jorney + Outros</TableHead>
+                      <TableHead className="text-right">Aceleração Turismo Pro</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {evolucaoMensal.map((m, i) => {
+                      const prev = i > 0 ? evolucaoMensal[i - 1] : null;
+                      const renderDelta = (cur: number, p: number | undefined) => {
+                        if (p == null) return null;
+                        const d = cur - p;
+                        if (d === 0) return <span className="ml-2 text-xs text-muted-foreground">(0)</span>;
+                        const cls = d > 0 ? "text-emerald-600" : "text-red-600";
+                        return <span className={`ml-2 text-xs ${cls}`}>({d > 0 ? "+" : ""}{d})</span>;
+                      };
+                      return (
+                        <TableRow key={m.key}>
+                          <TableCell className="font-medium">{m.label}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {m.ativos}{renderDelta(m.ativos, prev?.ativos)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {m.outros}{renderDelta(m.outros, prev?.outros)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {m.acelPro}{renderDelta(m.acelPro, prev?.acelPro)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           {/* Feed */}
           <TabsContent value="feed" className="space-y-6">
