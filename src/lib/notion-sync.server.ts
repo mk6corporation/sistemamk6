@@ -143,16 +143,23 @@ export async function runNotionSync(): Promise<SyncResult> {
     // Snapshot do estado atual no banco (para detectar diffs)
     const { data: snapshot, error: snapErr } = await supabaseAdmin
       .from("clientes")
-      .select("id, notion_page_id, estagio, categoria");
+      .select("id, notion_page_id, nome, estagio, categoria, removido_em");
     if (snapErr) throw new Error(`Erro lendo snapshot: ${snapErr.message}`);
 
     const snapshotMap = new Map(
       (snapshot ?? []).map((c) => [
         c.notion_page_id,
-        { id: c.id as string, estagio: c.estagio as string | null, categoria: c.categoria as string | null },
+        {
+          id: c.id as string,
+          nome: c.nome as string,
+          estagio: c.estagio as string | null,
+          categoria: c.categoria as string | null,
+          removido_em: c.removido_em as string | null,
+        },
       ]),
     );
 
+    const pageIdsNoNotion = new Set<string>();
     const mudancasParaInserir: any[] = [];
     const clientesUpsert: any[] = [];
 
