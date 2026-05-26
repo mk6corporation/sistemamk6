@@ -645,20 +645,19 @@ function Dashboard() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <LineChartIcon className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>Ativos no dia 01 — últimos 12 meses</CardTitle>
+                  <CardTitle>Evolução diária — {comparacaoMes.mes.label}</CardTitle>
                 </div>
                 <CardDescription>
-                  Snapshot reconstruído a partir do histórico de mudanças. Meses anteriores ao
-                  início do sync ({ultimaSync ? formatData(ultimaSync.iniciado_em) : "—"}) refletem
-                  o estado atual filtrado por <code>início de contrato</code>.
+                  Snapshot de ativos por dia do mês selecionado. Churn e Projetos finalizados são
+                  acumulados ao longo do mês (resetam no dia 01).
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={evolucaoMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <LineChart data={diarioMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                       <Tooltip
                         contentStyle={{
@@ -667,6 +666,7 @@ function Dashboard() {
                           borderRadius: 8,
                           fontSize: 12,
                         }}
+                        labelFormatter={(l) => `Dia ${l}`}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Line
