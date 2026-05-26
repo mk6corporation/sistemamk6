@@ -27,6 +27,7 @@ export type Database = {
           notion_page_id: string
           operacional: Json | null
           plano: string | null
+          removido_em: string | null
           updated_at: string
           valor_mensal: number | null
         }
@@ -42,6 +43,7 @@ export type Database = {
           notion_page_id: string
           operacional?: Json | null
           plano?: string | null
+          removido_em?: string | null
           updated_at?: string
           valor_mensal?: number | null
         }
@@ -57,6 +59,7 @@ export type Database = {
           notion_page_id?: string
           operacional?: Json | null
           plano?: string | null
+          removido_em?: string | null
           updated_at?: string
           valor_mensal?: number | null
         }
