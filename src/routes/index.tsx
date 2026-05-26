@@ -673,40 +673,40 @@ function Dashboard() {
                         type="monotone"
                         dataKey="ativos"
                         name="Ativos (total)"
-                        stroke="#10b981"
-                        strokeWidth={2}
+                        stroke="#047857"
+                        strokeWidth={2.5}
                         dot={{ r: 3 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="outros"
                         name="Jorney + Outros"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
+                        stroke="#1d4ed8"
+                        strokeWidth={2.5}
                         dot={{ r: 3 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="acelPro"
                         name="Aceleração Turismo Pro"
-                        stroke="#8b5cf6"
-                        strokeWidth={2}
+                        stroke="#6d28d9"
+                        strokeWidth={2.5}
                         dot={{ r: 3 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="churn"
                         name="Churn"
-                        stroke="#ef4444"
-                        strokeWidth={2}
+                        stroke="#dc2626"
+                        strokeWidth={2.5}
                         dot={{ r: 3 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="finalizou"
                         name="Projetos finalizados"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
+                        stroke="#b45309"
+                        strokeWidth={2.5}
                         strokeDasharray="4 4"
                         dot={{ r: 3 }}
                       />
