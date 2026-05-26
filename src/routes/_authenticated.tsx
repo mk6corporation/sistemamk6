@@ -35,10 +35,7 @@ function AuthLayout() {
           </Link>
           <div className="flex items-center gap-1">
             <Link to="/" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-foreground" }} activeOptions={{ exact: true }}>
-              Dashboard
-            </Link>
-            <Link to="/clientes" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-foreground" }}>
-              <Users className="mr-1 inline h-4 w-4" /> Clientes
+              <Users className="mr-1 inline h-4 w-4" /> Dashboard
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-2">
