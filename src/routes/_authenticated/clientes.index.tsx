@@ -131,15 +131,44 @@ function ClientesBase() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Users className="h-6 w-6 text-primary" />
-          Clientes — Base
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Pesquise e acesse a ficha 360º de qualquer cliente.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <Users className="h-6 w-6 text-primary" />
+            Clientes — Base
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Pesquise e acesse a ficha 360º de qualquer cliente.
+          </p>
+        </div>
+        {viewer?.isAdmin && (
+          <div className="inline-flex rounded-md border bg-background p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setScope("meus")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                effectiveScope === "meus"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Meus clientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setScope("todos")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                effectiveScope === "todos"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Todos (admin)
+            </button>
+          </div>
+        )}
       </div>
+
 
       <Card>
         <CardHeader>
