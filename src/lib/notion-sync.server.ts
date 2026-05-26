@@ -136,6 +136,7 @@ export async function runNotionSync(): Promise<SyncResult> {
 
   let processados = 0;
   let novos = 0;
+  let removidos = 0;
   let mudancas = 0;
 
   try {
