@@ -102,14 +102,14 @@ const CATEGORIA_STYLE: Record<string, string> = {
 };
 
 const TIPO_LABEL: Record<string, { label: string; icon: any; className: string }> = {
-  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-red-500" },
-  churn: { label: "Churn", icon: TrendingDown, className: "text-zinc-400" },
-  pausou: { label: "Pausou", icon: PauseCircle, className: "text-red-400" },
-  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-400" },
-  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-red-500" },
+  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-emerald-600" },
+  churn: { label: "Churn", icon: TrendingDown, className: "text-red-600" },
+  pausou: { label: "Pausou", icon: PauseCircle, className: "text-amber-600" },
+  finalizou: { label: "Finalizou", icon: Flag, className: "text-blue-600" },
+  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-emerald-600" },
   mudanca_estagio: { label: "Mudança de estágio", icon: ArrowRightLeft, className: "text-muted-foreground" },
-  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-zinc-400" },
-  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-red-500" },
+  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-red-500" },
+  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-emerald-600" },
 };
 
 const TIPOS_RELEVANTES = new Set([
