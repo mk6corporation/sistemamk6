@@ -327,6 +327,7 @@ export async function runNotionSync(): Promise<SyncResult> {
       status: "success",
       clientes_processados: processados,
       clientes_novos: novos,
+      clientes_removidos: removidos,
       mudancas_detectadas: mudancas,
       erro: null,
     };
