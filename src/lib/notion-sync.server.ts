@@ -119,6 +119,7 @@ export type SyncResult = {
   status: "success" | "error";
   clientes_processados: number;
   clientes_novos: number;
+  clientes_removidos: number;
   mudancas_detectadas: number;
   erro: string | null;
 };
