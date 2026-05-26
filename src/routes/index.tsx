@@ -741,11 +741,13 @@ function KpiCard({
   value,
   accent,
   icon: Icon,
+  comparacao,
 }: {
   label: string;
   value: string | number;
   accent: "emerald" | "amber" | "red" | "zinc";
   icon: any;
+  comparacao?: { inicio: number; fim: number; ehMesAtual: boolean };
 }) {
   const colors: Record<string, string> = {
     emerald: "text-emerald-600 bg-emerald-500/10",
@@ -753,19 +755,40 @@ function KpiCard({
     red: "text-red-600 bg-red-500/10",
     zinc: "text-zinc-600 bg-zinc-500/10",
   };
+  const delta = comparacao ? comparacao.fim - comparacao.inicio : 0;
+  const deltaColor =
+    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+  const deltaSign = delta > 0 ? "+" : "";
   return (
     <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={`rounded-md p-2 ${colors[accent]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
-            {label}
+      <CardContent className="flex flex-col gap-2 p-4">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-md p-2 ${colors[accent]}`}>
+            <Icon className="h-5 w-5" />
           </div>
-          <div className="text-xl font-semibold tabular-nums">{value}</div>
+          <div className="min-w-0">
+            <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+              {label}
+            </div>
+            <div className="text-xl font-semibold tabular-nums">{value}</div>
+          </div>
         </div>
+        {comparacao && (
+          <div className="flex items-center justify-between border-t pt-2 text-xs tabular-nums">
+            <span className="text-muted-foreground">
+              Início: <span className="font-medium text-foreground">{comparacao.inicio}</span>
+            </span>
+            <span className="text-muted-foreground">
+              {comparacao.ehMesAtual ? "Hoje" : "Fim"}:{" "}
+              <span className="font-medium text-foreground">{comparacao.fim}</span>
+            </span>
+            <span className={`font-semibold ${deltaColor}`}>
+              {deltaSign}{delta}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
+
