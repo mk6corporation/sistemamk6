@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [categoria, setCategoria] = useState<string>("ATIVO");
+  const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
     enabled: !!user,
@@ -71,6 +72,15 @@ function ClientesBase() {
       return { nome: profile?.nome ?? null, email: profile?.email ?? null, isAdmin };
     },
   });
+
+  // Admin default: ver todos. Colaborador: sempre "meus".
+  const effectiveScope: "meus" | "todos" = viewer?.isAdmin ? scope : "meus";
+
+  // Admin entra vendo todos por padrão
+  useEffect(() => {
+    if (viewer?.isAdmin) setScope("todos");
+  }, [viewer?.isAdmin]);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["clientes-base"],
@@ -86,17 +96,16 @@ function ClientesBase() {
 
   const allClientes = data ?? [];
 
-  // Scope by colaborador: admins see all; others see only clients whose
-  // operacional array contains a member matching their profile name.
   const clientes = useMemo(() => {
     if (!viewer) return [];
-    if (viewer.isAdmin) return allClientes;
+    if (effectiveScope === "todos") return allClientes;
     const myName = normalize(viewer.nome);
     if (!myName) return [];
     return allClientes.filter((c) =>
       (c.operacional ?? []).some((m) => normalize(m?.name).includes(myName) || myName.includes(normalize(m?.name)))
     );
-  }, [allClientes, viewer]);
+  }, [allClientes, viewer, effectiveScope]);
+
 
   const categorias = useMemo(() => {
     const set = new Set<string>();
@@ -122,15 +131,44 @@ function ClientesBase() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Users className="h-6 w-6 text-primary" />
-          Clientes — Base
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Pesquise e acesse a ficha 360º de qualquer cliente.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <Users className="h-6 w-6 text-primary" />
+            Clientes — Base
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Pesquise e acesse a ficha 360º de qualquer cliente.
+          </p>
+        </div>
+        {viewer?.isAdmin && (
+          <div className="inline-flex rounded-md border bg-background p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setScope("meus")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                effectiveScope === "meus"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Meus clientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setScope("todos")}
+              className={`rounded px-3 py-1.5 transition-colors ${
+                effectiveScope === "todos"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Todos (admin)
+            </button>
+          </div>
+        )}
       </div>
+
 
       <Card>
         <CardHeader>
