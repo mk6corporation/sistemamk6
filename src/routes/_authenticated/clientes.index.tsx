@@ -76,11 +76,11 @@ function ClientesBase() {
   // Admin default: ver todos. Colaborador: sempre "meus".
   const effectiveScope: "meus" | "todos" = viewer?.isAdmin ? scope : "meus";
 
-  // Inicializa scope conforme perfil quando viewer carrega
-  useMemo(() => {
-    if (viewer?.isAdmin && scope === "meus") setScope("todos");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Admin entra vendo todos por padrão
+  useEffect(() => {
+    if (viewer?.isAdmin) setScope("todos");
   }, [viewer?.isAdmin]);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["clientes-base"],
