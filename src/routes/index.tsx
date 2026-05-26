@@ -450,13 +450,44 @@ function Dashboard() {
               Limpar
             </Button>
           )}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Mês de análise:</span>
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[...mesesUltimos12].reverse().map((m) => (
+                  <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
-          <KpiCard label="Ativos" value={kpis.counts.ATIVO} accent="emerald" icon={TrendingUp} />
-          <KpiCard label="Jorney + Outros" value={kpis.outrosAtivos} accent="emerald" icon={TrendingUp} />
-          <KpiCard label="Aceleração Turismo Pro" value={kpis.aceleracaoPro} accent="emerald" icon={Sparkles} />
+          <KpiCard
+            label="Ativos"
+            value={kpis.counts.ATIVO}
+            accent="emerald"
+            icon={TrendingUp}
+            comparacao={{ inicio: comparacaoMes.inicio.ativos, fim: comparacaoMes.fim.ativos, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
+          <KpiCard
+            label="Jorney + Outros"
+            value={kpis.outrosAtivos}
+            accent="emerald"
+            icon={TrendingUp}
+            comparacao={{ inicio: comparacaoMes.inicio.outros, fim: comparacaoMes.fim.outros, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
+          <KpiCard
+            label="Aceleração Turismo Pro"
+            value={kpis.aceleracaoPro}
+            accent="emerald"
+            icon={Sparkles}
+            comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
+          />
           <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
           <KpiCard label="Churn" value={kpis.counts.CHURN} accent="red" icon={TrendingDown} />
           <KpiCard label="Finalizados" value={kpis.counts.FINALIZADO} accent="zinc" icon={Flag} />
