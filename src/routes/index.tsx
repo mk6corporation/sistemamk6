@@ -132,7 +132,6 @@ function Dashboard() {
   const syncFn = useServerFn(triggerNotionSync);
   const [lastResult, setLastResult] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
-  const [filtroPlano, setFiltroPlano] = useState<string>("todos");
 
   const mutation = useMutation({
     mutationFn: () => syncFn(),
