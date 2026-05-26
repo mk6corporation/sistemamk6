@@ -378,6 +378,53 @@ function Dashboard() {
     return { mes, inicio, fim, ehMesAtual };
   }, [mesSelecionado, mesesUltimos12, snapshotAt]);
 
+  // ===== Diário do mês selecionado: entradas vs saídas =====
+  const diarioMes = useMemo(() => {
+    const mes = comparacaoMes.mes;
+    const ano = mes.date.getFullYear();
+    const mIdx = mes.date.getMonth();
+    const ultimoDia = new Date(ano, mIdx + 1, 0).getDate();
+
+    // bucket por dia
+    const dias: { dia: number; label: string; entradas: number; saidas: number; saldo: number; acumulado: number }[] = [];
+    for (let d = 1; d <= ultimoDia; d++) {
+      dias.push({ dia: d, label: String(d).padStart(2, "0"), entradas: 0, saidas: 0, saldo: 0, acumulado: 0 });
+    }
+
+    const todas = mudancasQuery.data ?? [];
+    for (const m of todas) {
+      const dt = new Date(m.detectada_em);
+      if (dt.getFullYear() !== ano || dt.getMonth() !== mIdx) continue;
+      if (filtroOperacional !== "todos" && !idsClientesFiltrados.has(m.notion_page_id)) continue;
+      const dia = dt.getDate();
+      const bucket = dias[dia - 1];
+      if (!bucket) continue;
+      if (m.tipo_mudanca === "novo_cliente" || m.tipo_mudanca === "restaurado_no_notion") {
+        bucket.entradas += 1;
+      } else if (
+        m.tipo_mudanca === "churn" ||
+        m.tipo_mudanca === "finalizou" ||
+        m.tipo_mudanca === "removido_do_notion"
+      ) {
+        bucket.saidas += 1;
+      }
+    }
+    let acc = 0;
+    for (const d of dias) {
+      d.saldo = d.entradas - d.saidas;
+      acc += d.saldo;
+      d.acumulado = acc;
+    }
+    return dias;
+  }, [comparacaoMes, mudancasQuery.data, filtroOperacional, idsClientesFiltrados]);
+
+  const diarioTotais = useMemo(() => {
+    let entradas = 0, saidas = 0;
+    for (const d of diarioMes) { entradas += d.entradas; saidas += d.saidas; }
+    return { entradas, saidas, saldo: entradas - saidas };
+  }, [diarioMes]);
+
+
 
   const ultimaSync = runsQuery.data?.[0] as any;
 
