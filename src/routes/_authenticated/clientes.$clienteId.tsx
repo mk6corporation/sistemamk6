@@ -94,11 +94,15 @@ function ClienteDetailPage() {
           <TabsTrigger value="dados"><Building2 className="mr-2 h-4 w-4" />Dados Corporativos</TabsTrigger>
           <TabsTrigger value="contratos"><FileText className="mr-2 h-4 w-4" />Contratos</TabsTrigger>
           <TabsTrigger value="equipe"><Users className="mr-2 h-4 w-4" />Equipe Comercial</TabsTrigger>
+          <TabsTrigger value="timeline"><CalendarDays className="mr-2 h-4 w-4" />Linha do Tempo</TabsTrigger>
+          <TabsTrigger value="checkins"><MessageSquare className="mr-2 h-4 w-4" />Check-ins</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados"><DadosCorporativosTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="contratos"><ContratosTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="equipe"><EquipeComercialTab clienteId={clienteId} /></TabsContent>
+        <TabsContent value="timeline"><TimelineTab clienteId={clienteId} /></TabsContent>
+        <TabsContent value="checkins"><CheckinsTab clienteId={clienteId} /></TabsContent>
       </Tabs>
     </div>
   );
