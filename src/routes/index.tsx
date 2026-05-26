@@ -42,7 +42,18 @@ import {
   ArrowRightLeft,
   Trash2,
   Sparkles,
+  LineChart as LineChartIcon,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
