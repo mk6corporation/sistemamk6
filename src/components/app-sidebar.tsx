@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Briefcase, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase, ChevronDown, Rss } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
