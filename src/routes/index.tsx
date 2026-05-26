@@ -554,6 +554,18 @@ function Dashboard() {
             icon={Sparkles}
             comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
+          {(() => {
+            const delta = comparacaoMes.fim.ativos - comparacaoMes.inicio.ativos;
+            const sign = delta > 0 ? "+" : "";
+            return (
+              <KpiCard
+                label={`Variação em ${comparacaoMes.mes.label}`}
+                value={`${sign}${delta}`}
+                accent={delta >= 0 ? "emerald" : "red"}
+                icon={delta >= 0 ? TrendingUp : TrendingDown}
+              />
+            );
+          })()}
           <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
           <KpiCard
             label={`Churn em ${comparacaoMes.mes.label}`}
