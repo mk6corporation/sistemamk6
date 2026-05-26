@@ -58,6 +58,7 @@ function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [categoria, setCategoria] = useState<string>("ATIVO");
+  const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
     enabled: !!user,
@@ -71,6 +72,15 @@ function ClientesBase() {
       return { nome: profile?.nome ?? null, email: profile?.email ?? null, isAdmin };
     },
   });
+
+  // Admin default: ver todos. Colaborador: sempre "meus".
+  const effectiveScope: "meus" | "todos" = viewer?.isAdmin ? scope : "meus";
+
+  // Inicializa scope conforme perfil quando viewer carrega
+  useMemo(() => {
+    if (viewer?.isAdmin && scope === "meus") setScope("todos");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewer?.isAdmin]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["clientes-base"],
@@ -86,17 +96,16 @@ function ClientesBase() {
 
   const allClientes = data ?? [];
 
-  // Scope by colaborador: admins see all; others see only clients whose
-  // operacional array contains a member matching their profile name.
   const clientes = useMemo(() => {
     if (!viewer) return [];
-    if (viewer.isAdmin) return allClientes;
+    if (effectiveScope === "todos") return allClientes;
     const myName = normalize(viewer.nome);
     if (!myName) return [];
     return allClientes.filter((c) =>
       (c.operacional ?? []).some((m) => normalize(m?.name).includes(myName) || myName.includes(normalize(m?.name)))
     );
-  }, [allClientes, viewer]);
+  }, [allClientes, viewer, effectiveScope]);
+
 
   const categorias = useMemo(() => {
     const set = new Set<string>();
