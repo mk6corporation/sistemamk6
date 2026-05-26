@@ -119,6 +119,7 @@ export type SyncResult = {
   status: "success" | "error";
   clientes_processados: number;
   clientes_novos: number;
+  clientes_removidos: number;
   mudancas_detectadas: number;
   erro: string | null;
 };
@@ -135,6 +136,7 @@ export async function runNotionSync(): Promise<SyncResult> {
 
   let processados = 0;
   let novos = 0;
+  let removidos = 0;
   let mudancas = 0;
 
   try {
@@ -143,22 +145,31 @@ export async function runNotionSync(): Promise<SyncResult> {
     // Snapshot do estado atual no banco (para detectar diffs)
     const { data: snapshot, error: snapErr } = await supabaseAdmin
       .from("clientes")
-      .select("id, notion_page_id, estagio, categoria");
+      .select("id, notion_page_id, nome, estagio, categoria, removido_em");
     if (snapErr) throw new Error(`Erro lendo snapshot: ${snapErr.message}`);
 
     const snapshotMap = new Map(
       (snapshot ?? []).map((c) => [
         c.notion_page_id,
-        { id: c.id as string, estagio: c.estagio as string | null, categoria: c.categoria as string | null },
+        {
+          id: c.id as string,
+          nome: c.nome as string,
+          estagio: c.estagio as string | null,
+          categoria: c.categoria as string | null,
+          removido_em: c.removido_em as string | null,
+        },
       ]),
     );
 
+    const pageIdsNoNotion = new Set<string>();
     const mudancasParaInserir: any[] = [];
     const clientesUpsert: any[] = [];
 
     for (const page of pages) {
       const nome = extractTitle(page.properties["Cliente"]);
-      if (!nome) continue; // ignora linhas vazias
+      if (!nome) continue; // ignora linhas vazias sem título
+
+      pageIdsNoNotion.add(page.id);
 
       const estagio = extractStatus(page.properties["Status do Cliente"]);
       const categoria = classificarCategoria(estagio);
@@ -178,6 +189,7 @@ export async function runNotionSync(): Promise<SyncResult> {
         valor_mensal,
         notion_last_edited_time: page.last_edited_time,
         last_synced_at: new Date().toISOString(),
+        removido_em: null, // se reapareceu, "ressuscita"
       });
 
       const anterior = snapshotMap.get(page.id);
@@ -185,7 +197,7 @@ export async function runNotionSync(): Promise<SyncResult> {
         // Cliente novo
         novos += 1;
         mudancasParaInserir.push({
-          cliente_id: null, // preenchido após upsert
+          cliente_id: null,
           notion_page_id: page.id,
           nome_cliente: nome,
           estagio_anterior: null,
@@ -193,6 +205,19 @@ export async function runNotionSync(): Promise<SyncResult> {
           categoria_anterior: null,
           categoria_nova: categoria,
           tipo_mudanca: "novo_cliente",
+          notion_edited_at: page.last_edited_time,
+        });
+      } else if (anterior.removido_em) {
+        // Cliente que tinha sido removido reapareceu no Notion
+        mudancasParaInserir.push({
+          cliente_id: anterior.id,
+          notion_page_id: page.id,
+          nome_cliente: nome,
+          estagio_anterior: anterior.estagio,
+          estagio_novo: estagio,
+          categoria_anterior: anterior.categoria,
+          categoria_nova: categoria,
+          tipo_mudanca: "restaurado_no_notion",
           notion_edited_at: page.last_edited_time,
         });
       } else if (anterior.estagio !== estagio) {
@@ -211,6 +236,20 @@ export async function runNotionSync(): Promise<SyncResult> {
       }
 
       processados += 1;
+    }
+
+    // ===== Detectar exclusões (no banco mas não no Notion) =====
+    const removidosAgora: Array<{ id: string; notion_page_id: string; nome: string; estagio: string | null; categoria: string | null }> = [];
+    for (const [pageId, anterior] of snapshotMap) {
+      if (pageIdsNoNotion.has(pageId)) continue;
+      if (anterior.removido_em) continue; // já estava marcado
+      removidosAgora.push({
+        id: anterior.id,
+        notion_page_id: pageId,
+        nome: anterior.nome,
+        estagio: anterior.estagio,
+        categoria: anterior.categoria,
+      });
     }
 
     // Upsert clientes
@@ -233,6 +272,34 @@ export async function runNotionSync(): Promise<SyncResult> {
       const idMap = new Map((novosClientes ?? []).map((c) => [c.notion_page_id, c.id]));
       for (const m of mudancasParaInserir) {
         if (m.cliente_id === null) m.cliente_id = idMap.get(m.notion_page_id) ?? null;
+      }
+    }
+
+    // Marcar removidos (soft-delete) e gerar evento
+    if (removidosAgora.length) {
+      const agora = new Date().toISOString();
+      const { error: rmErr } = await supabaseAdmin
+        .from("clientes")
+        .update({ removido_em: agora })
+        .in(
+          "notion_page_id",
+          removidosAgora.map((r) => r.notion_page_id),
+        );
+      if (rmErr) throw new Error(`Erro marcando removidos: ${rmErr.message}`);
+      removidos = removidosAgora.length;
+
+      for (const r of removidosAgora) {
+        mudancasParaInserir.push({
+          cliente_id: r.id,
+          notion_page_id: r.notion_page_id,
+          nome_cliente: r.nome,
+          estagio_anterior: r.estagio,
+          estagio_novo: null,
+          categoria_anterior: r.categoria,
+          categoria_nova: null,
+          tipo_mudanca: "removido_do_notion",
+          notion_edited_at: null,
+        });
       }
     }
 
@@ -260,6 +327,7 @@ export async function runNotionSync(): Promise<SyncResult> {
       status: "success",
       clientes_processados: processados,
       clientes_novos: novos,
+      clientes_removidos: removidos,
       mudancas_detectadas: mudancas,
       erro: null,
     };
@@ -282,6 +350,7 @@ export async function runNotionSync(): Promise<SyncResult> {
       status: "error",
       clientes_processados: processados,
       clientes_novos: novos,
+      clientes_removidos: removidos,
       mudancas_detectadas: mudancas,
       erro: msg,
     };
