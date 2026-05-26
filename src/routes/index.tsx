@@ -53,7 +53,11 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ComposedChart,
+  Bar,
+  ReferenceLine,
 } from "recharts";
+
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -374,6 +378,53 @@ function Dashboard() {
     return { mes, inicio, fim, ehMesAtual };
   }, [mesSelecionado, mesesUltimos12, snapshotAt]);
 
+  // ===== Diário do mês selecionado: entradas vs saídas =====
+  const diarioMes = useMemo(() => {
+    const mes = comparacaoMes.mes;
+    const ano = mes.date.getFullYear();
+    const mIdx = mes.date.getMonth();
+    const ultimoDia = new Date(ano, mIdx + 1, 0).getDate();
+
+    // bucket por dia
+    const dias: { dia: number; label: string; entradas: number; saidas: number; saldo: number; acumulado: number }[] = [];
+    for (let d = 1; d <= ultimoDia; d++) {
+      dias.push({ dia: d, label: String(d).padStart(2, "0"), entradas: 0, saidas: 0, saldo: 0, acumulado: 0 });
+    }
+
+    const todas = mudancasQuery.data ?? [];
+    for (const m of todas) {
+      const dt = new Date(m.detectada_em);
+      if (dt.getFullYear() !== ano || dt.getMonth() !== mIdx) continue;
+      if (filtroOperacional !== "todos" && !idsClientesFiltrados.has(m.notion_page_id)) continue;
+      const dia = dt.getDate();
+      const bucket = dias[dia - 1];
+      if (!bucket) continue;
+      if (m.tipo_mudanca === "novo_cliente" || m.tipo_mudanca === "restaurado_no_notion") {
+        bucket.entradas += 1;
+      } else if (
+        m.tipo_mudanca === "churn" ||
+        m.tipo_mudanca === "finalizou" ||
+        m.tipo_mudanca === "removido_do_notion"
+      ) {
+        bucket.saidas += 1;
+      }
+    }
+    let acc = 0;
+    for (const d of dias) {
+      d.saldo = d.entradas - d.saidas;
+      acc += d.saldo;
+      d.acumulado = acc;
+    }
+    return dias;
+  }, [comparacaoMes, mudancasQuery.data, filtroOperacional, idsClientesFiltrados]);
+
+  const diarioTotais = useMemo(() => {
+    let entradas = 0, saidas = 0;
+    for (const d of diarioMes) { entradas += d.entradas; saidas += d.saidas; }
+    return { entradas, saidas, saldo: entradas - saidas };
+  }, [diarioMes]);
+
+
 
   const ultimaSync = runsQuery.data?.[0] as any;
 
@@ -561,6 +612,63 @@ function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <LineChartIcon className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle>Entradas vs Saídas — {comparacaoMes.mes.label}</CardTitle>
+                    </div>
+                    <CardDescription>
+                      Entradas = novos clientes. Saídas = churn ou projeto finalizado. A linha mostra o saldo acumulado no mês.
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-4 text-sm tabular-nums">
+                    <span className="text-emerald-600">Entradas: <b>{diarioTotais.entradas}</b></span>
+                    <span className="text-red-600">Saídas: <b>{diarioTotais.saidas}</b></span>
+                    <span className={diarioTotais.saldo >= 0 ? "text-emerald-600" : "text-red-600"}>
+                      Saldo: <b>{diarioTotais.saldo > 0 ? "+" : ""}{diarioTotais.saldo}</b>
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[320px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={diarioMes} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        labelFormatter={(l) => `Dia ${l}`}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                      <Bar dataKey="entradas" name="Entradas" fill="#10b981" />
+                      <Bar dataKey="saidas" name="Saídas" fill="#ef4444" />
+                      <Line
+                        type="monotone"
+                        dataKey="acumulado"
+                        name="Saldo acumulado"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 2 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+
 
             <Card>
               <CardHeader>
