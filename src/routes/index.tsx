@@ -94,22 +94,22 @@ type Mudanca = {
 
 // ===== UI helpers =====
 const CATEGORIA_STYLE: Record<string, string> = {
-  ATIVO: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  PAUSADO: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  CHURN: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20",
-  FINALIZADO: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-500/20",
+  ATIVO: "bg-red-500/15 text-red-400 border-red-500/20",
+  PAUSADO: "bg-red-500/10 text-red-300 border-red-500/15",
+  CHURN: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  FINALIZADO: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
   OUTRO: "bg-zinc-500/10 text-muted-foreground border-border",
 };
 
 const TIPO_LABEL: Record<string, { label: string; icon: any; className: string }> = {
-  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-emerald-600" },
-  churn: { label: "Churn", icon: TrendingDown, className: "text-red-600" },
-  pausou: { label: "Pausou", icon: PauseCircle, className: "text-amber-600" },
-  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-600" },
-  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-emerald-600" },
+  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-red-500" },
+  churn: { label: "Churn", icon: TrendingDown, className: "text-zinc-400" },
+  pausou: { label: "Pausou", icon: PauseCircle, className: "text-red-400" },
+  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-400" },
+  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-red-500" },
   mudanca_estagio: { label: "Mudança de estágio", icon: ArrowRightLeft, className: "text-muted-foreground" },
-  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-red-600" },
-  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-emerald-600" },
+  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-zinc-400" },
+  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-red-500" },
 };
 
 const TIPOS_RELEVANTES = new Set([
