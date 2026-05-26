@@ -14,7 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          estagio: string | null
+          id: string
+          inicio_contrato: string | null
+          last_synced_at: string
+          nome: string
+          notion_last_edited_time: string | null
+          notion_page_id: string
+          operacional: Json | null
+          plano: string | null
+          updated_at: string
+          valor_mensal: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          estagio?: string | null
+          id?: string
+          inicio_contrato?: string | null
+          last_synced_at?: string
+          nome: string
+          notion_last_edited_time?: string | null
+          notion_page_id: string
+          operacional?: Json | null
+          plano?: string | null
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          estagio?: string | null
+          id?: string
+          inicio_contrato?: string | null
+          last_synced_at?: string
+          nome?: string
+          notion_last_edited_time?: string | null
+          notion_page_id?: string
+          operacional?: Json | null
+          plano?: string | null
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Relationships: []
+      }
+      mudancas_estagio: {
+        Row: {
+          categoria_anterior: string | null
+          categoria_nova: string | null
+          cliente_id: string | null
+          detectada_em: string
+          estagio_anterior: string | null
+          estagio_novo: string | null
+          id: string
+          nome_cliente: string
+          notion_edited_at: string | null
+          notion_page_id: string
+          tipo_mudanca: string
+        }
+        Insert: {
+          categoria_anterior?: string | null
+          categoria_nova?: string | null
+          cliente_id?: string | null
+          detectada_em?: string
+          estagio_anterior?: string | null
+          estagio_novo?: string | null
+          id?: string
+          nome_cliente: string
+          notion_edited_at?: string | null
+          notion_page_id: string
+          tipo_mudanca: string
+        }
+        Update: {
+          categoria_anterior?: string | null
+          categoria_nova?: string | null
+          cliente_id?: string | null
+          detectada_em?: string
+          estagio_anterior?: string | null
+          estagio_novo?: string | null
+          id?: string
+          nome_cliente?: string
+          notion_edited_at?: string | null
+          notion_page_id?: string
+          tipo_mudanca?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mudancas_estagio_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_runs: {
+        Row: {
+          clientes_novos: number
+          clientes_processados: number
+          erro: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string
+          mudancas_detectadas: number
+          status: string
+        }
+        Insert: {
+          clientes_novos?: number
+          clientes_processados?: number
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          mudancas_detectadas?: number
+          status?: string
+        }
+        Update: {
+          clientes_novos?: number
+          clientes_processados?: number
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          mudancas_detectadas?: number
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
