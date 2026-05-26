@@ -233,12 +233,12 @@ function Dashboard() {
     const list = (mudancasQuery.data ?? []).filter(
       (m) =>
         TIPOS_RELEVANTES.has(m.tipo_mudanca) &&
-        (filtroPlano === "todos" && filtroOperacional === "todos"
+        (filtroOperacional === "todos"
           ? true
           : idsClientesFiltrados.has(m.notion_page_id)),
     );
     return list;
-  }, [mudancasQuery.data, idsClientesFiltrados, filtroPlano, filtroOperacional]);
+  }, [mudancasQuery.data, idsClientesFiltrados, filtroOperacional]);
 
   const feedPorMes = useMemo(() => {
     const buckets = new Map<string, Mudanca[]>();
