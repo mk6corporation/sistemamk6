@@ -537,7 +537,7 @@ function Dashboard() {
             <span>· −{lastResult.clientes_removidos ?? 0} removidos</span>
             <span>· {lastResult.mudancas_detectadas} mudanças</span>
             {lastResult.erro && (
-              <span className="text-zinc-400">· {lastResult.erro}</span>
+              <span className="text-red-600">· {lastResult.erro}</span>
             )}
           </div>
         )}
