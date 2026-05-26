@@ -700,6 +700,9 @@ function Dashboard() {
                       <TableHead className="text-right">Ativos (total)</TableHead>
                       <TableHead className="text-right">Jorney + Outros</TableHead>
                       <TableHead className="text-right">Aceleração Turismo Pro</TableHead>
+                      <TableHead className="text-right">Novos</TableHead>
+                      <TableHead className="text-right">Churn</TableHead>
+                      <TableHead className="text-right">Finalizados</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -724,9 +727,19 @@ function Dashboard() {
                           <TableCell className="text-right tabular-nums">
                             {m.acelPro}{renderDelta(m.acelPro, prev?.acelPro)}
                           </TableCell>
+                          <TableCell className="text-right tabular-nums text-emerald-600">
+                            {m.novos > 0 ? `+${m.novos}` : m.novos}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-red-600">
+                            {m.churn > 0 ? `−${m.churn}` : m.churn}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-zinc-600">
+                            {m.finalizou > 0 ? `−${m.finalizou}` : m.finalizou}
+                          </TableCell>
                         </TableRow>
                       );
                     })}
+
                   </TableBody>
                 </Table>
               </CardContent>
