@@ -585,21 +585,21 @@ function Dashboard() {
           <KpiCard
             label="Ativos"
             value={kpis.counts.ATIVO}
-            accent="emerald"
+            accent="red"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.ativos, fim: comparacaoMes.fim.ativos, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Jorney + Outros"
             value={kpis.outrosAtivos}
-            accent="emerald"
+            accent="red"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.outros, fim: comparacaoMes.fim.outros, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Aceleração Turismo Pro"
             value={kpis.aceleracaoPro}
-            accent="emerald"
+            accent="red"
             icon={Sparkles}
             comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
@@ -610,16 +610,16 @@ function Dashboard() {
               <KpiCard
                 label={`Variação em ${comparacaoMes.mes.label}`}
                 value={`${sign}${delta}`}
-                accent={delta >= 0 ? "emerald" : "red"}
+                accent={delta >= 0 ? "red" : "zinc"}
                 icon={delta >= 0 ? TrendingUp : TrendingDown}
               />
             );
           })()}
-          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
+          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="red" icon={PauseCircle} />
           <KpiCard
             label={`Churn em ${comparacaoMes.mes.label}`}
             value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.churn ?? 0}
-            accent="red"
+            accent="zinc"
             icon={TrendingDown}
           />
           <KpiCard
@@ -628,8 +628,8 @@ function Dashboard() {
             accent="zinc"
             icon={Flag}
           />
-          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
-          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
+          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="red" icon={AlertCircle} />
+          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="red" icon={Sparkles} />
         </div>
 
         <Tabs defaultValue="evolucao" className="w-full">
