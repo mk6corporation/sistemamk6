@@ -298,6 +298,64 @@ function Dashboard() {
       });
   }, [mudancasRelevantes]);
 
+  // ===== Evolução mensal (snapshot do dia 01 dos últimos 12 meses) =====
+  const evolucaoMensal = useMemo(() => {
+    const todasMudancas = mudancasQuery.data ?? [];
+    // Mudanças que alteram estagio, ordenadas desc
+    const mudancasEstagio = todasMudancas
+      .filter((m) => TIPOS_QUE_MUDAM_ESTAGIO.has(m.tipo_mudanca))
+      .sort((a, b) =>
+        new Date(b.detectada_em).getTime() - new Date(a.detectada_em).getTime(),
+      );
+
+    // Gerar lista dos últimos 12 dias-01 (mais antigo → mais recente)
+    const hoje = new Date();
+    const meses: { key: string; label: string; date: Date }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      meses.push({
+        key: `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`,
+        label: `${MESES_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(2)}`,
+        date: d,
+      });
+    }
+
+    return meses.map(({ key, label, date }) => {
+      const T = date.getTime();
+      // Estado por cliente no dia T: começa pelo atual e desfaz mudanças posteriores
+      const estagioPor: Record<string, string | null> = {};
+      for (const c of clientesFiltrados) {
+        estagioPor[c.notion_page_id] = c.estagio;
+      }
+      for (const m of mudancasEstagio) {
+        if (new Date(m.detectada_em).getTime() > T) {
+          if (m.notion_page_id in estagioPor) {
+            estagioPor[m.notion_page_id] = m.estagio_anterior;
+          }
+        }
+      }
+
+      let ativos = 0;
+      let acelPro = 0;
+      for (const c of clientesFiltrados) {
+        // Existência no dia T
+        if (c.inicio_contrato && new Date(c.inicio_contrato).getTime() > T) continue;
+        if (c.removido_em && new Date(c.removido_em).getTime() <= T) continue;
+        const cat = estagioToCategoria(estagioPor[c.notion_page_id] ?? null);
+        if (cat !== "ATIVO") continue;
+        ativos += 1;
+        if (c.plano === "Aceleração Turismo PRO") acelPro += 1;
+      }
+      return {
+        key,
+        label,
+        ativos,
+        acelPro,
+        outros: ativos - acelPro,
+      };
+    });
+  }, [clientesFiltrados, mudancasQuery.data]);
+
   const ultimaSync = runsQuery.data?.[0] as any;
 
   return (
