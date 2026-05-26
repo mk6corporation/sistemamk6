@@ -780,67 +780,7 @@ function Dashboard() {
           </TabsContent>
 
 
-          {/* Feed */}
-          <TabsContent value="feed" className="space-y-6">
-            {mudancasQuery.isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : feedPorMes.length === 0 ? (
-              <Card>
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  Nenhuma mudança relevante ainda. Rode uma sincronização.
-                </CardContent>
-              </Card>
-            ) : (
-              feedPorMes.map((mes) => (
-                <Card key={mes.key}>
-                  <CardHeader>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <CardTitle className="capitalize">{mes.label}</CardTitle>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(mes.stats).map(([tipo, qtd]) => {
-                          const meta = TIPO_LABEL[tipo];
-                          if (!meta) return null;
-                          return (
-                            <Badge key={tipo} variant="outline" className="gap-1">
-                              <meta.icon className={`h-3 w-3 ${meta.className}`} />
-                              {meta.label}: {qtd}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <CardDescription>{mes.items.length} eventos no mês</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {mes.items.map((it) => {
-                      const meta = TIPO_LABEL[it.tipo_mudanca] ?? TIPO_LABEL.mudanca_estagio;
-                      const Icon = meta.icon;
-                      return (
-                        <div
-                          key={it.id}
-                          className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/20 p-3 text-sm"
-                        >
-                          <Icon className={`h-4 w-4 shrink-0 ${meta.className}`} />
-                          <span className="font-medium">{it.nome_cliente}</span>
-                          <Badge variant="outline" className={meta.className}>
-                            {meta.label}
-                          </Badge>
-                          {it.estagio_anterior && it.estagio_novo && (
-                            <span className="text-xs text-muted-foreground">
-                              {it.estagio_anterior} → {it.estagio_novo}
-                            </span>
-                          )}
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {formatData(it.detectada_em)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
+
 
           {/* Clientes */}
           <TabsContent value="clientes">
