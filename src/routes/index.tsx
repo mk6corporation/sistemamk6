@@ -914,17 +914,20 @@ function KpiCard({
 }: {
   label: string;
   value: string | number;
-  accent: "red" | "zinc";
+  accent: "emerald" | "red" | "amber" | "blue" | "violet";
   icon: any;
   comparacao?: { inicio: number; fim: number; ehMesAtual: boolean };
 }) {
   const colors: Record<string, string> = {
-    red: "text-red-500 bg-red-500/10",
-    zinc: "text-zinc-400 bg-zinc-500/10",
+    emerald: "text-emerald-600 bg-emerald-500/10",
+    red: "text-red-600 bg-red-500/10",
+    amber: "text-amber-600 bg-amber-500/10",
+    blue: "text-blue-600 bg-blue-500/10",
+    violet: "text-violet-600 bg-violet-500/10",
   };
   const delta = comparacao ? comparacao.fim - comparacao.inicio : 0;
   const deltaColor =
-    delta > 0 ? "text-red-500" : delta < 0 ? "text-zinc-400" : "text-muted-foreground";
+    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
   const deltaSign = delta > 0 ? "+" : "";
   return (
     <Card>
