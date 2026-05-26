@@ -11,8 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { TimelineTab } from "@/components/cliente/timeline-tab";
+import { CheckinsTab } from "@/components/cliente/checkins-tab";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clienteId")({
   component: ClienteDetailPage,
