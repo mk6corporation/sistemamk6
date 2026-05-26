@@ -211,13 +211,16 @@ function Dashboard() {
     };
     let mrr = 0;
     let avisoChurn = 0;
+    let aceleracaoPro = 0;
     for (const c of clientesFiltrados) {
       const key = c.categoria ?? "OUTRO";
       counts[key] = (counts[key] ?? 0) + 1;
       if (key === "ATIVO" && c.valor_mensal) mrr += Number(c.valor_mensal);
       if (c.estagio === "Aviso de Churn") avisoChurn += 1;
+      if (key === "ATIVO" && c.plano === "Aceleração Turismo PRO") aceleracaoPro += 1;
     }
-    return { counts, mrr, avisoChurn, total: clientesFiltrados.length };
+    const outrosAtivos = counts.ATIVO - aceleracaoPro;
+    return { counts, mrr, avisoChurn, aceleracaoPro, outrosAtivos, total: clientesFiltrados.length };
   }, [clientesFiltrados]);
 
   // Feed by month
