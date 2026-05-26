@@ -171,7 +171,7 @@ function Dashboard() {
         .from("mudancas_estagio")
         .select("*")
         .order("detectada_em", { ascending: false })
-        .limit(500);
+        .limit(5000);
       if (error) throw error;
       return (data ?? []) as Mudanca[];
     },
