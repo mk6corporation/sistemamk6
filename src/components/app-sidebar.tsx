@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Briefcase, ChevronDown, Rss } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase, ChevronDown, Rss, CalendarClock, KanbanSquare, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,8 +23,11 @@ import {
 
 const operacionalItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, exact: true },
+  { title: "Minha Rotina", url: "/minha-rotina", icon: CalendarClock, exact: false },
+  { title: "Jornada (Kanban)", url: "/kanban", icon: KanbanSquare, exact: false },
   { title: "Clientes (Base)", url: "/clientes", icon: Users, exact: false },
   { title: "Feed de mudanças", url: "/feed", icon: Rss, exact: false },
+  { title: "Métricas (admin)", url: "/admin-metricas", icon: BarChart3, exact: false },
 ];
 
 export function AppSidebar() {
