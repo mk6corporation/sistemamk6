@@ -137,6 +137,32 @@ function formatData(s: string | null) {
   return new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
+function estagioToCategoria(estagio: string | null): string {
+  if (!estagio) return "OUTRO";
+  if (estagio === "Pausado") return "PAUSADO";
+  if (estagio === "Churn") return "CHURN";
+  if (estagio === "Projeto Finalizado (Não Churn)") return "FINALIZADO";
+  if (
+    estagio === "Cliente" ||
+    estagio === "Financeiro" ||
+    estagio === "Contrato Assinado" ||
+    estagio === "Aviso de Churn" ||
+    estagio === "Formulário de Cliente"
+  ) {
+    return "ATIVO";
+  }
+  return "OUTRO";
+}
+
+// Tipos de mudança que efetivamente alteram o estágio (para reconstrução histórica)
+const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
+  "mudanca_estagio",
+  "pausou",
+  "churn",
+  "finalizou",
+  "recuperou",
+]);
+
 // ===== Page =====
 function Dashboard() {
   const qc = useQueryClient();
