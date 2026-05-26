@@ -62,7 +62,9 @@ function ClientesBase() {
 
   const categorias = useMemo(() => {
     const set = new Set<string>();
-    clientes.forEach((c) => c.categoria && set.add(c.categoria));
+    clientes.forEach((c) => {
+      if (c.categoria && c.categoria !== "OUTRO") set.add(c.categoria);
+    });
     return ["TODOS", ...Array.from(set).sort()];
   }, [clientes]);
 
