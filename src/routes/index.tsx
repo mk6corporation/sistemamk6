@@ -193,23 +193,16 @@ function Dashboard() {
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [ativos]);
 
-  const planos = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of ativos) if (c.plano) set.add(c.plano);
-    return Array.from(set).sort();
-  }, [ativos]);
-
   // Filtered clients
   const clientesFiltrados = useMemo(() => {
     return ativos.filter((c) => {
-      if (filtroPlano !== "todos" && c.plano !== filtroPlano) return false;
       if (filtroOperacional !== "todos") {
         const has = (c.operacional ?? []).some((op) => op.id === filtroOperacional);
         if (!has) return false;
       }
       return true;
     });
-  }, [ativos, filtroPlano, filtroOperacional]);
+  }, [ativos, filtroOperacional]);
 
   // KPIs
   const kpis = useMemo(() => {
