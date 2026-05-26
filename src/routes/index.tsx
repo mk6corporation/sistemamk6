@@ -433,6 +433,55 @@ function Dashboard() {
     return dias;
   }, [comparacaoMes, mudancasQuery.data, filtroOperacional, idsClientesFiltrados]);
 
+  // ===== Série diária do mês selecionado (snapshot por dia + acumulados) =====
+  const diarioMensal = useMemo(() => {
+    const mes = comparacaoMes.mes;
+    const ano = mes.date.getFullYear();
+    const mIdx = mes.date.getMonth();
+    const ultimoDia = new Date(ano, mIdx + 1, 0).getDate();
+    const hoje = new Date();
+    const ehMesAtual = hoje.getFullYear() === ano && hoje.getMonth() === mIdx;
+    const limiteDia = ehMesAtual ? hoje.getDate() : ultimoDia;
+
+    const todas = mudancasQuery.data ?? [];
+    const pontos: Array<{
+      label: string;
+      ativos: number;
+      outros: number;
+      acelPro: number;
+      churn: number;
+      finalizou: number;
+    }> = [];
+
+    let churnAcum = 0;
+    let finalAcum = 0;
+
+    for (let d = 1; d <= limiteDia; d++) {
+      // snapshot ao fim do dia d
+      const fimDoDia = new Date(ano, mIdx, d, 23, 59, 59, 999);
+      const snap = snapshotAt(fimDoDia);
+
+      // acumula churn/finalizou ocorridos neste dia
+      for (const m of todas) {
+        const dt = new Date(m.detectada_em);
+        if (dt.getFullYear() !== ano || dt.getMonth() !== mIdx || dt.getDate() !== d) continue;
+        if (filtroOperacional !== "todos" && !idsClientesFiltrados.has(m.notion_page_id)) continue;
+        if (m.tipo_mudanca === "churn") churnAcum += 1;
+        else if (m.tipo_mudanca === "finalizou") finalAcum += 1;
+      }
+
+      pontos.push({
+        label: String(d).padStart(2, "0"),
+        ativos: snap.ativos,
+        outros: snap.outros,
+        acelPro: snap.acelPro,
+        churn: churnAcum,
+        finalizou: finalAcum,
+      });
+    }
+    return pontos;
+  }, [comparacaoMes, snapshotAt, mudancasQuery.data, filtroOperacional, idsClientesFiltrados]);
+
   const diarioTotais = useMemo(() => {
     let entradas = 0, saidas = 0;
     for (const d of diarioMes) { entradas += d.entradas; saidas += d.saidas; }
@@ -596,20 +645,19 @@ function Dashboard() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <LineChartIcon className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>Ativos no dia 01 — últimos 12 meses</CardTitle>
+                  <CardTitle>Evolução diária — {comparacaoMes.mes.label}</CardTitle>
                 </div>
                 <CardDescription>
-                  Snapshot reconstruído a partir do histórico de mudanças. Meses anteriores ao
-                  início do sync ({ultimaSync ? formatData(ultimaSync.iniciado_em) : "—"}) refletem
-                  o estado atual filtrado por <code>início de contrato</code>.
+                  Snapshot de ativos por dia do mês selecionado. Churn e Projetos finalizados são
+                  acumulados ao longo do mês (resetam no dia 01).
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={evolucaoMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <LineChart data={diarioMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                       <Tooltip
                         contentStyle={{
@@ -618,6 +666,7 @@ function Dashboard() {
                           borderRadius: 8,
                           fontSize: 12,
                         }}
+                        labelFormatter={(l) => `Dia ${l}`}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Line
