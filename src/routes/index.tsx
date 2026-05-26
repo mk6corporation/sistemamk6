@@ -760,13 +760,13 @@ function Dashboard() {
                           <TableCell className="text-right tabular-nums">
                             {m.acelPro}{renderDelta(m.acelPro, prev?.acelPro)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-red-500">
+                          <TableCell className="text-right tabular-nums text-emerald-600">
                             {m.novos > 0 ? `+${m.novos}` : m.novos}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-zinc-400">
+                          <TableCell className="text-right tabular-nums text-red-600">
                             {m.churn > 0 ? `−${m.churn}` : m.churn}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-zinc-400">
+                          <TableCell className="text-right tabular-nums text-blue-600">
                             {m.finalizou > 0 ? `−${m.finalizou}` : m.finalizou}
                           </TableCell>
                         </TableRow>
