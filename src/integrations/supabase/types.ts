@@ -14,6 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
+      cliente_checkins: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data: string
+          id: string
+          observacoes: string | null
+          registrado_por: string | null
+          resposta_cliente: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data?: string
+          id?: string
+          observacoes?: string | null
+          registrado_por?: string | null
+          resposta_cliente?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          observacoes?: string | null
+          registrado_por?: string | null
+          resposta_cliente?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_checkins_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cliente_timeline_steps: {
+        Row: {
+          cliente_entregue: boolean
+          cliente_entregue_em: string | null
+          cliente_id: string
+          cliente_responsabilidade: string | null
+          codigo: string
+          created_at: string
+          data_concluida: string | null
+          data_prevista: string | null
+          descricao: string | null
+          dia_fim: number | null
+          dia_inicio: number | null
+          fase: string
+          id: string
+          mk6_entregue: boolean
+          mk6_entregue_em: string | null
+          mk6_responsabilidade: string | null
+          observacoes: string | null
+          ordem: number
+          responsavel: string | null
+          semana: number | null
+          status: string
+          subtitulo: string | null
+          tem_trava: boolean
+          tipo: string
+          titulo: string
+          trava_descricao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_entregue?: boolean
+          cliente_entregue_em?: string | null
+          cliente_id: string
+          cliente_responsabilidade?: string | null
+          codigo: string
+          created_at?: string
+          data_concluida?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          dia_fim?: number | null
+          dia_inicio?: number | null
+          fase: string
+          id?: string
+          mk6_entregue?: boolean
+          mk6_entregue_em?: string | null
+          mk6_responsabilidade?: string | null
+          observacoes?: string | null
+          ordem: number
+          responsavel?: string | null
+          semana?: number | null
+          status?: string
+          subtitulo?: string | null
+          tem_trava?: boolean
+          tipo?: string
+          titulo: string
+          trava_descricao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_entregue?: boolean
+          cliente_entregue_em?: string | null
+          cliente_id?: string
+          cliente_responsabilidade?: string | null
+          codigo?: string
+          created_at?: string
+          data_concluida?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          dia_fim?: number | null
+          dia_inicio?: number | null
+          fase?: string
+          id?: string
+          mk6_entregue?: boolean
+          mk6_entregue_em?: string | null
+          mk6_responsabilidade?: string | null
+          observacoes?: string | null
+          ordem?: number
+          responsavel?: string | null
+          semana?: number | null
+          status?: string
+          subtitulo?: string | null
+          tem_trava?: boolean
+          tipo?: string
+          titulo?: string
+          trava_descricao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_timeline_steps_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           categoria: string | null
