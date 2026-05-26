@@ -94,22 +94,22 @@ type Mudanca = {
 
 // ===== UI helpers =====
 const CATEGORIA_STYLE: Record<string, string> = {
-  ATIVO: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  PAUSADO: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  CHURN: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20",
-  FINALIZADO: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-500/20",
+  ATIVO: "bg-red-500/15 text-red-400 border-red-500/20",
+  PAUSADO: "bg-red-500/10 text-red-300 border-red-500/15",
+  CHURN: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  FINALIZADO: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
   OUTRO: "bg-zinc-500/10 text-muted-foreground border-border",
 };
 
 const TIPO_LABEL: Record<string, { label: string; icon: any; className: string }> = {
-  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-emerald-600" },
-  churn: { label: "Churn", icon: TrendingDown, className: "text-red-600" },
-  pausou: { label: "Pausou", icon: PauseCircle, className: "text-amber-600" },
-  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-600" },
-  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-emerald-600" },
+  novo_cliente: { label: "Novo cliente", icon: UserPlus, className: "text-red-500" },
+  churn: { label: "Churn", icon: TrendingDown, className: "text-zinc-400" },
+  pausou: { label: "Pausou", icon: PauseCircle, className: "text-red-400" },
+  finalizou: { label: "Finalizou", icon: Flag, className: "text-zinc-400" },
+  recuperou: { label: "Recuperou", icon: Sparkles, className: "text-red-500" },
   mudanca_estagio: { label: "Mudança de estágio", icon: ArrowRightLeft, className: "text-muted-foreground" },
-  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-red-600" },
-  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-emerald-600" },
+  removido_do_notion: { label: "Removido do Notion", icon: Trash2, className: "text-zinc-400" },
+  restaurado_no_notion: { label: "Restaurado no Notion", icon: Sparkles, className: "text-red-500" },
 };
 
 const TIPOS_RELEVANTES = new Set([
@@ -527,9 +527,9 @@ function Dashboard() {
         {lastResult && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
             {lastResult.status === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CheckCircle2 className="h-4 w-4 text-red-500" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertCircle className="h-4 w-4 text-zinc-400" />
             )}
             <span className="font-medium">Última execução:</span>
             <span>{lastResult.clientes_processados} processados</span>
@@ -537,7 +537,7 @@ function Dashboard() {
             <span>· −{lastResult.clientes_removidos ?? 0} removidos</span>
             <span>· {lastResult.mudancas_detectadas} mudanças</span>
             {lastResult.erro && (
-              <span className="text-red-600">· {lastResult.erro}</span>
+              <span className="text-zinc-400">· {lastResult.erro}</span>
             )}
           </div>
         )}
@@ -585,21 +585,21 @@ function Dashboard() {
           <KpiCard
             label="Ativos"
             value={kpis.counts.ATIVO}
-            accent="emerald"
+            accent="red"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.ativos, fim: comparacaoMes.fim.ativos, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Jorney + Outros"
             value={kpis.outrosAtivos}
-            accent="emerald"
+            accent="red"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.outros, fim: comparacaoMes.fim.outros, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Aceleração Turismo Pro"
             value={kpis.aceleracaoPro}
-            accent="emerald"
+            accent="red"
             icon={Sparkles}
             comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
@@ -610,16 +610,16 @@ function Dashboard() {
               <KpiCard
                 label={`Variação em ${comparacaoMes.mes.label}`}
                 value={`${sign}${delta}`}
-                accent={delta >= 0 ? "emerald" : "red"}
+                accent={delta >= 0 ? "red" : "zinc"}
                 icon={delta >= 0 ? TrendingUp : TrendingDown}
               />
             );
           })()}
-          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
+          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="red" icon={PauseCircle} />
           <KpiCard
             label={`Churn em ${comparacaoMes.mes.label}`}
             value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.churn ?? 0}
-            accent="red"
+            accent="zinc"
             icon={TrendingDown}
           />
           <KpiCard
@@ -628,8 +628,8 @@ function Dashboard() {
             accent="zinc"
             icon={Flag}
           />
-          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
-          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
+          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="red" icon={AlertCircle} />
+          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="red" icon={Sparkles} />
         </div>
 
         <Tabs defaultValue="evolucao" className="w-full">
@@ -673,7 +673,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="ativos"
                         name="Ativos (total)"
-                        stroke="#10b981"
+                        stroke="#ef4444"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -681,7 +681,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="outros"
                         name="Jorney + Outros"
-                        stroke="#3b82f6"
+                        stroke="#f87171"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -689,7 +689,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="acelPro"
                         name="Aceleração Turismo Pro"
-                        stroke="#f59e0b"
+                        stroke="#991b1b"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -697,7 +697,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="churn"
                         name="Churn"
-                        stroke="#ef4444"
+                        stroke="#525252"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                       />
@@ -705,7 +705,7 @@ function Dashboard() {
                         type="monotone"
                         dataKey="finalizou"
                         name="Projetos finalizados"
-                        stroke="#71717a"
+                        stroke="#404040"
                         strokeWidth={2}
                         strokeDasharray="4 4"
                         dot={{ r: 3 }}
@@ -745,7 +745,7 @@ function Dashboard() {
                         if (p == null) return null;
                         const d = cur - p;
                         if (d === 0) return <span className="ml-2 text-xs text-muted-foreground">(0)</span>;
-                        const cls = d > 0 ? "text-emerald-600" : "text-red-600";
+                        const cls = d > 0 ? "text-red-500" : "text-zinc-400";
                         return <span className={`ml-2 text-xs ${cls}`}>({d > 0 ? "+" : ""}{d})</span>;
                       };
                       return (
@@ -760,13 +760,13 @@ function Dashboard() {
                           <TableCell className="text-right tabular-nums">
                             {m.acelPro}{renderDelta(m.acelPro, prev?.acelPro)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-emerald-600">
+                          <TableCell className="text-right tabular-nums text-red-500">
                             {m.novos > 0 ? `+${m.novos}` : m.novos}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-red-600">
+                          <TableCell className="text-right tabular-nums text-zinc-400">
                             {m.churn > 0 ? `−${m.churn}` : m.churn}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-zinc-600">
+                          <TableCell className="text-right tabular-nums text-zinc-400">
                             {m.finalizou > 0 ? `−${m.finalizou}` : m.finalizou}
                           </TableCell>
                         </TableRow>
@@ -914,19 +914,17 @@ function KpiCard({
 }: {
   label: string;
   value: string | number;
-  accent: "emerald" | "amber" | "red" | "zinc";
+  accent: "red" | "zinc";
   icon: any;
   comparacao?: { inicio: number; fim: number; ehMesAtual: boolean };
 }) {
   const colors: Record<string, string> = {
-    emerald: "text-emerald-600 bg-emerald-500/10",
-    amber: "text-amber-600 bg-amber-500/10",
-    red: "text-red-600 bg-red-500/10",
-    zinc: "text-zinc-600 bg-zinc-500/10",
+    red: "text-red-500 bg-red-500/10",
+    zinc: "text-zinc-400 bg-zinc-500/10",
   };
   const delta = comparacao ? comparacao.fim - comparacao.inicio : 0;
   const deltaColor =
-    delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-muted-foreground";
+    delta > 0 ? "text-red-500" : delta < 0 ? "text-zinc-400" : "text-muted-foreground";
   const deltaSign = delta > 0 ? "+" : "";
   return (
     <Card>
