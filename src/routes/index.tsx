@@ -585,21 +585,21 @@ function Dashboard() {
           <KpiCard
             label="Ativos"
             value={kpis.counts.ATIVO}
-            accent="red"
+            accent="emerald"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.ativos, fim: comparacaoMes.fim.ativos, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Jorney + Outros"
             value={kpis.outrosAtivos}
-            accent="red"
+            accent="blue"
             icon={TrendingUp}
             comparacao={{ inicio: comparacaoMes.inicio.outros, fim: comparacaoMes.fim.outros, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
           <KpiCard
             label="Aceleração Turismo Pro"
             value={kpis.aceleracaoPro}
-            accent="red"
+            accent="violet"
             icon={Sparkles}
             comparacao={{ inicio: comparacaoMes.inicio.acelPro, fim: comparacaoMes.fim.acelPro, ehMesAtual: comparacaoMes.ehMesAtual }}
           />
@@ -610,26 +610,26 @@ function Dashboard() {
               <KpiCard
                 label={`Variação em ${comparacaoMes.mes.label}`}
                 value={`${sign}${delta}`}
-                accent={delta >= 0 ? "red" : "zinc"}
+                accent={delta >= 0 ? "emerald" : "red"}
                 icon={delta >= 0 ? TrendingUp : TrendingDown}
               />
             );
           })()}
-          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="red" icon={PauseCircle} />
+          <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
           <KpiCard
             label={`Churn em ${comparacaoMes.mes.label}`}
             value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.churn ?? 0}
-            accent="zinc"
+            accent="red"
             icon={TrendingDown}
           />
           <KpiCard
             label={`Finalizados em ${comparacaoMes.mes.label}`}
             value={evolucaoMensal.find((m) => m.key === comparacaoMes.mes.key)?.finalizou ?? 0}
-            accent="zinc"
+            accent="blue"
             icon={Flag}
           />
-          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="red" icon={AlertCircle} />
-          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="red" icon={Sparkles} />
+          <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
+          <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
         </div>
 
         <Tabs defaultValue="evolucao" className="w-full">
