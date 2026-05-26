@@ -745,7 +745,7 @@ function Dashboard() {
                         if (p == null) return null;
                         const d = cur - p;
                         if (d === 0) return <span className="ml-2 text-xs text-muted-foreground">(0)</span>;
-                        const cls = d > 0 ? "text-emerald-600" : "text-red-600";
+                        const cls = d > 0 ? "text-red-500" : "text-zinc-400";
                         return <span className={`ml-2 text-xs ${cls}`}>({d > 0 ? "+" : ""}{d})</span>;
                       };
                       return (
@@ -760,13 +760,13 @@ function Dashboard() {
                           <TableCell className="text-right tabular-nums">
                             {m.acelPro}{renderDelta(m.acelPro, prev?.acelPro)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-emerald-600">
+                          <TableCell className="text-right tabular-nums text-red-500">
                             {m.novos > 0 ? `+${m.novos}` : m.novos}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-red-600">
+                          <TableCell className="text-right tabular-nums text-zinc-400">
                             {m.churn > 0 ? `−${m.churn}` : m.churn}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums text-zinc-600">
+                          <TableCell className="text-right tabular-nums text-zinc-400">
                             {m.finalizou > 0 ? `−${m.finalizou}` : m.finalizou}
                           </TableCell>
                         </TableRow>
