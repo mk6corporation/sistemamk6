@@ -1,7 +1,9 @@
-import { createFileRoute, Outlet, Navigate, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Navigate, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, LayoutDashboard, Users } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -26,27 +28,22 @@ function AuthLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 md:px-8">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <LayoutDashboard className="h-5 w-5 text-primary" />
-            <span className="hidden sm:inline">Painel</span>
-          </Link>
-          <div className="flex items-center gap-1">
-            <Link to="/" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-foreground" }} activeOptions={{ exact: true }}>
-              <Users className="mr-1 inline h-4 w-4" /> Dashboard
-            </Link>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="mr-1 h-4 w-4" /> Sair
-            </Button>
-          </div>
-        </div>
-      </nav>
-      <Outlet />
-    </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar />
+        <SidebarInset>
+          <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-card/80 px-4 backdrop-blur">
+            <SidebarTrigger />
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="mr-1 h-4 w-4" /> Sair
+              </Button>
+            </div>
+          </header>
+          <Outlet />
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
