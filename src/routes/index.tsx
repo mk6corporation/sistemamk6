@@ -745,7 +745,7 @@ function Dashboard() {
                         if (p == null) return null;
                         const d = cur - p;
                         if (d === 0) return <span className="ml-2 text-xs text-muted-foreground">(0)</span>;
-                        const cls = d > 0 ? "text-red-500" : "text-zinc-400";
+                        const cls = d > 0 ? "text-emerald-600" : "text-red-600";
                         return <span className={`ml-2 text-xs ${cls}`}>({d > 0 ? "+" : ""}{d})</span>;
                       };
                       return (
