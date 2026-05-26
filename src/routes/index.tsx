@@ -527,9 +527,9 @@ function Dashboard() {
         {lastResult && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
             {lastResult.status === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-red-500" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-zinc-400" />
+              <AlertCircle className="h-4 w-4 text-red-600" />
             )}
             <span className="font-medium">Última execução:</span>
             <span>{lastResult.clientes_processados} processados</span>
