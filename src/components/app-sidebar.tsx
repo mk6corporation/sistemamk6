@@ -24,6 +24,7 @@ import {
 const operacionalItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, exact: true },
   { title: "Clientes (Base)", url: "/clientes", icon: Users, exact: false },
+  { title: "Feed de mudanças", url: "/feed", icon: Rss, exact: false },
 ];
 
 export function AppSidebar() {
