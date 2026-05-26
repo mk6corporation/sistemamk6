@@ -94,10 +94,10 @@ type Mudanca = {
 
 // ===== UI helpers =====
 const CATEGORIA_STYLE: Record<string, string> = {
-  ATIVO: "bg-red-500/15 text-red-400 border-red-500/20",
-  PAUSADO: "bg-red-500/10 text-red-300 border-red-500/15",
-  CHURN: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
-  FINALIZADO: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  ATIVO: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  PAUSADO: "bg-amber-500/15 text-amber-700 border-amber-500/30",
+  CHURN: "bg-red-500/15 text-red-700 border-red-500/30",
+  FINALIZADO: "bg-blue-500/15 text-blue-700 border-blue-500/30",
   OUTRO: "bg-zinc-500/10 text-muted-foreground border-border",
 };
 
