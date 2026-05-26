@@ -273,6 +273,33 @@ export async function runNotionSync(): Promise<SyncResult> {
       }
     }
 
+    // Marcar removidos (soft-delete) e gerar evento
+    if (removidosAgora.length) {
+      const agora = new Date().toISOString();
+      const { error: rmErr } = await supabaseAdmin
+        .from("clientes")
+        .update({ removido_em: agora })
+        .in(
+          "notion_page_id",
+          removidosAgora.map((r) => r.notion_page_id),
+        );
+      if (rmErr) throw new Error(`Erro marcando removidos: ${rmErr.message}`);
+
+      for (const r of removidosAgora) {
+        mudancasParaInserir.push({
+          cliente_id: r.id,
+          notion_page_id: r.notion_page_id,
+          nome_cliente: r.nome,
+          estagio_anterior: r.estagio,
+          estagio_novo: null,
+          categoria_anterior: r.categoria,
+          categoria_nova: null,
+          tipo_mudanca: "removido_do_notion",
+          notion_edited_at: null,
+        });
+      }
+    }
+
     if (mudancasParaInserir.length) {
       const { error: mErr } = await supabaseAdmin
         .from("mudancas_estagio")
