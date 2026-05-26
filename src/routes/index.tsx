@@ -341,8 +341,8 @@ function Dashboard() {
         {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
           <KpiCard label="Ativos" value={kpis.counts.ATIVO} accent="emerald" icon={TrendingUp} />
-          <KpiCard label="Aceleração Turismo PRO" value={kpis.aceleracaoPro} accent="emerald" icon={Sparkles} />
-          <KpiCard label="Outros ativos" value={kpis.outrosAtivos} accent="emerald" icon={TrendingUp} />
+          <KpiCard label="Jorney + Outros" value={kpis.outrosAtivos} accent="emerald" icon={TrendingUp} />
+          <KpiCard label="Aceleração Turismo Pro" value={kpis.aceleracaoPro} accent="emerald" icon={Sparkles} />
           <KpiCard label="Pausados" value={kpis.counts.PAUSADO} accent="amber" icon={PauseCircle} />
           <KpiCard label="Churn" value={kpis.counts.CHURN} accent="red" icon={TrendingDown} />
           <KpiCard label="Finalizados" value={kpis.counts.FINALIZADO} accent="zinc" icon={Flag} />
