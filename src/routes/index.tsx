@@ -169,6 +169,11 @@ function Dashboard() {
   const syncFn = useServerFn(triggerNotionSync);
   const [lastResult, setLastResult] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
+  const hojeRef = new Date();
+  const [mesSelecionado, setMesSelecionado] = useState<string>(
+    `${hojeRef.getFullYear()}-${String(hojeRef.getMonth()).padStart(2, "0")}`,
+  );
+
 
   const mutation = useMutation({
     mutationFn: () => syncFn(),
