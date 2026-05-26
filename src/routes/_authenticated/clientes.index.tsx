@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/clientes/")({
   component: ClientesBase,
 });
 
+type OperacionalMember = { id?: string; name?: string };
+
 type Cliente = {
   id: string;
   nome: string;
@@ -28,7 +31,16 @@ type Cliente = {
   valor_mensal: number | null;
   inicio_contrato: string | null;
   removido_em: string | null;
+  operacional: OperacionalMember[] | null;
 };
+
+function normalize(s: string | null | undefined) {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
 
 const CATEGORIA_STYLE: Record<string, string> = {
   ATIVO: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
@@ -43,22 +55,48 @@ function formatBRL(v: number | null) {
 }
 
 function ClientesBase() {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
-  const [categoria, setCategoria] = useState<string>("TODOS");
+  const [categoria, setCategoria] = useState<string>("ATIVO");
+
+  const { data: viewer } = useQuery({
+    enabled: !!user,
+    queryKey: ["viewer-scope", user?.id],
+    queryFn: async () => {
+      const [{ data: profile }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("nome,email").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", user!.id),
+      ]);
+      const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+      return { nome: profile?.nome ?? null, email: profile?.email ?? null, isAdmin };
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["clientes-base"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id,nome,estagio,categoria,plano,valor_mensal,inicio_contrato,removido_em")
+        .select("id,nome,estagio,categoria,plano,valor_mensal,inicio_contrato,removido_em,operacional")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Cliente[];
     },
   });
 
-  const clientes = data ?? [];
+  const allClientes = data ?? [];
+
+  // Scope by colaborador: admins see all; others see only clients whose
+  // operacional array contains a member matching their profile name.
+  const clientes = useMemo(() => {
+    if (!viewer) return [];
+    if (viewer.isAdmin) return allClientes;
+    const myName = normalize(viewer.nome);
+    if (!myName) return [];
+    return allClientes.filter((c) =>
+      (c.operacional ?? []).some((m) => normalize(m?.name).includes(myName) || myName.includes(normalize(m?.name)))
+    );
+  }, [allClientes, viewer]);
 
   const categorias = useMemo(() => {
     const set = new Set<string>();
@@ -80,6 +118,7 @@ function ClientesBase() {
       );
     });
   }, [clientes, query, categoria]);
+
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
