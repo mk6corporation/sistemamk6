@@ -61,11 +61,24 @@ function extractStatus(prop: any): string | null {
 function extractSelect(prop: any): string | null {
   return prop?.select?.name ?? null;
 }
+function extractMultiSelect(prop: any): string[] {
+  if (!Array.isArray(prop?.multi_select)) return [];
+  return prop.multi_select.map((s: any) => s?.name).filter(Boolean);
+}
 function extractDate(prop: any): string | null {
   return prop?.date?.start ?? null;
 }
 function extractNumber(prop: any): number | null {
   return typeof prop?.number === "number" ? prop.number : null;
+}
+function extractRichText(prop: any): string | null {
+  if (!Array.isArray(prop?.rich_text) || prop.rich_text.length === 0) return null;
+  const txt = prop.rich_text.map((t: any) => t?.plain_text ?? "").join("").trim();
+  return txt || null;
+}
+function extractFormulaString(prop: any): string | null {
+  const v = prop?.formula?.string;
+  return v ? String(v).trim() || null : null;
 }
 function extractPeople(prop: any): Array<{ id: string; name: string; avatar_url: string | null }> {
   if (!Array.isArray(prop?.people)) return [];
@@ -187,6 +200,24 @@ export async function runNotionSync(): Promise<SyncResult> {
         operacional,
         inicio_contrato,
         valor_mensal,
+        fim_contrato: extractDate(page.properties["Final do Contrato"]),
+        tipo_projeto: extractMultiSelect(page.properties["Tipo de Projeto"]),
+        orcamento_ads: extractNumber(page.properties["Orçamento de Anúncios"]),
+        satisfacao: extractSelect(page.properties["Satisfação"]),
+        adimplencia: extractMultiSelect(page.properties["Adimplência/Inadimplência"]),
+        observacao: extractRichText(page.properties["Observação"]),
+        produtos_upsell: extractMultiSelect(page.properties["Produtos - Upsell"]),
+        info_venda_texto: extractRichText(page.properties["Valor + Informações da Venda + Data"]),
+        data_reuniao_cs: extractDate(page.properties["Data da Reunião CS"]),
+        ultima_reuniao_gestor: extractDate(page.properties["Última Reunião Gestor"]),
+        ultima_otimizacao: extractDate(page.properties["Última Otimização"]),
+        feedback_data: extractDate(page.properties["Feedback"]),
+        status_contrato_formula: extractFormulaString(page.properties["Status do Contrato"]),
+        status_reuniao_formula: extractFormulaString(page.properties["Status da Reunião"]),
+        status_otimizacao_formula: extractFormulaString(page.properties["Status da Otimização"]),
+        status_feedback_formula: extractFormulaString(page.properties["Status do Feedback"]),
+        proxima_otimizacao_formula: extractFormulaString(page.properties["Próxima Otimização"]),
+        status_aceleracao_pro: extractStatus(page.properties["Status - ACELERAÇÃO PRO"]),
         notion_last_edited_time: page.last_edited_time,
         last_synced_at: new Date().toISOString(),
         removido_em: null, // se reapareceu, "ressuscita"

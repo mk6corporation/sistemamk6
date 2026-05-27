@@ -158,50 +158,104 @@ export type Database = {
       }
       clientes: {
         Row: {
+          adimplencia: string[] | null
           categoria: string | null
           created_at: string
+          data_reuniao_cs: string | null
           estagio: string | null
+          feedback_data: string | null
+          fim_contrato: string | null
           id: string
+          info_venda_texto: string | null
           inicio_contrato: string | null
           last_synced_at: string
           nome: string
           notion_last_edited_time: string | null
           notion_page_id: string
+          observacao: string | null
           operacional: Json | null
+          orcamento_ads: number | null
           plano: string | null
+          produtos_upsell: string[] | null
+          proxima_otimizacao_formula: string | null
           removido_em: string | null
+          satisfacao: string | null
+          status_aceleracao_pro: string | null
+          status_contrato_formula: string | null
+          status_feedback_formula: string | null
+          status_otimizacao_formula: string | null
+          status_reuniao_formula: string | null
+          tipo_projeto: string[] | null
+          ultima_otimizacao: string | null
+          ultima_reuniao_gestor: string | null
           updated_at: string
           valor_mensal: number | null
         }
         Insert: {
+          adimplencia?: string[] | null
           categoria?: string | null
           created_at?: string
+          data_reuniao_cs?: string | null
           estagio?: string | null
+          feedback_data?: string | null
+          fim_contrato?: string | null
           id?: string
+          info_venda_texto?: string | null
           inicio_contrato?: string | null
           last_synced_at?: string
           nome: string
           notion_last_edited_time?: string | null
           notion_page_id: string
+          observacao?: string | null
           operacional?: Json | null
+          orcamento_ads?: number | null
           plano?: string | null
+          produtos_upsell?: string[] | null
+          proxima_otimizacao_formula?: string | null
           removido_em?: string | null
+          satisfacao?: string | null
+          status_aceleracao_pro?: string | null
+          status_contrato_formula?: string | null
+          status_feedback_formula?: string | null
+          status_otimizacao_formula?: string | null
+          status_reuniao_formula?: string | null
+          tipo_projeto?: string[] | null
+          ultima_otimizacao?: string | null
+          ultima_reuniao_gestor?: string | null
           updated_at?: string
           valor_mensal?: number | null
         }
         Update: {
+          adimplencia?: string[] | null
           categoria?: string | null
           created_at?: string
+          data_reuniao_cs?: string | null
           estagio?: string | null
+          feedback_data?: string | null
+          fim_contrato?: string | null
           id?: string
+          info_venda_texto?: string | null
           inicio_contrato?: string | null
           last_synced_at?: string
           nome?: string
           notion_last_edited_time?: string | null
           notion_page_id?: string
+          observacao?: string | null
           operacional?: Json | null
+          orcamento_ads?: number | null
           plano?: string | null
+          produtos_upsell?: string[] | null
+          proxima_otimizacao_formula?: string | null
           removido_em?: string | null
+          satisfacao?: string | null
+          status_aceleracao_pro?: string | null
+          status_contrato_formula?: string | null
+          status_feedback_formula?: string | null
+          status_otimizacao_formula?: string | null
+          status_reuniao_formula?: string | null
+          tipo_projeto?: string[] | null
+          ultima_otimizacao?: string | null
+          ultima_reuniao_gestor?: string | null
           updated_at?: string
           valor_mensal?: number | null
         }
