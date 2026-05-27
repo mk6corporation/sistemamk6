@@ -90,10 +90,12 @@ export type FinanceiroSyncStats = {
   clientes_com_formulario: number;
   clientes_sem_formulario: number;
   erros: number;
+  erros_detalhe: { cliente: string; mensagem: string; etapa: string }[];
 };
 
 export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise<FinanceiroSyncStats> {
   const stats: FinanceiroSyncStats = {
+    erros_detalhe: [],
     clientes_tentados: 0,
     clientes_com_formulario: 0,
     clientes_sem_formulario: 0,
