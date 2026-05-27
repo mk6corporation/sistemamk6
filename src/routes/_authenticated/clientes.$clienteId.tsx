@@ -343,7 +343,18 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
   if (query.isLoading) return <Card><CardContent className="flex h-32 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></CardContent></Card>;
 
   const f = (k: string) => (e: any) => setForm({ ...form, [k]: e.target.value });
-  const saldo = (Number(form.valor_total) || 0) - (Number(form.valor_recebido) || 0);
+  const valorTotalNum = Number(form.valor_total) || 0;
+  const valorRecebidoNum = Number(form.valor_recebido) || 0;
+  const saldo = valorTotalNum - valorRecebidoNum;
+  // Fee mensal automático = valor total / meses do contrato
+  let mesesContrato = 0;
+  if (form.inicio_contrato && form.fim_contrato) {
+    const d1 = new Date(form.inicio_contrato);
+    const d2 = new Date(form.fim_contrato);
+    mesesContrato = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+  }
+  const feeMensalAuto = mesesContrato > 0 && valorTotalNum > 0 ? valorTotalNum / mesesContrato : null;
+  const pctRecebido = valorTotalNum > 0 ? Math.min(100, Math.round((valorRecebidoNum / valorTotalNum) * 100)) : 0;
 
   return (
     <Card className="border-primary/40">
