@@ -111,9 +111,14 @@ function addMonths(dateISO: string, meses: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// Procura uma chave em properties ignorando maiúsculas, espaços extras e ":"
+// Procura uma chave em properties ignorando maiúsculas, acentos, espaços extras e pontuação
 function findKey(props: Record<string, any>, ...needles: string[]): any {
-  const norm = (s: string) => s.toLowerCase().replace(/[\s:?.]+/g, "");
+  const norm = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // remove acentos
+      .toLowerCase()
+      .replace(/[\s:?.\-_/]+/g, "");
   const targets = needles.map(norm);
   for (const [k, v] of Object.entries(props)) {
     if (targets.some((t) => norm(k).includes(t))) return v;
