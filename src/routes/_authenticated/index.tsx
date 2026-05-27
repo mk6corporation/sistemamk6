@@ -569,7 +569,7 @@ function Dashboard() {
             </div>
             {lastFinanceiro.erros_detalhe && lastFinanceiro.erros_detalhe.length > 0 && (
               <ul className="ml-7 list-disc space-y-1 text-xs text-red-700">
-                {lastFinanceiro.erros_detalhe.map((e, i) => (
+                {lastFinanceiro.erros_detalhe.map((e: { cliente: string; mensagem: string }, i: number) => (
                   <li key={i}>
                     <span className="font-medium">{e.cliente}:</span> {e.mensagem}
                   </li>
