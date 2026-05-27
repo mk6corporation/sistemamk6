@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { triggerNotionSync } from "@/lib/sync.functions";
+import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -171,7 +171,9 @@ const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
 function Dashboard() {
   const qc = useQueryClient();
   const syncFn = useServerFn(triggerNotionSync);
+  const financeiroFn = useServerFn(triggerFinanceiroSync);
   const [lastResult, setLastResult] = useState<any>(null);
+  const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
@@ -183,6 +185,14 @@ function Dashboard() {
     mutationFn: () => syncFn(),
     onSuccess: (data) => {
       setLastResult(data);
+      qc.invalidateQueries();
+    },
+  });
+
+  const financeiroMutation = useMutation({
+    mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
+    onSuccess: (data) => {
+      setLastFinanceiro(data);
       qc.invalidateQueries();
     },
   });
@@ -505,23 +515,27 @@ function Dashboard() {
               Sincronizado com o Notion · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
             </p>
           </div>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-            size="lg"
-          >
-            {mutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Sincronizar agora
-              </>
-            )}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} size="lg">
+              {mutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sincronizando...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Sincronizar agora</>
+              )}
+            </Button>
+            <Button
+              onClick={() => financeiroMutation.mutate(false)}
+              disabled={financeiroMutation.isPending}
+              size="lg"
+              variant="outline"
+            >
+              {financeiroMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Importando...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Importar formulários (CNPJ, contratos)</>
+              )}
+            </Button>
+          </div>
         </header>
 
         {lastResult && (
@@ -538,6 +552,18 @@ function Dashboard() {
             <span>· {lastResult.mudancas_detectadas} mudanças</span>
             {lastResult.erro && (
               <span className="text-red-600">· {lastResult.erro}</span>
+            )}
+          </div>
+        )}
+
+        {lastFinanceiro && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span className="font-medium">Formulários do financeiro:</span>
+            <span>{lastFinanceiro.clientes_com_formulario} importados</span>
+            <span>· {lastFinanceiro.clientes_sem_formulario} sem formulário</span>
+            {lastFinanceiro.erros > 0 && (
+              <span className="text-red-600">· {lastFinanceiro.erros} erros</span>
             )}
           </div>
         )}
