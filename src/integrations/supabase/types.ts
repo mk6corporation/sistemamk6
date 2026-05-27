@@ -498,6 +498,33 @@ export type Database = {
           },
         ]
       }
+      financeiro_sync_erros: {
+        Row: {
+          cliente_id: string | null
+          cliente_nome: string | null
+          created_at: string
+          etapa: string | null
+          id: string
+          mensagem: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          etapa?: string | null
+          id?: string
+          mensagem: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          etapa?: string | null
+          id?: string
+          mensagem?: string
+        }
+        Relationships: []
+      }
       mudancas_estagio: {
         Row: {
           categoria_anterior: string | null
