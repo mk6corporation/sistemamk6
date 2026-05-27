@@ -69,10 +69,46 @@ function multi(prop: any): string | null {
 }
 function parseNumero(s: string | null): number | null {
   if (!s) return null;
-  // "R$ 1.500,00" / "9000" / "1.234,56" → number
-  const clean = s.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+  // Extrai o primeiro número do texto (lida com "R$1.500 E O RESTANTE EM 6 BOLETOS")
+  // Aceita formatos: "R$ 1.500,00" / "9000" / "1.234,56" / "4.182"
+  const m = s.match(/-?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|-?\d+(?:[.,]\d{1,2})?/);
+  if (!m) return null;
+  const raw = m[0];
+  // Se tem ambos . e , — assume . = milhar, , = decimal (BR)
+  let clean = raw;
+  if (raw.includes(".") && raw.includes(",")) {
+    clean = raw.replace(/\./g, "").replace(",", ".");
+  } else if (raw.includes(",")) {
+    // só vírgula = decimal BR
+    clean = raw.replace(",", ".");
+  } else if (raw.includes(".")) {
+    // só ponto: se 3 dígitos após = separador de milhar, senão decimal
+    const after = raw.split(".").pop() ?? "";
+    if (after.length === 3) clean = raw.replace(/\./g, "");
+  }
   const n = parseFloat(clean);
   return Number.isFinite(n) ? n : null;
+}
+
+// Converte "90 DIAS", "12 MESES", "1 ANO", "1 ano e meio" → número de meses
+function parseVigenciaMeses(s: string | null): number | null {
+  if (!s) return null;
+  const txt = s.toLowerCase();
+  const m = txt.match(/(\d+(?:[.,]\d+)?)\s*(dia|mes|mês|ano)/);
+  if (!m) return null;
+  const num = parseFloat(m[1].replace(",", "."));
+  const unit = m[2];
+  if (unit.startsWith("dia")) return num / 30;
+  if (unit.startsWith("mes") || unit.startsWith("mês")) return num;
+  if (unit.startsWith("ano")) return num * 12;
+  return null;
+}
+
+function addMonths(dateISO: string, meses: number): string {
+  const d = new Date(dateISO);
+  const totalDays = Math.round(meses * 30);
+  d.setDate(d.getDate() + totalDays);
+  return d.toISOString().slice(0, 10);
 }
 
 // Procura uma chave em properties ignorando maiúsculas, espaços extras e ":"
