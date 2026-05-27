@@ -324,7 +324,12 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
         banco_recebimento: form.banco_recebimento, inicio_contrato: form.inicio_contrato || null,
         fim_contrato: form.fim_contrato || null, forma_pagamento: form.forma_pagamento,
         dia_vencimento: form.dia_vencimento ? Number(form.dia_vencimento) : null,
-        fee_mensal: form.fee_mensal ? Number(form.fee_mensal) : null,
+        fee_mensal: (() => {
+          const vt = Number(form.valor_total) || 0;
+          if (!form.inicio_contrato || !form.fim_contrato || vt <= 0) return null;
+          const meses = Math.max(1, Math.round((new Date(form.fim_contrato).getTime() - new Date(form.inicio_contrato).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+          return Number((vt / meses).toFixed(2));
+        })(),
         valor_total: form.valor_total ? Number(form.valor_total) : null,
         valor_recebido: form.valor_recebido ? Number(form.valor_recebido) : 0,
         status_recebimento: form.status_recebimento, observacoes: form.observacoes,
