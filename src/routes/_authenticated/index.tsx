@@ -557,13 +557,24 @@ function Dashboard() {
         )}
 
         {lastFinanceiro && (
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <span className="font-medium">Formulários do financeiro:</span>
-            <span>{lastFinanceiro.clientes_com_formulario} importados</span>
-            <span>· {lastFinanceiro.clientes_sem_formulario} sem formulário</span>
-            {lastFinanceiro.erros > 0 && (
-              <span className="text-red-600">· {lastFinanceiro.erros} erros</span>
+          <div className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <span className="font-medium">Formulários do financeiro:</span>
+              <span>{lastFinanceiro.clientes_com_formulario} importados</span>
+              <span>· {lastFinanceiro.clientes_sem_formulario} sem formulário</span>
+              {lastFinanceiro.erros > 0 && (
+                <span className="text-red-600">· {lastFinanceiro.erros} erros</span>
+              )}
+            </div>
+            {lastFinanceiro.erros_detalhe && lastFinanceiro.erros_detalhe.length > 0 && (
+              <ul className="ml-7 list-disc space-y-1 text-xs text-red-700">
+                {lastFinanceiro.erros_detalhe.map((e: { cliente: string; mensagem: string }, i: number) => (
+                  <li key={i}>
+                    <span className="font-medium">{e.cliente}:</span> {e.mensagem}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}
