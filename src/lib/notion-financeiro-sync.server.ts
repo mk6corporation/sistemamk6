@@ -217,8 +217,16 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
 
       stats.clientes_com_formulario += 1;
     } catch (e) {
+      const mensagem = e instanceof Error ? e.message : String(e);
       console.error(`[financeiro-sync] cliente ${cliente.nome}:`, e);
       stats.erros += 1;
+      stats.erros_detalhe.push({ cliente: cliente.nome, mensagem, etapa: "sync" });
+      await supabaseAdmin.from("financeiro_sync_erros").insert({
+        cliente_id: cliente.id,
+        cliente_nome: cliente.nome,
+        mensagem: mensagem.slice(0, 1000),
+        etapa: "sync",
+      });
     }
   }
 
