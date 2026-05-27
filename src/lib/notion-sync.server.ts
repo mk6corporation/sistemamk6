@@ -61,11 +61,24 @@ function extractStatus(prop: any): string | null {
 function extractSelect(prop: any): string | null {
   return prop?.select?.name ?? null;
 }
+function extractMultiSelect(prop: any): string[] {
+  if (!Array.isArray(prop?.multi_select)) return [];
+  return prop.multi_select.map((s: any) => s?.name).filter(Boolean);
+}
 function extractDate(prop: any): string | null {
   return prop?.date?.start ?? null;
 }
 function extractNumber(prop: any): number | null {
   return typeof prop?.number === "number" ? prop.number : null;
+}
+function extractRichText(prop: any): string | null {
+  if (!Array.isArray(prop?.rich_text) || prop.rich_text.length === 0) return null;
+  const txt = prop.rich_text.map((t: any) => t?.plain_text ?? "").join("").trim();
+  return txt || null;
+}
+function extractFormulaString(prop: any): string | null {
+  const v = prop?.formula?.string;
+  return v ? String(v).trim() || null : null;
 }
 function extractPeople(prop: any): Array<{ id: string; name: string; avatar_url: string | null }> {
   if (!Array.isArray(prop?.people)) return [];
