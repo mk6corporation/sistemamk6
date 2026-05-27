@@ -171,7 +171,9 @@ const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
 function Dashboard() {
   const qc = useQueryClient();
   const syncFn = useServerFn(triggerNotionSync);
+  const financeiroFn = useServerFn(triggerFinanceiroSync);
   const [lastResult, setLastResult] = useState<any>(null);
+  const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
@@ -183,6 +185,14 @@ function Dashboard() {
     mutationFn: () => syncFn(),
     onSuccess: (data) => {
       setLastResult(data);
+      qc.invalidateQueries();
+    },
+  });
+
+  const financeiroMutation = useMutation({
+    mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
+    onSuccess: (data) => {
+      setLastFinanceiro(data);
       qc.invalidateQueries();
     },
   });
