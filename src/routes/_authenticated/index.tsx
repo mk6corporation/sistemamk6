@@ -556,6 +556,18 @@ function Dashboard() {
           </div>
         )}
 
+        {lastFinanceiro && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span className="font-medium">Formulários do financeiro:</span>
+            <span>{lastFinanceiro.clientes_com_formulario} importados</span>
+            <span>· {lastFinanceiro.clientes_sem_formulario} sem formulário</span>
+            {lastFinanceiro.erros > 0 && (
+              <span className="text-red-600">· {lastFinanceiro.erros} erros</span>
+            )}
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground">Filtros:</span>
