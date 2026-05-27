@@ -324,7 +324,12 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
         banco_recebimento: form.banco_recebimento, inicio_contrato: form.inicio_contrato || null,
         fim_contrato: form.fim_contrato || null, forma_pagamento: form.forma_pagamento,
         dia_vencimento: form.dia_vencimento ? Number(form.dia_vencimento) : null,
-        fee_mensal: form.fee_mensal ? Number(form.fee_mensal) : null,
+        fee_mensal: (() => {
+          const vt = Number(form.valor_total) || 0;
+          if (!form.inicio_contrato || !form.fim_contrato || vt <= 0) return null;
+          const meses = Math.max(1, Math.round((new Date(form.fim_contrato).getTime() - new Date(form.inicio_contrato).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+          return Number((vt / meses).toFixed(2));
+        })(),
         valor_total: form.valor_total ? Number(form.valor_total) : null,
         valor_recebido: form.valor_recebido ? Number(form.valor_recebido) : 0,
         status_recebimento: form.status_recebimento, observacoes: form.observacoes,
@@ -343,7 +348,18 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
   if (query.isLoading) return <Card><CardContent className="flex h-32 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></CardContent></Card>;
 
   const f = (k: string) => (e: any) => setForm({ ...form, [k]: e.target.value });
-  const saldo = (Number(form.valor_total) || 0) - (Number(form.valor_recebido) || 0);
+  const valorTotalNum = Number(form.valor_total) || 0;
+  const valorRecebidoNum = Number(form.valor_recebido) || 0;
+  const saldo = valorTotalNum - valorRecebidoNum;
+  // Fee mensal automático = valor total / meses do contrato
+  let mesesContrato = 0;
+  if (form.inicio_contrato && form.fim_contrato) {
+    const d1 = new Date(form.inicio_contrato);
+    const d2 = new Date(form.fim_contrato);
+    mesesContrato = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+  }
+  const feeMensalAuto = mesesContrato > 0 && valorTotalNum > 0 ? valorTotalNum / mesesContrato : null;
+  const pctRecebido = valorTotalNum > 0 ? Math.min(100, Math.round((valorRecebidoNum / valorTotalNum) * 100)) : 0;
 
   return (
     <Card className="border-primary/40">
@@ -384,11 +400,64 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
           </Field>
         </div>
 
-        <div className="rounded-lg bg-muted/30 p-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Field label="Fee Mensal"><Input type="number" step="0.01" value={form.fee_mensal ?? ""} onChange={f("fee_mensal")} /></Field>
-            <Field label="Valor Total (este serviço)"><Input type="number" step="0.01" value={form.valor_total ?? ""} onChange={f("valor_total")} /></Field>
-            <Field label="Valor Recebido"><Input type="number" step="0.01" value={form.valor_recebido ?? ""} onChange={f("valor_recebido")} /></Field>
+        <div className="rounded-lg border border-border/60 bg-gradient-to-br from-muted/40 to-muted/10 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Financeiro do Serviço</span>
+            {valorTotalNum > 0 && (
+              <span className="text-xs font-medium text-muted-foreground">
+                {pctRecebido}% recebido
+              </span>
+            )}
+          </div>
+          {valorTotalNum > 0 && (
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+                style={{ width: `${pctRecebido}%` }}
+              />
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <Field label="Fee Mensal (automático)">
+              <div className="flex h-9 items-center justify-between rounded-md border border-blue-500/30 bg-blue-500/10 px-3 text-sm font-semibold tabular-nums text-blue-700">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-blue-600/70">R$</span>
+                <span>{feeMensalAuto != null ? feeMensalAuto.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"}</span>
+              </div>
+            </Field>
+            <Field label="Valor Total (este serviço)">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">R$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.valor_total ?? ""}
+                  onChange={f("valor_total")}
+                  className="pl-9 font-semibold tabular-nums"
+                />
+              </div>
+              {valorTotalNum > 0 && (
+                <span className="mt-1 block text-[11px] text-muted-foreground tabular-nums">
+                  {formatMoney(valorTotalNum)}
+                </span>
+              )}
+            </Field>
+            <Field label="Valor Recebido">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-emerald-600">R$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.valor_recebido ?? ""}
+                  onChange={f("valor_recebido")}
+                  className="border-emerald-500/30 bg-emerald-500/5 pl-9 font-semibold tabular-nums text-emerald-700 focus-visible:ring-emerald-500/30"
+                />
+              </div>
+              {valorRecebidoNum > 0 && (
+                <span className="mt-1 block text-[11px] font-medium text-emerald-700 tabular-nums">
+                  {formatMoney(valorRecebidoNum)}
+                </span>
+              )}
+            </Field>
             <Field label="Saldo Restante (automático)">
               <div className={`flex h-9 items-center rounded-md border px-3 text-sm font-semibold tabular-nums ${saldo > 0 ? "border-red-500/30 bg-red-500/10 text-red-700" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"}`}>
                 {formatMoney(saldo)}

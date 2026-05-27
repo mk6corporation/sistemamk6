@@ -69,10 +69,46 @@ function multi(prop: any): string | null {
 }
 function parseNumero(s: string | null): number | null {
   if (!s) return null;
-  // "R$ 1.500,00" / "9000" / "1.234,56" → number
-  const clean = s.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+  // Extrai o primeiro número do texto (lida com "R$1.500 E O RESTANTE EM 6 BOLETOS")
+  // Aceita formatos: "R$ 1.500,00" / "9000" / "1.234,56" / "4.182"
+  const m = s.match(/-?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|-?\d+(?:[.,]\d{1,2})?/);
+  if (!m) return null;
+  const raw = m[0];
+  // Se tem ambos . e , — assume . = milhar, , = decimal (BR)
+  let clean = raw;
+  if (raw.includes(".") && raw.includes(",")) {
+    clean = raw.replace(/\./g, "").replace(",", ".");
+  } else if (raw.includes(",")) {
+    // só vírgula = decimal BR
+    clean = raw.replace(",", ".");
+  } else if (raw.includes(".")) {
+    // só ponto: se 3 dígitos após = separador de milhar, senão decimal
+    const after = raw.split(".").pop() ?? "";
+    if (after.length === 3) clean = raw.replace(/\./g, "");
+  }
   const n = parseFloat(clean);
   return Number.isFinite(n) ? n : null;
+}
+
+// Converte "90 DIAS", "12 MESES", "1 ANO", "1 ano e meio" → número de meses
+function parseVigenciaMeses(s: string | null): number | null {
+  if (!s) return null;
+  const txt = s.toLowerCase();
+  const m = txt.match(/(\d+(?:[.,]\d+)?)\s*(dia|mes|mês|ano)/);
+  if (!m) return null;
+  const num = parseFloat(m[1].replace(",", "."));
+  const unit = m[2];
+  if (unit.startsWith("dia")) return num / 30;
+  if (unit.startsWith("mes") || unit.startsWith("mês")) return num;
+  if (unit.startsWith("ano")) return num * 12;
+  return null;
+}
+
+function addMonths(dateISO: string, meses: number): string {
+  const d = new Date(dateISO);
+  const totalDays = Math.round(meses * 30);
+  d.setDate(d.getDate() + totalDays);
+  return d.toISOString().slice(0, 10);
 }
 
 // Procura uma chave em properties ignorando maiúsculas, espaços extras e ":"
@@ -157,6 +193,15 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
         findKey(props, "horariodoenvio", "horariodoenv")?.created_time ?? null;
       const participante = findKey(props, "participante")?.created_by ?? null;
       const grupoNome = rt(findKey(props, "nomadogrupocriado", "nomedogrupocriado", "grupocriado"));
+      const comprovanteFiles: any[] =
+        findKey(props, "comprovantedepagamento", "comprovante")?.files ?? [];
+
+      // Datas + vigência → fim_contrato + fee_mensal
+      const inicioContrato = horarioEnvio ? horarioEnvio.slice(0, 10) : null;
+      const meses = parseVigenciaMeses(vigencia);
+      const fimContrato = inicioContrato && meses ? addMonths(inicioContrato, meses) : null;
+      const feeMensal =
+        valorTotal && meses && meses > 0 ? Number((valorTotal / meses).toFixed(2)) : null;
 
       // 1) dados_corporativos (1 por cliente)
       await supabaseAdmin
@@ -172,8 +217,8 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
           { onConflict: "cliente_id" },
         );
 
-      // 2) contrato base (1 por cliente+tipo)
-      await supabaseAdmin
+      // 2) contrato base (1 por cliente+tipo) — retornamos o id para os comprovantes
+      const { data: contratoRow, error: contratoErr } = await supabaseAdmin
         .from("contratos")
         .upsert(
           {
@@ -184,17 +229,25 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
             forma_pagamento: formaPag,
             valor_total: valorTotal,
             valor_recebido: valorRecebido,
-            inicio_contrato: horarioEnvio ? horarioEnvio.slice(0, 10) : null,
+            fee_mensal: feeMensal,
+            inicio_contrato: inicioContrato,
+            fim_contrato: fimContrato,
             observacoes: [
               vigencia ? `Vigência: ${vigencia}` : null,
               linkContrato ? `Contrato: ${linkContrato}` : null,
               grupoNome ? `Grupo: ${grupoNome}` : null,
+              valorTotalRaw && valorTotal == null ? `Valor total (texto): ${valorTotalRaw}` : null,
+              valorRecebidoRaw && valorRecebido == null ? `Valor recebido (texto): ${valorRecebidoRaw}` : null,
             ]
               .filter(Boolean)
               .join("\n") || null,
           },
           { onConflict: "cliente_id,tipo" },
-        );
+        )
+        .select("id")
+        .single();
+      if (contratoErr) throw contratoErr;
+      const contratoId = contratoRow.id;
 
       // 3) equipe comercial (vendedor = quem preencheu o formulário)
       if (participante?.name || horarioEnvio) {
@@ -208,6 +261,54 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
             },
             { onConflict: "cliente_id" },
           );
+      }
+
+      // 4) comprovantes — baixa do Notion (URLs S3 expiram em ~1h) e hospeda no bucket
+      for (const file of comprovanteFiles) {
+        try {
+          const fileUrl: string | null = file?.file?.url ?? file?.external?.url ?? null;
+          const fileName: string = file?.name ?? "comprovante";
+          if (!fileUrl) continue;
+
+          // Idempotência: pula se já existe um comprovante com este nome neste contrato
+          const { data: existing } = await supabaseAdmin
+            .from("comprovantes")
+            .select("id")
+            .eq("contrato_id", contratoId)
+            .eq("nome_arquivo", fileName)
+            .maybeSingle();
+          if (existing) continue;
+
+          const fileRes = await fetch(fileUrl);
+          if (!fileRes.ok) throw new Error(`download ${fileRes.status}`);
+          const arrayBuf = await fileRes.arrayBuffer();
+          const buf = new Uint8Array(arrayBuf);
+          const contentType = fileRes.headers.get("content-type") ?? "application/octet-stream";
+          const ext = fileName.includes(".") ? fileName.split(".").pop() : "bin";
+          const storagePath = `${cliente.id}/${contratoId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+          const { error: upErr } = await supabaseAdmin.storage
+            .from("comprovantes")
+            .upload(storagePath, buf, { contentType, upsert: false });
+          if (upErr) throw upErr;
+
+          await supabaseAdmin.from("comprovantes").insert({
+            cliente_id: cliente.id,
+            contrato_id: contratoId,
+            storage_path: storagePath,
+            nome_arquivo: fileName,
+            mime_type: contentType,
+            tamanho: buf.byteLength,
+          });
+        } catch (fileErr) {
+          const fmsg = fileErr instanceof Error ? fileErr.message : String(fileErr);
+          await supabaseAdmin.from("financeiro_sync_erros").insert({
+            cliente_id: cliente.id,
+            cliente_nome: cliente.nome,
+            mensagem: `Comprovante: ${fmsg}`.slice(0, 1000),
+            etapa: "comprovante",
+          });
+        }
       }
 
       await supabaseAdmin
