@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { triggerNotionSync } from "@/lib/sync.functions";
+import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
