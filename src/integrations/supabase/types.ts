@@ -165,6 +165,8 @@ export type Database = {
           estagio: string | null
           feedback_data: string | null
           fim_contrato: string | null
+          financeiro_form_database_id: string | null
+          financeiro_form_synced_at: string | null
           id: string
           info_venda_texto: string | null
           inicio_contrato: string | null
@@ -199,6 +201,8 @@ export type Database = {
           estagio?: string | null
           feedback_data?: string | null
           fim_contrato?: string | null
+          financeiro_form_database_id?: string | null
+          financeiro_form_synced_at?: string | null
           id?: string
           info_venda_texto?: string | null
           inicio_contrato?: string | null
@@ -233,6 +237,8 @@ export type Database = {
           estagio?: string | null
           feedback_data?: string | null
           fim_contrato?: string | null
+          financeiro_form_database_id?: string | null
+          financeiro_form_synced_at?: string | null
           id?: string
           info_venda_texto?: string | null
           inicio_contrato?: string | null
