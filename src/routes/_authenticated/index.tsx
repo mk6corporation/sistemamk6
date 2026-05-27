@@ -524,7 +524,7 @@ function Dashboard() {
               )}
             </Button>
             <Button
-              onClick={() => financeiroMutation.mutate(false)}
+              onClick={() => financeiroMutation.mutate(true)}
               disabled={financeiroMutation.isPending}
               size="lg"
               variant="outline"
