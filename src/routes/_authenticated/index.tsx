@@ -515,23 +515,27 @@ function Dashboard() {
               Sincronizado com o Notion · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
             </p>
           </div>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-            size="lg"
-          >
-            {mutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Sincronizar agora
-              </>
-            )}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} size="lg">
+              {mutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sincronizando...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Sincronizar agora</>
+              )}
+            </Button>
+            <Button
+              onClick={() => financeiroMutation.mutate(false)}
+              disabled={financeiroMutation.isPending}
+              size="lg"
+              variant="outline"
+            >
+              {financeiroMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Importando...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Importar formulários (CNPJ, contratos)</>
+              )}
+            </Button>
+          </div>
         </header>
 
         {lastResult && (
