@@ -106,7 +106,7 @@ export async function enrichDadosCorporativosByCnpj(
   } else {
     const { error } = await supabaseAdmin
       .from("dados_corporativos")
-      .insert({ cliente_id: clienteId, ...patch });
+      .insert({ cliente_id: clienteId, ...patch } as any);
     if (error) return { ok: false, filled: [], error: error.message };
   }
 
