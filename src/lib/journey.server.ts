@@ -56,7 +56,10 @@ export async function migrarJourneyTodosClientes() {
     // step atual = primeiro não-concluído
     const idxAtual = lista.findIndex((s) => s.status !== "concluido");
     const stepAtual = idxAtual >= 0 ? lista[idxAtual] : null;
+    const stepAtualOrdem = stepAtual ? stepAtual.ordem : null;
+
     for (const s of lista) {
+
       const template = MK6_JOURNEY.find((t) => t.ordem === s.ordem);
       const patch: {
         acao_mk6_itens?: Array<{ texto: string; concluido: boolean }>;
