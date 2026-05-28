@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TimelineTab } from "@/components/cliente/timeline-tab";
 import { CheckinsTab } from "@/components/cliente/checkins-tab";
+import { consultarCnpj } from "@/lib/cnpj.functions";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clienteId")({
   component: ClienteDetailPage,
@@ -145,6 +147,24 @@ function DadosCorporativosTab({ clienteId }: { clienteId: string }) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const consultar = useServerFn(consultarCnpj);
+  const lookup = useMutation({
+    mutationFn: async () => {
+      const cnpj = (form.cnpj ?? "").toString();
+      return consultar({ data: { cnpj, clienteId: clienteId } });
+    },
+    onSuccess: (r: any) => {
+      if (!r?.ok) {
+        toast.error(r?.error ?? "Não foi possível consultar o CNPJ");
+        return;
+      }
+      const n = r.filled?.length ?? 0;
+      toast.success(n > 0 ? `BrasilAPI: ${n} campo(s) preenchido(s)` : "Nada a preencher (campos já estão completos)");
+      qc.invalidateQueries({ queryKey: ["dados_corporativos", clienteId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (query.isLoading) return <div className="flex h-32 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
 
   const onField = (k: string) => (e: any) => setForm({ ...form, [k]: e.target.value });
@@ -153,9 +173,14 @@ function DadosCorporativosTab({ clienteId }: { clienteId: string }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2 text-lg"><Building2 className="h-5 w-5 text-primary" />Dados Corporativos</CardTitle>
-        <Button onClick={() => save.mutate()} disabled={save.isPending} size="sm">
-          {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Salvar
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => lookup.mutate()} disabled={lookup.isPending || !form.cnpj} size="sm" variant="outline">
+            {lookup.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Search className="mr-1 h-4 w-4" />} Consultar CNPJ
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} size="sm">
+            {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Salvar
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

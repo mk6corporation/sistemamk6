@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enrichDadosCorporativosByCnpj, onlyDigits } from "./cnpj.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 
@@ -221,6 +222,15 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
           },
           { onConflict: "cliente_id" },
         );
+
+      // 1.b) enriquecer com BrasilAPI (preenche somente campos vazios)
+      if (cnpj && onlyDigits(cnpj).length === 14) {
+        try {
+          await enrichDadosCorporativosByCnpj(cliente.id, cnpj);
+        } catch {
+          /* não bloqueia o sync */
+        }
+      }
 
       // 2) contrato base (1 por cliente+tipo) — retornamos o id para os comprovantes
       const { data: contratoRow, error: contratoErr } = await supabaseAdmin

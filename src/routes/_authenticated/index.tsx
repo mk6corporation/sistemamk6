@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
+import { enriquecerTodosCnpjs } from "@/lib/cnpj.functions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -172,8 +173,10 @@ function Dashboard() {
   const qc = useQueryClient();
   const syncFn = useServerFn(triggerNotionSync);
   const financeiroFn = useServerFn(triggerFinanceiroSync);
+  const enriquecerFn = useServerFn(enriquecerTodosCnpjs);
   const [lastResult, setLastResult] = useState<any>(null);
   const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
+  const [lastCnpj, setLastCnpj] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
@@ -193,6 +196,14 @@ function Dashboard() {
     mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
     onSuccess: (data) => {
       setLastFinanceiro(data);
+      qc.invalidateQueries();
+    },
+  });
+
+  const cnpjMutation = useMutation({
+    mutationFn: () => enriquecerFn(),
+    onSuccess: (data) => {
+      setLastCnpj(data);
       qc.invalidateQueries();
     },
   });
@@ -535,6 +546,18 @@ function Dashboard() {
                 <><RefreshCw className="mr-2 h-4 w-4" />Importar formulários (CNPJ, contratos)</>
               )}
             </Button>
+            <Button
+              onClick={() => cnpjMutation.mutate()}
+              disabled={cnpjMutation.isPending}
+              size="lg"
+              variant="outline"
+            >
+              {cnpjMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Consultando BrasilAPI...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Enriquecer CNPJs (BrasilAPI)</>
+              )}
+            </Button>
           </div>
         </header>
 
@@ -578,6 +601,19 @@ function Dashboard() {
             )}
           </div>
         )}
+
+        {lastCnpj && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span className="font-medium">BrasilAPI:</span>
+            <span>{lastCnpj.processados} CNPJs consultados</span>
+            <span>· {lastCnpj.preenchidos} clientes enriquecidos</span>
+            <span className="text-muted-foreground">· {lastCnpj.semCnpj} sem CNPJ</span>
+            {lastCnpj.invalidos > 0 && <span className="text-amber-600">· {lastCnpj.invalidos} inválidos</span>}
+            {lastCnpj.erros > 0 && <span className="text-red-600">· {lastCnpj.erros} erros</span>}
+          </div>
+        )}
+
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
