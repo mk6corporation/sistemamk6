@@ -23,9 +23,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MK6_JOURNEY, tipoLabel, tipoColor, addDays, type MK6Tipo } from "@/lib/mk6-journey";
-import { avancarStep } from "@/lib/journey.functions";
-
-
 type Step = {
   id: string;
   cliente_id: string;
@@ -48,6 +45,14 @@ type Step = {
   trava_descricao: string | null;
   data_prevista: string | null;
   data_concluida: string | null;
+  status: string;
+  observacoes: string | null;
+  bloqueado: boolean;
+  acao_mk6_itens: Array<{ texto: string; concluido: boolean }> | null;
+  pronto_para_avancar: boolean;
+  atrasado: boolean;
+};
+
   status: string;
   observacoes: string | null;
 };
