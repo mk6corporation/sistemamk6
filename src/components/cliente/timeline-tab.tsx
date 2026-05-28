@@ -53,10 +53,6 @@ type Step = {
   atrasado: boolean;
 };
 
-  status: string;
-  observacoes: string | null;
-};
-
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente" },
   { value: "em_andamento", label: "Em andamento" },
