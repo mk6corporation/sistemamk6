@@ -18,6 +18,7 @@ import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
+import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -67,6 +68,11 @@ const AuthenticatedClientesClienteIdRoute =
     path: '/clientes/$clienteId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicHooksNpsRoute = ApiPublicHooksNpsRouteImport.update({
+  id: '/api/public/hooks/nps',
+  path: '/api/public/hooks/nps',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/minha-rotina'
     | '/clientes/$clienteId'
     | '/clientes/'
+    | '/api/public/hooks/nps'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes/$clienteId'
     | '/clientes'
+    | '/api/public/hooks/nps'
   id:
     | '__root__'
     | '/_authenticated'
@@ -132,11 +143,13 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
     | '/_authenticated/clientes/'
+    | '/api/public/hooks/nps'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesClienteIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/hooks/nps': {
+      id: '/api/public/hooks/nps'
+      path: '/api/public/hooks/nps'
+      fullPath: '/api/public/hooks/nps'
+      preLoaderRoute: typeof ApiPublicHooksNpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -234,7 +254,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
