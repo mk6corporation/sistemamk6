@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, CalendarDays, Sparkles, Lock, CheckCircle2, Clock, AlertTriangle,
-  Trash2, RotateCcw,
+  RotateCcw, ArrowRight, Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MK6_JOURNEY, tipoLabel, tipoColor, addDays, type MK6Tipo } from "@/lib/mk6-journey";
+import { avancarStep } from "@/lib/journey.functions";
 
 type Step = {
   id: string;
@@ -47,6 +49,10 @@ type Step = {
   data_concluida: string | null;
   status: string;
   observacoes: string | null;
+  bloqueado: boolean;
+  acao_mk6_itens: Array<{ texto: string; concluido: boolean }> | null;
+  pronto_para_avancar: boolean;
+  atrasado: boolean;
 };
 
 const STATUS_OPTIONS = [
@@ -193,6 +199,7 @@ export function TimelineTab({ clienteId }: { clienteId: string }) {
   const fases = Array.from(new Set(steps.map((s) => s.fase)));
   const totalConcluidos = steps.filter((s) => s.status === "concluido").length;
   const progresso = Math.round((totalConcluidos / steps.length) * 100);
+  const stepAtual = steps.find((s) => s.status !== "concluido") ?? null;
 
   return (
     <div className="space-y-4">
@@ -238,6 +245,7 @@ export function TimelineTab({ clienteId }: { clienteId: string }) {
           </div>
         </CardContent>
       </Card>
+      {stepAtual && <StepAtualCard step={stepAtual} />}
 
       {fases.map((fase) => (
         <div key={fase} className="space-y-3">
@@ -252,6 +260,119 @@ export function TimelineTab({ clienteId }: { clienteId: string }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function StepAtualCard({ step }: { step: Step }) {
+  const qc = useQueryClient();
+  const avancarFn = useServerFn(avancarStep);
+  const itens = Array.isArray(step.acao_mk6_itens) ? step.acao_mk6_itens : [];
+  const acaoOk = itens.length === 0 || itens.every((i) => i.concluido);
+  const clienteOk = !step.tem_trava || step.cliente_entregue;
+  const pronto = acaoOk && clienteOk;
+
+  const toggle = useMutation({
+    mutationFn: async (idx: number) => {
+      const novos = itens.map((it, i) => i === idx ? { ...it, concluido: !it.concluido } : it);
+      const ok = novos.every((i) => i.concluido) && clienteOk;
+      const { error } = await supabase
+        .from("cliente_timeline_steps")
+        .update({ acao_mk6_itens: novos, pronto_para_avancar: ok })
+        .eq("id", step.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline", step.cliente_id] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleCliente = useMutation({
+    mutationFn: async (v: boolean) => {
+      const ok = acaoOk && (!step.tem_trava || v);
+      const { error } = await supabase
+        .from("cliente_timeline_steps")
+        .update({
+          cliente_entregue: v,
+          cliente_entregue_em: v ? new Date().toISOString() : null,
+          pronto_para_avancar: ok,
+        })
+        .eq("id", step.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline", step.cliente_id] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const avancar = useMutation({
+    mutationFn: () => avancarFn({ data: { stepId: step.id } }),
+    onSuccess: () => {
+      toast.success("Step concluído. Próximo desbloqueado!");
+      qc.invalidateQueries({ queryKey: ["timeline", step.cliente_id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="border-primary/40 bg-primary/5">
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-1">
+            <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30">
+              Step atual · {step.ordem}/15
+            </Badge>
+            <CardTitle className="text-lg">{step.titulo}</CardTitle>
+            {step.subtitulo && <p className="text-xs text-muted-foreground">{step.subtitulo}</p>}
+          </div>
+          {step.atrasado && (
+            <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300">
+              <AlertTriangle className="mr-1 h-3 w-3" /> Atrasado
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border bg-card p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Frente A — Ação MK6</p>
+            {itens.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sem itens.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {itens.map((it, idx) => (
+                  <label key={idx} className="flex items-start gap-2 text-sm">
+                    <Checkbox checked={it.concluido} onCheckedChange={() => toggle.mutate(idx)} className="mt-0.5" />
+                    <span className={it.concluido ? "text-muted-foreground line-through" : ""}>{it.texto}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className={`rounded-lg border p-3 ${step.tem_trava ? "border-amber-500/40 bg-amber-500/5" : "bg-card"}`}>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              Frente B — Entrega do cliente {step.tem_trava ? "(trava)" : "(opcional)"}
+            </p>
+            <p className="text-sm">{step.cliente_responsabilidade ?? "—"}</p>
+            {step.tem_trava && (
+              <label className="mt-2 flex items-center gap-2 text-sm">
+                <Checkbox checked={step.cliente_entregue}
+                  onCheckedChange={(v) => toggleCliente.mutate(!!v)} />
+                Cliente entregou
+              </label>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t pt-3">
+          <p className="text-xs text-muted-foreground">
+            {pronto ? "Tudo pronto. Pode avançar para o próximo step." :
+              !acaoOk ? "Conclua a Ação MK6 acima." :
+              "Aguardando entrega do cliente."}
+          </p>
+          <Button onClick={() => avancar.mutate()} disabled={!pronto || avancar.isPending}>
+            {avancar.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            <ArrowRight className="mr-1 h-4 w-4" /> Avançar step
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

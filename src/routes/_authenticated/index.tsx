@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
 import { enriquecerTodosCnpjs } from "@/lib/cnpj.functions";
+import { migrarJourney } from "@/lib/journey.functions";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -174,9 +177,11 @@ function Dashboard() {
   const syncFn = useServerFn(triggerNotionSync);
   const financeiroFn = useServerFn(triggerFinanceiroSync);
   const enriquecerFn = useServerFn(enriquecerTodosCnpjs);
+  const migrarFn = useServerFn(migrarJourney);
   const [lastResult, setLastResult] = useState<any>(null);
   const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
   const [lastCnpj, setLastCnpj] = useState<any>(null);
+
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
@@ -207,6 +212,43 @@ function Dashboard() {
       qc.invalidateQueries();
     },
   });
+
+  // Auto-migração do Journey (1x por sessão)
+  const migrouRef = useRef(false);
+  useEffect(() => {
+    if (migrouRef.current) return;
+    migrouRef.current = true;
+    migrarFn().then(() => qc.invalidateQueries({ queryKey: ["gargalos"] })).catch(() => {});
+  }, [migrarFn, qc]);
+
+  const gargalosQuery = useQuery({
+    queryKey: ["gargalos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cliente_timeline_steps")
+        .select("ordem,status,tem_trava,cliente_entregue,acao_mk6_itens,atrasado,pronto_para_avancar,bloqueado")
+        .neq("status", "concluido")
+        .eq("bloqueado", false);
+      if (error) throw error;
+      const rows = data ?? [];
+      const congestion: Record<number, number> = {};
+      let bolaMk6 = 0, bolaCliente = 0, atrasados = 0, prontos = 0;
+      for (const r of rows) {
+        congestion[r.ordem] = (congestion[r.ordem] ?? 0) + 1;
+        const itens = Array.isArray(r.acao_mk6_itens) ? (r.acao_mk6_itens as any[]) : [];
+        const acaoOk = itens.length === 0 || itens.every((i) => i.concluido);
+        if (!acaoOk) bolaMk6 += 1;
+        else if (r.tem_trava && !r.cliente_entregue) bolaCliente += 1;
+        if (r.atrasado) atrasados += 1;
+        if (r.pronto_para_avancar) prontos += 1;
+      }
+      const top = Object.entries(congestion)
+        .sort((a, b) => b[1] - a[1]).slice(0, 3)
+        .map(([ordem, n]) => ({ ordem: Number(ordem), n }));
+      return { bolaMk6, bolaCliente, atrasados, prontos, top, total: rows.length };
+    },
+  });
+
 
   const clientesQuery = useQuery({
     queryKey: ["clientes"],
@@ -612,6 +654,46 @@ function Dashboard() {
             {lastCnpj.invalidos > 0 && <span className="text-amber-600">· {lastCnpj.invalidos} inválidos</span>}
             {lastCnpj.erros > 0 && <span className="text-red-600">· {lastCnpj.erros} erros</span>}
           </div>
+        )}
+
+        {/* Gargalos da Jornada */}
+        {gargalosQuery.data && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Gargalos da Jornada (MK6)</CardTitle>
+              <CardDescription>
+                {gargalosQuery.data.total} clientes ativos na jornada
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="rounded-md border bg-emerald-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Bola com MK6</p>
+                  <p className="text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{gargalosQuery.data.bolaMk6}</p>
+                </div>
+                <div className="rounded-md border bg-amber-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Aguardando cliente</p>
+                  <p className="text-2xl font-semibold text-amber-700 dark:text-amber-300">{gargalosQuery.data.bolaCliente}</p>
+                </div>
+                <div className="rounded-md border bg-red-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Atrasados</p>
+                  <p className="text-2xl font-semibold text-red-700 dark:text-red-300">{gargalosQuery.data.atrasados}</p>
+                </div>
+                <div className="rounded-md border bg-primary/5 p-3">
+                  <p className="text-xs text-muted-foreground">Prontos p/ avançar</p>
+                  <p className="text-2xl font-semibold text-primary">{gargalosQuery.data.prontos}</p>
+                </div>
+              </div>
+              {gargalosQuery.data.top.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Steps mais congestionados:</span>
+                  {gargalosQuery.data.top.map((t) => (
+                    <Badge key={t.ordem} variant="secondary">Step {t.ordem} · {t.n}</Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
 
