@@ -173,8 +173,10 @@ function Dashboard() {
   const qc = useQueryClient();
   const syncFn = useServerFn(triggerNotionSync);
   const financeiroFn = useServerFn(triggerFinanceiroSync);
+  const enriquecerFn = useServerFn(enriquecerTodosCnpjs);
   const [lastResult, setLastResult] = useState<any>(null);
   const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
+  const [lastCnpj, setLastCnpj] = useState<any>(null);
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
@@ -194,6 +196,14 @@ function Dashboard() {
     mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
     onSuccess: (data) => {
       setLastFinanceiro(data);
+      qc.invalidateQueries();
+    },
+  });
+
+  const cnpjMutation = useMutation({
+    mutationFn: () => enriquecerFn(),
+    onSuccess: (data) => {
+      setLastCnpj(data);
       qc.invalidateQueries();
     },
   });
