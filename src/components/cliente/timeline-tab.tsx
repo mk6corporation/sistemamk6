@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, CalendarDays, Sparkles, Lock, CheckCircle2, Clock, AlertTriangle,
-  Trash2, RotateCcw,
+  RotateCcw, ArrowRight, Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MK6_JOURNEY, tipoLabel, tipoColor, addDays, type MK6Tipo } from "@/lib/mk6-journey";
+import { avancarStep } from "@/lib/journey.functions";
+
 
 type Step = {
   id: string;
