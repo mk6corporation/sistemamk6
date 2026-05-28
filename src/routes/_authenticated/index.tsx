@@ -546,6 +546,18 @@ function Dashboard() {
                 <><RefreshCw className="mr-2 h-4 w-4" />Importar formulários (CNPJ, contratos)</>
               )}
             </Button>
+            <Button
+              onClick={() => cnpjMutation.mutate()}
+              disabled={cnpjMutation.isPending}
+              size="lg"
+              variant="outline"
+            >
+              {cnpjMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Consultando BrasilAPI...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Enriquecer CNPJs (BrasilAPI)</>
+              )}
+            </Button>
           </div>
         </header>
 
