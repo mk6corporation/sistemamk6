@@ -56,16 +56,18 @@ export async function migrarJourneyTodosClientes() {
     // step atual = primeiro não-concluído
     const idxAtual = lista.findIndex((s) => s.status !== "concluido");
     const stepAtual = idxAtual >= 0 ? lista[idxAtual] : null;
-    const stepAtualOrdem = stepAtual ? stepAtual.ordem : null;
-
     for (const s of lista) {
       const template = MK6_JOURNEY.find((t) => t.ordem === s.ordem);
-      const patch: Record<string, unknown> = {};
+      const patch: {
+        acao_mk6_itens?: Array<{ texto: string; concluido: boolean }>;
+        bloqueado?: boolean;
+        pronto_para_avancar?: boolean;
+        atrasado?: boolean;
+      } = {};
 
       // 1) preencher acao_mk6_itens se vazio
       const itensAtuais = Array.isArray(s.acao_mk6_itens) ? s.acao_mk6_itens : [];
       if (itensAtuais.length === 0 && template) {
-        // se o step já está concluído, marca todos concluídos
         patch.acao_mk6_itens = template.acao_mk6_itens.map((texto) => ({
           texto,
           concluido: s.status === "concluido",
@@ -82,7 +84,7 @@ export async function migrarJourneyTodosClientes() {
       // 3) pronto_para_avancar (só faz sentido pro step atual)
       let pronto = false;
       if (stepAtual && s.id === stepAtual.id) {
-        const itens = (patch.acao_mk6_itens as Array<{ concluido: boolean }>) ?? itensAtuais;
+        const itens = patch.acao_mk6_itens ?? itensAtuais;
         const acaoOk = itens.length === 0 || itens.every((i) => i.concluido);
         const clienteOk = !s.tem_trava || s.cliente_entregue;
         pronto = acaoOk && clienteOk;
@@ -100,6 +102,12 @@ export async function migrarJourneyTodosClientes() {
         const { error: upErr } = await supabaseAdmin
           .from("cliente_timeline_steps")
           .update(patch)
+          .eq("id", s.id);
+        if (upErr) throw new Error(upErr.message);
+        atualizacoes += 1;
+      }
+    }
+
           .eq("id", s.id);
         if (upErr) throw new Error(upErr.message);
         atualizacoes += 1;
