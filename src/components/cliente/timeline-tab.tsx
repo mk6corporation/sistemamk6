@@ -374,10 +374,6 @@ function StepAtualCard({ step }: { step: Step }) {
   );
 }
 
-    </div>
-  );
-}
-
 function StepCard({ step }: { step: Step }) {
   const qc = useQueryClient();
   const [obs, setObs] = useState(step.observacoes ?? "");
