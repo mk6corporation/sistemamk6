@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enrichDadosCorporativosByCnpj, onlyDigits } from "./cnpj.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/notion/v1";
 
