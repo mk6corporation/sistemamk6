@@ -108,12 +108,6 @@ export async function migrarJourneyTodosClientes() {
       }
     }
 
-          .eq("id", s.id);
-        if (upErr) throw new Error(upErr.message);
-        atualizacoes += 1;
-      }
-    }
-
     // atualizar ponteiro do cliente
     const { error: cliErr } = await supabaseAdmin
       .from("clientes")
