@@ -60,6 +60,9 @@ export type Database = {
       }
       cliente_timeline_steps: {
         Row: {
+          acao_mk6_itens: Json
+          atrasado: boolean
+          bloqueado: boolean
           cliente_entregue: boolean
           cliente_entregue_em: string | null
           cliente_id: string
@@ -78,6 +81,7 @@ export type Database = {
           mk6_responsabilidade: string | null
           observacoes: string | null
           ordem: number
+          pronto_para_avancar: boolean
           responsavel: string | null
           semana: number | null
           status: string
@@ -89,6 +93,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acao_mk6_itens?: Json
+          atrasado?: boolean
+          bloqueado?: boolean
           cliente_entregue?: boolean
           cliente_entregue_em?: string | null
           cliente_id: string
@@ -107,6 +114,7 @@ export type Database = {
           mk6_responsabilidade?: string | null
           observacoes?: string | null
           ordem: number
+          pronto_para_avancar?: boolean
           responsavel?: string | null
           semana?: number | null
           status?: string
@@ -118,6 +126,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acao_mk6_itens?: Json
+          atrasado?: boolean
+          bloqueado?: boolean
           cliente_entregue?: boolean
           cliente_entregue_em?: string | null
           cliente_id?: string
@@ -136,6 +147,7 @@ export type Database = {
           mk6_responsabilidade?: string | null
           observacoes?: string | null
           ordem?: number
+          pronto_para_avancar?: boolean
           responsavel?: string | null
           semana?: number | null
           status?: string
@@ -181,12 +193,14 @@ export type Database = {
           produtos_upsell: string[] | null
           proxima_otimizacao_formula: string | null
           removido_em: string | null
+          resultado_renovacao: string | null
           satisfacao: string | null
           status_aceleracao_pro: string | null
           status_contrato_formula: string | null
           status_feedback_formula: string | null
           status_otimizacao_formula: string | null
           status_reuniao_formula: string | null
+          step_atual_ordem: number | null
           tipo_projeto: string[] | null
           ultima_otimizacao: string | null
           ultima_reuniao_gestor: string | null
@@ -217,12 +231,14 @@ export type Database = {
           produtos_upsell?: string[] | null
           proxima_otimizacao_formula?: string | null
           removido_em?: string | null
+          resultado_renovacao?: string | null
           satisfacao?: string | null
           status_aceleracao_pro?: string | null
           status_contrato_formula?: string | null
           status_feedback_formula?: string | null
           status_otimizacao_formula?: string | null
           status_reuniao_formula?: string | null
+          step_atual_ordem?: number | null
           tipo_projeto?: string[] | null
           ultima_otimizacao?: string | null
           ultima_reuniao_gestor?: string | null
@@ -253,12 +269,14 @@ export type Database = {
           produtos_upsell?: string[] | null
           proxima_otimizacao_formula?: string | null
           removido_em?: string | null
+          resultado_renovacao?: string | null
           satisfacao?: string | null
           status_aceleracao_pro?: string | null
           status_contrato_formula?: string | null
           status_feedback_formula?: string | null
           status_otimizacao_formula?: string | null
           status_reuniao_formula?: string | null
+          step_atual_ordem?: number | null
           tipo_projeto?: string[] | null
           ultima_otimizacao?: string | null
           ultima_reuniao_gestor?: string | null
@@ -602,6 +620,39 @@ export type Database = {
           nome?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rotina_recorrente: {
+        Row: {
+          cliente_id: string
+          colaborador_user_id: string
+          created_at: string
+          data: string
+          id: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          colaborador_user_id: string
+          created_at?: string
+          data: string
+          id?: string
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          colaborador_user_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
         }
         Relationships: []
       }
