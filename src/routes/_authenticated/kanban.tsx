@@ -5,7 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, KanbanSquare, ChevronRight, CheckCircle2 } from "lucide-react";
+import {
+  Loader2, KanbanSquare, ChevronRight, CheckCircle2, Flag, AlertTriangle, Clock, Hourglass,
+} from "lucide-react";
+import { MK6_JOURNEY } from "@/lib/mk6-journey";
 
 export const Route = createFileRoute("/_authenticated/kanban")({
   component: KanbanPage,
@@ -19,10 +22,32 @@ type OperacionalMember = { id?: string; name?: string };
 type Cliente = {
   id: string; nome: string; categoria: string | null;
   operacional: OperacionalMember[] | null; removido_em: string | null;
+  step_atual_ordem: number | null;
 };
 type Step = {
-  cliente_id: string; ordem: number; semana: number | null;
-  fase: string; titulo: string; status: string; data_prevista: string | null;
+  id: string; cliente_id: string; ordem: number; fase: string; titulo: string;
+  status: string; data_prevista: string | null;
+  tem_trava: boolean; cliente_entregue: boolean;
+  acao_mk6_itens: Array<{ texto: string; concluido: boolean }> | null;
+  pronto_para_avancar: boolean; atrasado: boolean; bloqueado: boolean;
+};
+
+type RAG = "verde" | "amarelo" | "vermelho" | "pronto";
+
+function ragOf(step: Step): RAG {
+  if (step.atrasado) return "vermelho";
+  if (step.pronto_para_avancar) return "pronto";
+  const itens = Array.isArray(step.acao_mk6_itens) ? step.acao_mk6_itens : [];
+  const acaoOk = itens.length === 0 || itens.every((i) => i.concluido);
+  if (acaoOk && step.tem_trava && !step.cliente_entregue) return "amarelo";
+  return "verde";
+}
+
+const RAG_STYLES: Record<RAG, { border: string; bg: string; chip: string; label: string; icon: any }> = {
+  verde:    { border: "border-emerald-500/40", bg: "bg-emerald-500/5", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30", label: "Ação MK6", icon: Clock },
+  amarelo:  { border: "border-amber-500/40",   bg: "bg-amber-500/5",   chip: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30", label: "Aguardando cliente", icon: Hourglass },
+  vermelho: { border: "border-red-500/40",     bg: "bg-red-500/5",     chip: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30", label: "Atrasado", icon: AlertTriangle },
+  pronto:   { border: "border-primary/40",     bg: "bg-primary/5",     chip: "bg-primary/15 text-primary border-primary/30", label: "Pronto p/ avançar", icon: CheckCircle2 },
 };
 
 function KanbanPage() {
@@ -52,7 +77,7 @@ function KanbanPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id,nome,categoria,operacional,removido_em");
+        .select("id,nome,categoria,operacional,removido_em,step_atual_ordem");
       if (error) throw error;
       return (data ?? []) as Cliente[];
     },
@@ -75,59 +100,49 @@ function KanbanPage() {
 
   const { data: steps, isLoading: stepsLoading } = useQuery({
     enabled: clienteIds.length > 0,
-    queryKey: ["kanban-steps", clienteIds],
+    queryKey: ["kanban-steps-v2", clienteIds],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cliente_timeline_steps")
-        .select("cliente_id,ordem,semana,fase,titulo,status,data_prevista")
-        .in("cliente_id", clienteIds)
-        .order("ordem", { ascending: true });
+        .select("id,cliente_id,ordem,fase,titulo,status,data_prevista,tem_trava,cliente_entregue,acao_mk6_itens,pronto_para_avancar,atrasado,bloqueado")
+        .in("cliente_id", clienteIds);
       if (error) throw error;
       return (data ?? []) as Step[];
     },
   });
 
-  // Para cada cliente, achar o "step atual" (primeiro não-concluído) → semana
+  type Col = number | "sem-jornada" | "finalizado";
   const colunas = useMemo(() => {
-    const map = new Map<number | "sem-jornada" | "finalizado", { cliente: Cliente; step?: Step }[]>();
-    for (let i = 1; i <= 13; i++) map.set(i, []);
+    const map = new Map<Col, Array<{ cliente: Cliente; step?: Step; rag?: RAG }>>();
+    for (let i = 1; i <= 15; i++) map.set(i, []);
     map.set("sem-jornada", []);
     map.set("finalizado", []);
 
     for (const c of filteredClientes) {
-      const allSteps = (steps ?? []).filter((s) => s.cliente_id === c.id);
-      if (allSteps.length === 0) {
-        map.get("sem-jornada")!.push({ cliente: c });
-        continue;
-      }
-      const ativo = allSteps.find((s) => s.status !== "concluido");
-      if (!ativo) {
-        map.get("finalizado")!.push({ cliente: c });
-        continue;
-      }
-      const semana = ativo.semana ?? 1;
-      const arr = map.get(semana) ?? map.set(semana, []).get(semana)!;
-      arr.push({ cliente: c, step: ativo });
+      const all = (steps ?? []).filter((s) => s.cliente_id === c.id);
+      if (all.length === 0) { map.get("sem-jornada")!.push({ cliente: c }); continue; }
+      const atual = all.find((s) => s.status !== "concluido");
+      if (!atual) { map.get("finalizado")!.push({ cliente: c }); continue; }
+      map.get(atual.ordem)!.push({ cliente: c, step: atual, rag: ragOf(atual) });
     }
     return map;
   }, [filteredClientes, steps]);
 
   const loading = clientesLoading || (clienteIds.length > 0 && stepsLoading);
+  const colKeys: Col[] = ["sem-jornada", ...Array.from({ length: 15 }, (_, i) => i + 1), "finalizado"];
 
-  const colKeys: Array<number | "sem-jornada" | "finalizado"> = [
-    "sem-jornada", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "finalizado",
-  ];
-
-  const labelCol = (k: number | "sem-jornada" | "finalizado") => {
+  const labelCol = (k: Col) => {
     if (k === "sem-jornada") return "Sem jornada";
     if (k === "finalizado") return "Finalizado";
-    return `Sprint ${k}`;
+    return `Step ${k}`;
   };
-  const subCol = (k: number | "sem-jornada" | "finalizado") => {
+  const subCol = (k: Col) => {
     if (k === "sem-jornada") return "Aguardando aplicar MK6";
     if (k === "finalizado") return "Renovação / encerramento";
-    return `Semana ${k} da jornada`;
+    const t = MK6_JOURNEY.find((j) => j.ordem === k);
+    return t?.titulo ?? "";
   };
+  const isMarco = (k: Col) => k === 9 || k === 15;
 
   return (
     <div className="w-full space-y-6 p-4 md:p-6">
@@ -137,21 +152,20 @@ function KanbanPage() {
             <KanbanSquare className="h-6 w-6 text-primary" /> Jornada do Cliente
           </h1>
           <p className="text-sm text-muted-foreground">
-            Acompanhe o progresso dos clientes em cada sprint da MK6 Journey.
+            Cada cliente aparece no <strong>step atual</strong> da MK6 Journey. RAG = verde (Ação MK6),
+            amarelo (aguardando cliente), vermelho (atrasado), azul (pronto p/ avançar).
           </p>
         </div>
         {viewer?.isAdmin && (
           <div className="inline-flex rounded-md border bg-background p-0.5 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setScope("meus")}
-              className={`rounded px-3 py-1.5 ${effectiveScope === "meus" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-            >Meus clientes</button>
-            <button
-              type="button"
-              onClick={() => setScope("todos")}
-              className={`rounded px-3 py-1.5 ${effectiveScope === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-            >Todos (admin)</button>
+            <button type="button" onClick={() => setScope("meus")}
+              className={`rounded px-3 py-1.5 ${effectiveScope === "meus" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+              Meus clientes
+            </button>
+            <button type="button" onClick={() => setScope("todos")}
+              className={`rounded px-3 py-1.5 ${effectiveScope === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+              Todos (admin)
+            </button>
           </div>
         )}
       </div>
@@ -164,49 +178,55 @@ function KanbanPage() {
         <div className="flex gap-3 overflow-x-auto pb-4">
           {colKeys.map((k) => {
             const items = colunas.get(k) ?? [];
+            const marco = isMarco(k);
             return (
               <div key={String(k)} className="flex w-72 shrink-0 flex-col">
-                <Card className="flex h-full flex-col bg-muted/30">
+                <Card className={`flex h-full flex-col ${marco ? "border-amber-500/40 bg-amber-500/5" : "bg-muted/30"}`}>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center justify-between text-sm">
-                      <span>{labelCol(k)}</span>
+                      <span className="flex items-center gap-1.5">
+                        {marco && <Flag className="h-4 w-4 text-amber-600" />}
+                        {labelCol(k)}
+                      </span>
                       <Badge variant="secondary" className="text-xs">{items.length}</Badge>
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">{subCol(k)}</p>
+                    <p className="line-clamp-2 text-xs text-muted-foreground">{subCol(k)}</p>
                   </CardHeader>
                   <CardContent className="flex-1 space-y-2">
                     {items.length === 0 ? (
-                      <p className="py-6 text-center text-xs text-muted-foreground">
-                        Nenhum cliente
-                      </p>
+                      <p className="py-6 text-center text-xs text-muted-foreground">—</p>
                     ) : (
-                      items.map(({ cliente, step }) => (
-                        <Link
-                          key={cliente.id}
-                          to="/clientes/$clienteId"
-                          params={{ clienteId: cliente.id }}
-                          className="block rounded-md border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-accent"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-sm font-medium">{cliente.nome}</p>
-                            {k === "finalizado" ? (
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      items.map(({ cliente, step, rag }) => {
+                        const st = rag ? RAG_STYLES[rag] : null;
+                        const Icon = st?.icon;
+                        return (
+                          <Link
+                            key={cliente.id}
+                            to="/clientes/$clienteId"
+                            params={{ clienteId: cliente.id }}
+                            className={`block rounded-md border p-3 transition-colors hover:border-primary/40 hover:bg-accent ${st ? `${st.border} ${st.bg}` : "bg-card"}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="truncate text-sm font-medium">{cliente.nome}</p>
+                              {k === "finalizado" ? (
+                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              )}
+                            </div>
+                            {st && Icon && (
+                              <Badge variant="outline" className={`mt-1.5 ${st.chip}`}>
+                                <Icon className="mr-1 h-3 w-3" /> {st.label}
+                              </Badge>
                             )}
-                          </div>
-                          {step && (
-                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                              {step.titulo}
-                            </p>
-                          )}
-                          {step?.data_prevista && (
-                            <p className="mt-1 text-[10px] text-muted-foreground">
-                              prev. {new Date(step.data_prevista + "T00:00:00").toLocaleDateString("pt-BR")}
-                            </p>
-                          )}
-                        </Link>
-                      ))
+                            {step?.data_prevista && (
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                prev. {new Date(step.data_prevista + "T00:00:00").toLocaleDateString("pt-BR")}
+                              </p>
+                            )}
+                          </Link>
+                        );
+                      })
                     )}
                   </CardContent>
                 </Card>
