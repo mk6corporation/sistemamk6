@@ -58,6 +58,78 @@ export type Database = {
           },
         ]
       }
+      cliente_nps: {
+        Row: {
+          cliente_id: string
+          comentario: string | null
+          created_at: string
+          id: string
+          respondido_em: string
+          score: number
+          source: string | null
+          source_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          respondido_em?: string
+          score: number
+          source?: string | null
+          source_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          respondido_em?: string
+          score?: number
+          source?: string | null
+          source_id?: string | null
+        }
+        Relationships: []
+      }
+      cliente_performance: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          faturamento_atual: number | null
+          faturamento_inicial: number | null
+          faturamento_meta: number | null
+          id: string
+          leads_atual: number | null
+          leads_inicial: number | null
+          observacoes: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          faturamento_atual?: number | null
+          faturamento_inicial?: number | null
+          faturamento_meta?: number | null
+          id?: string
+          leads_atual?: number | null
+          leads_inicial?: number | null
+          observacoes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          faturamento_atual?: number | null
+          faturamento_inicial?: number | null
+          faturamento_meta?: number | null
+          id?: string
+          leads_atual?: number | null
+          leads_inicial?: number | null
+          observacoes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_timeline_steps: {
         Row: {
           acao_mk6_itens: Json
