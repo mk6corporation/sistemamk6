@@ -224,7 +224,7 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
         );
 
       // 1.b) enriquecer com BrasilAPI (preenche somente campos vazios)
-      if (onlyDigits(cnpj).length === 14) {
+      if (cnpj && onlyDigits(cnpj).length === 14) {
         try {
           await enrichDadosCorporativosByCnpj(cliente.id, cnpj);
         } catch {
