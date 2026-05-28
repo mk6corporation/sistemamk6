@@ -1,4 +1,4 @@
-// Template fixo da jornada MK6 — 90 dias / 13 steps
+// Template fixo da jornada MK6 — 90 dias / 15 steps
 // Aplicado sob demanda ao cliente via botão "Aplicar MK6 Journey"
 
 export type MK6Tipo = "call_gestor" | "call_cs" | "call_ambos" | "marco";
@@ -19,6 +19,8 @@ export interface MK6StepTemplate {
   cliente_responsabilidade: string;
   tem_trava: boolean;
   trava_descricao?: string;
+  /** Itens curtos e diretos da Ação MK6 — viram checkboxes no card de "Step atual". */
+  acao_mk6_itens: string[];
 }
 
 export const MK6_JOURNEY: MK6StepTemplate[] = [
@@ -34,6 +36,11 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Separar e enviar todos os acessos (BM, conta de anúncio, página, WhatsApp) antes do planejamento.",
     tem_trava: true,
     trava_descricao: "Sem os acessos entregues, o planejamento não roda e a campanha não sobe.",
+    acao_mk6_itens: [
+      "Realizar call de boas-vindas",
+      "Entregar calendário dos 90 dias",
+      "Combinar metas iniciais",
+    ],
   },
   {
     ordem: 2, codigo: "f1_planejamento", fase: "Fase 1 — Arranque", semana: 1,
@@ -46,6 +53,11 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Validar ofertas, confirmar condições/preços para a campanha e começar a registrar leads no CRM.",
     tem_trava: true,
     trava_descricao: "Sem as ofertas validadas, não há o que anunciar — a campanha não sobe.",
+    acao_mk6_itens: [
+      "Apresentar plano e time",
+      "Priorizar ofertas com o cliente",
+      "Entregar planilha-CRM com passo a passo",
+    ],
   },
   {
     ordem: 3, codigo: "f1_treinamento", fase: "Fase 1 — Arranque", semana: 1,
@@ -58,6 +70,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Aplicar abertura/rapport em atendimentos reais e trazer os registros para o roleplay.",
     tem_trava: true,
     trava_descricao: "Sem atendimentos aplicados, não há roleplay — o cliente fica parado.",
+    acao_mk6_itens: [
+      "Subir campanhas (leads chegando)",
+      "Entregar roteiro de abertura e qualificação",
+    ],
   },
 
   // ===== FASE 2: EXECUÇÃO =====
@@ -72,6 +88,11 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Conduzir 5 atendimentos com o roteiro e separar 2 conversas difíceis para análise.",
     tem_trava: true,
     trava_descricao: "Sem conversas reais separadas, a demonstração de ligação perde o sentido.",
+    acao_mk6_itens: [
+      "Conduzir roleplay com o cliente",
+      "Entregar roteiro de qualificação refinado",
+      "Enviar ajustes por escrito",
+    ],
   },
   {
     ordem: 5, codigo: "f2_metricas1", fase: "Fase 2 — Execução", semana: 3,
@@ -83,6 +104,11 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Conta otimizada + briefing de criativos enviado + meta de CPL definida.",
     cliente_responsabilidade: "Devolver feedback sobre qualidade dos leads e manter o CRM atualizado.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Otimizar conta (matar/escalar conjuntos)",
+      "Enviar briefing de criativos ao designer",
+      "Definir meta de CPL",
+    ],
   },
   {
     ordem: 6, codigo: "f2_demo", fase: "Fase 2 — Execução", semana: 4,
@@ -95,6 +121,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Fazer 5 ligações sozinho no mesmo padrão e anotar onde travou.",
     tem_trava: true,
     trava_descricao: "Sem as ligações feitas, não há prática para analisar — a evolução comercial empaca.",
+    acao_mk6_itens: [
+      "Ligar ao vivo para os leads do cliente",
+      "Entregar o modelo de ligação (estrutura + gravação)",
+    ],
   },
   {
     ordem: 7, codigo: "f2_metricas2", fase: "Fase 2 — Execução", semana: 5,
@@ -106,6 +136,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Conjunto vencedor escalado + variações de criativo no ar.",
     cliente_responsabilidade: "Reportar vendas geradas pelos leads para fechar o cálculo de retorno até aqui.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Escalar conjunto vencedor",
+      "Subir variações de criativo",
+    ],
   },
   {
     ordem: 8, codigo: "f2_whats1", fase: "Fase 2 — Execução", semana: 6,
@@ -118,6 +152,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Reescrever 3 abordagens fracas e aplicar nos próximos leads.",
     tem_trava: true,
     trava_descricao: "Sem abordagens corrigidas em uso, não dá para subir para objeção e fechamento.",
+    acao_mk6_itens: [
+      "Revisar conversas reais junto com o cliente",
+      "Entregar conversas anotadas + modelos de abordagem",
+    ],
   },
   {
     ordem: 9, codigo: "f2_marco_replan", fase: "Fase 2 — Execução", semana: 7,
@@ -129,6 +167,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Plano revisado dos dias 45–90, com metas ajustadas e prioridades repactuadas por escrito.",
     cliente_responsabilidade: "Trazer percepções dos primeiros 45 dias e reconfirmar o compromisso comercial.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Conduzir call dedicada de replanejamento",
+      "Entregar plano revisado dos dias 45–90 por escrito",
+    ],
   },
 
   // ===== FASE 3: PROVA & CONTINUIDADE =====
@@ -143,6 +185,11 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Aplicar 2 técnicas de contorno e trazer o resultado de cada tentativa de fechamento.",
     tem_trava: true,
     trava_descricao: "Sem tentativas registradas, não há base para trabalhar relacionamento e recompra.",
+    acao_mk6_itens: [
+      "Revisar conversas com foco em objeção/fechamento",
+      "Conduzir roleplay com cenários reais",
+      "Entregar playbook de objeções + respostas-modelo",
+    ],
   },
   {
     ordem: 11, codigo: "f3_metricas3", fase: "Fase 3 — Prova & Continuidade", semana: 9,
@@ -154,6 +201,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Volume de leads sustentado para alimentar a prática comercial até o dia 90.",
     cliente_responsabilidade: "Manter ritmo de atendimento e CRM em dia — o número de vendas vai para o balanço.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Escalar orçamento e públicos vencedores",
+      "Sustentar volume de leads até o dia 90",
+    ],
   },
   {
     ordem: 12, codigo: "f3_relacionamento", fase: "Fase 3 — Prova & Continuidade", semana: 10,
@@ -166,6 +217,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Rodar a régua com leads parados dos últimos 30 dias e registrar respostas.",
     tem_trava: true,
     trava_descricao: "Sem a régua rodando, o balanço final não mostra o potencial de recompra.",
+    acao_mk6_itens: [
+      "Entregar régua de follow-up pronta para usar",
+      "Entregar scripts de reativação",
+    ],
   },
   {
     ordem: 13, codigo: "f3_metricas4", fase: "Fase 3 — Prova & Continuidade", semana: 11,
@@ -177,6 +232,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Números de tráfego consolidados e prévia do balanço montada.",
     cliente_responsabilidade: "Fechar os dados de vendas no CRM para o balanço sair fiel à realidade.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Consolidar números de tráfego",
+      "Montar prévia do balanço dos 90 dias",
+    ],
   },
   {
     ordem: 14, codigo: "f3_prova_evolucao", fase: "Fase 3 — Prova & Continuidade", semana: 12,
@@ -189,6 +248,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     cliente_responsabilidade: "Rodar uma semana inteira no padrão com CRM atualizado — prova viva do balanço.",
     tem_trava: true,
     trava_descricao: "Sem a semana documentada, o balanço de encerramento perde força — e a renovação, o melhor argumento.",
+    acao_mk6_itens: [
+      "Conduzir roleplay final do ciclo completo",
+      "Montar e validar comparativo antes × depois",
+    ],
   },
   {
     ordem: 15, codigo: "f3_marco_renovacao", fase: "Fase 3 — Prova & Continuidade", semana: 13,
@@ -200,6 +263,10 @@ export const MK6_JOURNEY: MK6StepTemplate[] = [
     mk6_responsabilidade: "Relatório consolidado dos 90 dias + plano de crescimento e proposta de renovação.",
     cliente_responsabilidade: "Avaliar os números na mesa e decidir a continuidade do projeto com a MK6.",
     tem_trava: false,
+    acao_mk6_itens: [
+      "Apresentar balanço consolidado dos 90 dias",
+      "Entregar plano de crescimento + proposta de renovação",
+    ],
   },
 ];
 
@@ -225,4 +292,9 @@ export function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + days - 1); // dia 1 = data de início
   return d.toISOString().slice(0, 10);
+}
+
+/** Itens da Ação MK6 transformados em `[{texto, concluido:false}]` para persistir no step do cliente. */
+export function acaoItensFromTemplate(template: MK6StepTemplate): Array<{ texto: string; concluido: boolean }> {
+  return template.acao_mk6_itens.map((texto) => ({ texto, concluido: false }));
 }
