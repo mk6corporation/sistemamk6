@@ -213,6 +213,43 @@ function Dashboard() {
     },
   });
 
+  // Auto-migração do Journey (1x por sessão)
+  const migrouRef = useRef(false);
+  useEffect(() => {
+    if (migrouRef.current) return;
+    migrouRef.current = true;
+    migrarFn().then(() => qc.invalidateQueries({ queryKey: ["gargalos"] })).catch(() => {});
+  }, [migrarFn, qc]);
+
+  const gargalosQuery = useQuery({
+    queryKey: ["gargalos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cliente_timeline_steps")
+        .select("ordem,status,tem_trava,cliente_entregue,acao_mk6_itens,atrasado,pronto_para_avancar,bloqueado")
+        .neq("status", "concluido")
+        .eq("bloqueado", false);
+      if (error) throw error;
+      const rows = data ?? [];
+      const congestion: Record<number, number> = {};
+      let bolaMk6 = 0, bolaCliente = 0, atrasados = 0, prontos = 0;
+      for (const r of rows) {
+        congestion[r.ordem] = (congestion[r.ordem] ?? 0) + 1;
+        const itens = Array.isArray(r.acao_mk6_itens) ? (r.acao_mk6_itens as any[]) : [];
+        const acaoOk = itens.length === 0 || itens.every((i) => i.concluido);
+        if (!acaoOk) bolaMk6 += 1;
+        else if (r.tem_trava && !r.cliente_entregue) bolaCliente += 1;
+        if (r.atrasado) atrasados += 1;
+        if (r.pronto_para_avancar) prontos += 1;
+      }
+      const top = Object.entries(congestion)
+        .sort((a, b) => b[1] - a[1]).slice(0, 3)
+        .map(([ordem, n]) => ({ ordem: Number(ordem), n }));
+      return { bolaMk6, bolaCliente, atrasados, prontos, top, total: rows.length };
+    },
+  });
+
+
   const clientesQuery = useQuery({
     queryKey: ["clientes"],
     queryFn: async () => {
