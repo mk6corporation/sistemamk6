@@ -197,6 +197,7 @@ export function TimelineTab({ clienteId }: { clienteId: string }) {
   const fases = Array.from(new Set(steps.map((s) => s.fase)));
   const totalConcluidos = steps.filter((s) => s.status === "concluido").length;
   const progresso = Math.round((totalConcluidos / steps.length) * 100);
+  const stepAtual = steps.find((s) => s.status !== "concluido") ?? null;
 
   return (
     <div className="space-y-4">
