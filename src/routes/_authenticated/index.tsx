@@ -656,6 +656,46 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Gargalos da Jornada */}
+        {gargalosQuery.data && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Gargalos da Jornada (MK6)</CardTitle>
+              <CardDescription>
+                {gargalosQuery.data.total} clientes ativos na jornada
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="rounded-md border bg-emerald-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Bola com MK6</p>
+                  <p className="text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{gargalosQuery.data.bolaMk6}</p>
+                </div>
+                <div className="rounded-md border bg-amber-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Aguardando cliente</p>
+                  <p className="text-2xl font-semibold text-amber-700 dark:text-amber-300">{gargalosQuery.data.bolaCliente}</p>
+                </div>
+                <div className="rounded-md border bg-red-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">Atrasados</p>
+                  <p className="text-2xl font-semibold text-red-700 dark:text-red-300">{gargalosQuery.data.atrasados}</p>
+                </div>
+                <div className="rounded-md border bg-primary/5 p-3">
+                  <p className="text-xs text-muted-foreground">Prontos p/ avançar</p>
+                  <p className="text-2xl font-semibold text-primary">{gargalosQuery.data.prontos}</p>
+                </div>
+              </div>
+              {gargalosQuery.data.top.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Steps mais congestionados:</span>
+                  {gargalosQuery.data.top.map((t) => (
+                    <Badge key={t.ordem} variant="secondary">Step {t.ordem} · {t.n}</Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
