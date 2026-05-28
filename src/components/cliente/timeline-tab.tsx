@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MK6_JOURNEY, tipoLabel, tipoColor, addDays, type MK6Tipo } from "@/lib/mk6-journey";
+import { avancarStep } from "@/lib/journey.functions";
+
 type Step = {
   id: string;
   cliente_id: string;
