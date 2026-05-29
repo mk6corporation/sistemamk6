@@ -621,11 +621,18 @@ function Dashboard() {
 
     const itens = contratos
       .filter((r) => {
-        if (!r.inicio_contrato) return false;
-        const [y, m, d] = r.inicio_contrato.split("-").map(Number);
+        if (!r.cliente_id || !idsPermitidos.has(r.cliente_id)) return false;
+        let y: number | undefined, m: number | undefined, d: number | undefined;
+        if (r.inicio_contrato) {
+          [y, m, d] = r.inicio_contrato.split("-").map(Number);
+        } else if (r.created_at) {
+          const dt = new Date(r.created_at);
+          y = dt.getFullYear();
+          m = dt.getMonth() + 1;
+          d = dt.getDate();
+        }
         if (!y || !m || !d) return false;
         if (y !== ano || m - 1 !== mIdx) return false;
-        if (!r.cliente_id || !idsPermitidos.has(r.cliente_id)) return false;
         return true;
       })
       .map((r) => {
