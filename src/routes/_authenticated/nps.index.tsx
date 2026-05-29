@@ -107,6 +107,11 @@ function classificarBain(nps: number): {
 function NpsDashboard() {
   const [filtroProduto, setFiltroProduto] = useState<string>("todos");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
+  const [drilldown, setDrilldown] = useState<{
+    title: string;
+    description?: string;
+    respostas: NpsResposta[];
+  } | null>(null);
 
   const respostasQuery = useQuery({
     queryKey: ["nps-respostas-all"],
