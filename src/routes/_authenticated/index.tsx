@@ -882,6 +882,7 @@ function Dashboard() {
             icon={Flag}
           />
           <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
+          <RenovacoesKpi mesLabel={comparacaoMes.mes.label} itens={renovacoesDoMes} />
           <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
         </div>
 
