@@ -1,15 +1,41 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Loader2, BarChart3, AlertTriangle, Users, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin-metricas")({
   component: AdminMetricas,
 });
+
+type AtrasoItem = {
+  cliente_id: string;
+  cliente_nome: string;
+  fase: string;
+  ordem: number;
+  data_prevista: string | null;
+  diasAtraso: number;
+  responsaveis: string;
+};
+
 
 type OperacionalMember = { id?: string; name?: string };
 type Cliente = {
@@ -65,6 +91,7 @@ function AdminMetricas() {
     return m;
   }, [clientes]);
 
+
   // Atrasados por colaborador
   const atrasadosPorColab = useMemo(() => {
     const map = new Map<string, { atrasados: number; clientes: Set<string> }>();
@@ -86,6 +113,34 @@ function AdminMetricas() {
       .map(([nome, v]) => ({ nome, atrasados: v.atrasados, clientes: v.clientes.size }))
       .sort((a, b) => b.atrasados - a.atrasados);
   }, [steps, clienteById, hoje]);
+
+  // Lista detalhada de steps atrasados (para drilldown)
+  const atrasosDetalhe = useMemo<AtrasoItem[]>(() => {
+    const out: AtrasoItem[] = [];
+    (steps ?? []).forEach((s) => {
+      if (s.status === "concluido") return;
+      if (!s.data_prevista || s.data_prevista >= hoje) return;
+      const cliente = clienteById.get(s.cliente_id);
+      if (!cliente) return;
+      const colabs = (cliente.operacional ?? []).map((m) => m?.name).filter(Boolean) as string[];
+      const diasAtraso = Math.floor(
+        (new Date(hoje).getTime() - new Date(s.data_prevista).getTime()) / 86400000,
+      );
+      out.push({
+        cliente_id: s.cliente_id,
+        cliente_nome: cliente.nome,
+        fase: s.fase,
+        ordem: s.ordem,
+        data_prevista: s.data_prevista,
+        diasAtraso,
+        responsaveis: colabs.length > 0 ? colabs.join(", ") : "(Sem responsável)",
+      });
+    });
+    return out.sort((a, b) => b.diasAtraso - a.diasAtraso);
+  }, [steps, clienteById, hoje]);
+
+  const [drilldown, setDrilldown] = useState<{ title: string; items: AtrasoItem[] } | null>(null);
+
 
   // Clientes por fase + tempo médio na fase
   const fasesStat = useMemo(() => {
@@ -153,7 +208,20 @@ function AdminMetricas() {
           </CardHeader>
           <CardContent><p className="text-2xl font-semibold">{totalClientesAtivos}</p></CardContent>
         </Card>
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() =>
+            setDrilldown({ title: "Steps em atraso", items: atrasosDetalhe })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setDrilldown({ title: "Steps em atraso", items: atrasosDetalhe });
+            }
+          }}
+          className="cursor-pointer transition-colors hover:bg-accent/40"
+        >
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
               <AlertTriangle className="h-3 w-3" /> Steps em atraso
@@ -163,8 +231,12 @@ function AdminMetricas() {
             <p className={`text-2xl font-semibold ${totalAtrasados > 0 ? "text-red-600" : "text-emerald-600"}`}>
               {totalAtrasados}
             </p>
+            <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              Clique para ver clientes
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -195,7 +267,31 @@ function AdminMetricas() {
                 const max = atrasadosPorColab[0].atrasados || 1;
                 const pct = Math.round((row.atrasados / max) * 100);
                 return (
-                  <div key={row.nome} className="space-y-1">
+                  <div
+                    key={row.nome}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      setDrilldown({
+                        title: `Atrasos · ${row.nome}`,
+                        items: atrasosDetalhe.filter((a) =>
+                          a.responsaveis.split(", ").includes(row.nome),
+                        ),
+                      })
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDrilldown({
+                          title: `Atrasos · ${row.nome}`,
+                          items: atrasosDetalhe.filter((a) =>
+                            a.responsaveis.split(", ").includes(row.nome),
+                          ),
+                        });
+                      }
+                    }}
+                    className="cursor-pointer space-y-1 rounded-md p-2 transition-colors hover:bg-accent/40"
+                  >
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{row.nome}</span>
                       <span className="text-xs text-muted-foreground">
@@ -219,6 +315,7 @@ function AdminMetricas() {
                       />
                     </div>
                   </div>
+
                 );
               })}
             </div>
@@ -249,6 +346,76 @@ function AdminMetricas() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!drilldown} onOpenChange={(open) => !open && setDrilldown(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{drilldown?.title}</DialogTitle>
+            <DialogDescription>
+              {drilldown?.items.length ?? 0} step(s) em atraso. Clique no cliente para abrir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {drilldown && drilldown.items.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Fase</TableHead>
+                    <TableHead>Step</TableHead>
+                    <TableHead>Prevista</TableHead>
+                    <TableHead className="text-right">Atraso</TableHead>
+                    <TableHead>Responsáveis</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drilldown.items.map((it, idx) => (
+                    <TableRow key={`${it.cliente_id}-${it.ordem}-${idx}`}>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/clientes/$clienteId"
+                          params={{ clienteId: it.cliente_id }}
+                          className="text-primary hover:underline"
+                          onClick={() => setDrilldown(null)}
+                        >
+                          {it.cliente_nome}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{it.fase}</TableCell>
+                      <TableCell className="text-xs">#{it.ordem}</TableCell>
+                      <TableCell className="text-xs">
+                        {it.data_prevista
+                          ? new Date(it.data_prevista).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant="outline"
+                          className={
+                            it.diasAtraso > 7
+                              ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
+                              : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          }
+                        >
+                          {it.diasAtraso} dia(s)
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {it.responsaveis}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nenhum step em atraso.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
