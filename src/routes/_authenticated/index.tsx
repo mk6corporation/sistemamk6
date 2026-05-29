@@ -286,6 +286,21 @@ function Dashboard() {
     },
   });
 
+  const renovacoesQuery = useQuery({
+    queryKey: ["renovacoes-contratos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id,cliente_id,tipo,inicio_contrato,fim_contrato,fee_mensal,valor_total,created_at")
+        .eq("tipo", "renovacao")
+        .order("inicio_contrato", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+
+
   const runsQuery = useQuery({
     queryKey: ["sync_runs"],
     queryFn: async () => {
