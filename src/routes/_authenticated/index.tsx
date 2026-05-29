@@ -968,7 +968,26 @@ function VencimentosCard({
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <Badge variant="secondary" className="ml-auto">{itens.length}</Badge>
+          {(() => {
+            const pausados = itens.filter((c) =>
+              (c.estagio ?? "").toLowerCase().includes("pausad"),
+            ).length;
+            const ativos = itens.length - pausados;
+            return (
+              <div className="ml-auto flex items-center gap-1.5">
+                <Badge variant="secondary" title="Ativos (sem pausados)">
+                  {ativos}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                  title="Pausados"
+                >
+                  {pausados} pausad{pausados === 1 ? "o" : "os"}
+                </Badge>
+              </div>
+            );
+          })()}
         </div>
       </CardHeader>
       <CardContent className="p-0">
