@@ -44,6 +44,7 @@ type Cliente = {
   valor_mensal: number | null;
   removido_em: string | null;
   operacional: Array<{ id?: string; name?: string }> | null;
+  estagio: string | null;
 };
 
 type Equipe = {
@@ -103,7 +104,7 @@ function AdminRenovacao() {
       const { data, error } = await supabase
         .from("clientes")
         .select(
-          "id,nome,categoria,plano,fim_contrato,resultado_renovacao,valor_mensal,removido_em,operacional",
+          "id,nome,categoria,plano,fim_contrato,resultado_renovacao,valor_mensal,removido_em,operacional,estagio",
         );
       if (error) throw error;
       return ((data ?? []) as Cliente[]).filter((c) => !c.removido_em);
@@ -129,6 +130,7 @@ function AdminRenovacao() {
   }, [equipeQuery.data]);
 
   // Filtros
+  const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroGestor, setFiltroGestor] = useState("todos");
   const [filtroCs, setFiltroCs] = useState("todos");
   const [filtroVendedor, setFiltroVendedor] = useState("todos");
@@ -136,9 +138,21 @@ function AdminRenovacao() {
   const [filtroBucket, setFiltroBucket] = useState<string>("todos");
   const [busca, setBusca] = useState("");
 
-  const ativos = useMemo(
-    () => (clientesQuery.data ?? []).filter((c) => c.categoria === "ATIVO"),
-    [clientesQuery.data],
+  function filtrarPorStatus(c: Cliente): boolean {
+    const estagioLower = (c.estagio ?? "").toLowerCase();
+    const pausado = estagioLower.includes("pausad");
+    const categoria = (c.categoria ?? "").toUpperCase();
+    const resultado = classifyResultado(c.resultado_renovacao);
+
+    if (filtroStatus === "ativo") return categoria === "ATIVO" && !pausado;
+    if (filtroStatus === "pausado") return categoria === "ATIVO" && pausado;
+    if (filtroStatus === "churn") return categoria === "CHURN" || resultado === "nao_renovou";
+    return true; // todos
+  }
+
+  const clientesBase = useMemo(
+    () => (clientesQuery.data ?? []).filter(filtrarPorStatus),
+    [clientesQuery.data, filtroStatus],
   );
 
   const opcoes = useMemo(() => {
@@ -146,7 +160,7 @@ function AdminRenovacao() {
     const css = new Set<string>();
     const vendedores = new Set<string>();
     const planos = new Set<string>();
-    (clientesQuery.data ?? []).forEach((c) => {
+    (clientesBase ?? []).forEach((c) => {
       if (c.plano) planos.add(c.plano);
       const eq = equipeByCliente.get(c.id);
       if (eq?.gestor_nome) gestores.add(eq.gestor_nome);
@@ -159,9 +173,10 @@ function AdminRenovacao() {
       vendedores: Array.from(vendedores).sort(),
       planos: Array.from(planos).sort(),
     };
-  }, [clientesQuery.data, equipeByCliente]);
+  }, [clientesBase, equipeByCliente]);
 
   function aplicaFiltros(c: Cliente): boolean {
+    if (!filtrarPorStatus(c)) return false;
     const eq = equipeByCliente.get(c.id);
     if (filtroGestor !== "todos" && eq?.gestor_nome !== filtroGestor) return false;
     if (filtroCs !== "todos" && eq?.cs_nome !== filtroCs) return false;
@@ -176,20 +191,21 @@ function AdminRenovacao() {
 
   // Vencimentos (ATIVOS + futuro)
   const vencimentos = useMemo(() => {
-    return ativos
+    return clientesBase
       .filter(aplicaFiltros)
-      .map((c) => {
+      .map((c: Cliente) => {
         const dias = diasParaVencer(c.fim_contrato, hoje);
         const bucket = bucketize(dias);
         return { cliente: c, dias, bucket };
       })
-      .filter((v) => v.bucket !== null && v.bucket !== "futuro")
-      .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0));
+      .filter((v: { bucket: string | null }) => v.bucket !== null && v.bucket !== "futuro")
+      .sort((a: { dias: number | null }, b: { dias: number | null }) => (a.dias ?? 0) - (b.dias ?? 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    ativos,
+    clientesBase,
     hoje,
     equipeByCliente,
+    filtroStatus,
     filtroGestor,
     filtroCs,
     filtroVendedor,
@@ -219,7 +235,7 @@ function AdminRenovacao() {
 
   // Taxa de renovação histórica (clientes com fim_contrato passado, com resultado preenchido)
   const taxaRenovacao = useMemo(() => {
-    const todos = (clientesQuery.data ?? []).filter(aplicaFiltros);
+    const todos = (clientesBase ?? []).filter(aplicaFiltros);
     const decididos = todos.filter((c) => {
       if (!c.fim_contrato) return false;
       const d = diasParaVencer(c.fim_contrato, hoje);
@@ -237,9 +253,10 @@ function AdminRenovacao() {
     return { renovou, naoRenovou, total, taxa };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    clientesQuery.data,
+    clientesBase,
     hoje,
     equipeByCliente,
+    filtroStatus,
     filtroGestor,
     filtroCs,
     filtroVendedor,
@@ -251,7 +268,7 @@ function AdminRenovacao() {
   type RankRow = { nome: string; renovou: number; nao: number; total: number; taxa: number };
   function ranking(key: "gestor_nome" | "cs_nome" | "vendedor_nome"): RankRow[] {
     const m = new Map<string, { renovou: number; nao: number; total: number }>();
-    (clientesQuery.data ?? []).filter(aplicaFiltros).forEach((c) => {
+    (clientesBase ?? []).filter(aplicaFiltros).forEach((c) => {
       const dias = diasParaVencer(c.fim_contrato, hoje);
       if (dias === null || dias > 0) return;
       const cls = classifyResultado(c.resultado_renovacao);
@@ -278,17 +295,17 @@ function AdminRenovacao() {
   const rankGestor = useMemo(
     () => ranking("gestor_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
   const rankCs = useMemo(
     () => ranking("cs_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
   const rankVendedor = useMemo(
     () => ranking("vendedor_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
 
   if (roleLoading) {
@@ -325,6 +342,17 @@ function AdminRenovacao() {
               className="w-[220px] pl-8"
             />
           </div>
+          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativos</SelectItem>
+              <SelectItem value="pausado">Pausados</SelectItem>
+              <SelectItem value="churn">Churn</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={filtroGestor} onValueChange={setFiltroGestor}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Gestor" />
