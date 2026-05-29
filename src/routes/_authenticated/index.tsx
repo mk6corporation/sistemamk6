@@ -293,10 +293,14 @@ function Dashboard() {
         .from("contratos")
         .select("id,cliente_id,tipo,inicio_contrato,fim_contrato,fee_mensal,valor_total,created_at")
         .eq("tipo", "renovacao")
-        .order("inicio_contrato", { ascending: false });
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchInterval: 15000,
   });
 
 
@@ -623,13 +627,13 @@ function Dashboard() {
       .filter((r) => {
         if (!r.cliente_id || !idsPermitidos.has(r.cliente_id)) return false;
         let y: number | undefined, m: number | undefined, d: number | undefined;
-        if (r.inicio_contrato) {
-          [y, m, d] = r.inicio_contrato.split("-").map(Number);
-        } else if (r.created_at) {
+        if (r.created_at) {
           const dt = new Date(r.created_at);
           y = dt.getFullYear();
           m = dt.getMonth() + 1;
           d = dt.getDate();
+        } else if (r.inicio_contrato) {
+          [y, m, d] = r.inicio_contrato.split("-").map(Number);
         }
         if (!y || !m || !d) return false;
         if (y !== ano || m - 1 !== mIdx) return false;
