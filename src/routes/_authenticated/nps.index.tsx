@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Star, TrendingUp, TrendingDown, Smile, Meh, Frown } from "lucide-react";
+import { Loader2, Star, TrendingUp, Smile, Meh, Frown, Award } from "lucide-react";
 import { calcNps, classifyNps, type NpsResposta } from "@/lib/nps-utils";
 import {
   ResponsiveContainer,
@@ -29,6 +29,10 @@ import {
   Tooltip,
   LineChart,
   Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/nps/")({
@@ -39,6 +43,51 @@ const MESES_PT = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
   "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ];
+
+// Paleta vibrante
+const COLOR_PROMOTOR = "#10b981"; // emerald-500
+const COLOR_NEUTRO = "#f59e0b"; // amber-500
+const COLOR_DETRATOR = "#ef4444"; // red-500
+const COLOR_LINE = "#6366f1"; // indigo-500
+const COLOR_SERVICE_POS = "#10b981";
+const COLOR_SERVICE_NEU = "#f59e0b";
+const COLOR_SERVICE_NEG = "#ef4444";
+
+// Faixas Bain & Co
+function classificarBain(nps: number): {
+  label: string;
+  color: string;
+  bg: string;
+  hex: string;
+} {
+  if (nps >= 75)
+    return {
+      label: "Excelência",
+      color: "text-emerald-700",
+      bg: "bg-emerald-500/15 border-emerald-500/40",
+      hex: "#10b981",
+    };
+  if (nps >= 50)
+    return {
+      label: "Qualidade",
+      color: "text-blue-700",
+      bg: "bg-blue-500/15 border-blue-500/40",
+      hex: "#3b82f6",
+    };
+  if (nps >= 1)
+    return {
+      label: "Aperfeiçoamento",
+      color: "text-amber-700",
+      bg: "bg-amber-500/15 border-amber-500/40",
+      hex: "#f59e0b",
+    };
+  return {
+    label: "Crítica",
+    color: "text-red-700",
+    bg: "bg-red-500/15 border-red-500/40",
+    hex: "#ef4444",
+  };
+}
 
 function NpsDashboard() {
   const [filtroProduto, setFiltroProduto] = useState<string>("todos");
@@ -110,16 +159,48 @@ function NpsDashboard() {
     [respostasFiltradas],
   );
 
-  const distribuicao = useMemo(() => {
-    const counts: Record<number, number> = {};
-    for (let i = 0; i <= 10; i++) counts[i] = 0;
-    for (const r of respostasFiltradas) counts[r.score] = (counts[r.score] ?? 0) + 1;
-    return Object.entries(counts).map(([nota, qtd]) => ({
-      nota,
-      qtd,
-      tipo: classifyNps(Number(nota)),
-    }));
+  const bain = classificarBain(stats.nps);
+
+  // Clientes únicos respondentes + a tratar (detratores únicos)
+  const clientesStats = useMemo(() => {
+    const unicos = new Set<string>();
+    const aTratar = new Set<string>();
+    for (const r of respostasFiltradas) {
+      unicos.add(r.cliente_id);
+      if (r.score <= 6) aTratar.add(r.cliente_id);
+    }
+    return { unicos: unicos.size, aTratar: aTratar.size };
   }, [respostasFiltradas]);
+
+  // Distribuição donut
+  const distribuicaoDonut = useMemo(
+    () => [
+      { name: "Promotores", value: stats.promotores, color: COLOR_PROMOTOR },
+      { name: "Neutros", value: stats.neutros, color: COLOR_NEUTRO },
+      { name: "Detratores", value: stats.detratores, color: COLOR_DETRATOR },
+    ],
+    [stats],
+  );
+
+  // NPS por serviço (plano)
+  const npsPorServico = useMemo(() => {
+    const buckets = new Map<string, number[]>();
+    for (const r of respostasFiltradas) {
+      const c = clientesById.get(r.cliente_id);
+      const plano = c?.plano ?? "Sem plano";
+      const arr = buckets.get(plano) ?? [];
+      arr.push(r.score);
+      buckets.set(plano, arr);
+    }
+    return Array.from(buckets.entries())
+      .map(([plano, scores]) => {
+        const s = calcNps(scores);
+        const color =
+          s.nps >= 50 ? COLOR_SERVICE_POS : s.nps >= 0 ? COLOR_SERVICE_NEU : COLOR_SERVICE_NEG;
+        return { plano, nps: s.nps, qtd: s.total, color };
+      })
+      .sort((a, b) => b.nps - a.nps);
+  }, [respostasFiltradas, clientesById]);
 
   const evolucaoMensal = useMemo(() => {
     const buckets = new Map<string, number[]>();
@@ -200,24 +281,143 @@ function NpsDashboard() {
           </div>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {/* KPIs com cores */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
           <KpiCard
             label="NPS"
             value={stats.nps}
             icon={Star}
-            accent={stats.nps >= 50 ? "emerald" : stats.nps >= 0 ? "amber" : "red"}
-            sub={stats.nps >= 50 ? "Excelente" : stats.nps >= 0 ? "Razoável" : "Crítico"}
+            accent={
+              stats.nps >= 75 ? "emerald"
+              : stats.nps >= 50 ? "blue"
+              : stats.nps >= 1 ? "amber"
+              : "red"
+            }
+            sub={bain.label}
+            highlight
           />
-          <KpiCard label="Nota média" value={stats.media.toFixed(1)} icon={TrendingUp} accent="blue" />
+          <KpiCard label="Nota média" value={stats.media.toFixed(1)} icon={TrendingUp} accent="indigo" />
           <KpiCard label="Respostas" value={stats.total} icon={Star} accent="violet" />
           <KpiCard label="Promotores" value={stats.promotores} icon={Smile} accent="emerald" />
           <KpiCard label="Neutros" value={stats.neutros} icon={Meh} accent="amber" />
           <KpiCard label="Detratores" value={stats.detratores} icon={Frown} accent="red" />
+          <KpiCard label="A tratar" value={clientesStats.aTratar} icon={Award} accent="pink" sub={`${clientesStats.unicos} clientes`} />
         </div>
 
-        {/* Gráficos */}
+        {/* Faixas Bain */}
+        <Card className="border-l-4" style={{ borderLeftColor: bain.hex }}>
+          <CardContent className="flex flex-wrap items-center gap-4 p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold">Faixas NPS (Bain & Co):</span>
+            </div>
+            <FaixaPill color="#10b981" label="Excelência ≥ 75" active={stats.nps >= 75} />
+            <FaixaPill color="#3b82f6" label="Qualidade 50–74" active={stats.nps >= 50 && stats.nps < 75} />
+            <FaixaPill color="#f59e0b" label="Aperfeiçoamento 1–49" active={stats.nps >= 1 && stats.nps < 50} />
+            <FaixaPill color="#ef4444" label="Crítica ≤ 0" active={stats.nps <= 0} />
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Classificação atual:</span>
+              <Badge variant="outline" className={`${bain.bg} ${bain.color} font-semibold`}>
+                {bain.label}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gráficos principais */}
         <div className="grid gap-4 lg:grid-cols-2">
+          {/* Donut */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Distribuição de respostas</CardTitle>
+              <CardDescription>Promotores, neutros e detratores.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={distribuicaoDonut}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={110}
+                      paddingAngle={3}
+                      stroke="none"
+                    >
+                      {distribuicaoDonut.map((d) => (
+                        <Cell key={d.name} fill={d.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* NPS por serviço */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">NPS por serviço</CardTitle>
+              <CardDescription>Pontuação por produto/plano.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                {npsPorServico.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Sem dados no período.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={npsPorServico} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="plano"
+                        tick={{ fontSize: 11 }}
+                        angle={-15}
+                        textAnchor="end"
+                        height={50}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} domain={[-100, 100]} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        formatter={(value: number, _name, p: any) => [
+                          `NPS ${value} (${p.payload.qtd} resp.)`,
+                          p.payload.plano,
+                        ]}
+                      />
+                      <Bar dataKey="nps" radius={[6, 6, 0, 0]}>
+                        {npsPorServico.map((d) => (
+                          <Cell key={d.plano} fill={d.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Distribuição por nota */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Distribuição de notas</CardTitle>
@@ -226,7 +426,24 @@ function NpsDashboard() {
             <CardContent>
               <div className="h-[260px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={distribuicao}>
+                  <BarChart
+                    data={(() => {
+                      const counts: Record<number, number> = {};
+                      for (let i = 0; i <= 10; i++) counts[i] = 0;
+                      for (const r of respostasFiltradas)
+                        counts[r.score] = (counts[r.score] ?? 0) + 1;
+                      return Object.entries(counts).map(([nota, qtd]) => ({
+                        nota,
+                        qtd,
+                        color:
+                          classifyNps(Number(nota)) === "promotor"
+                            ? COLOR_PROMOTOR
+                            : classifyNps(Number(nota)) === "neutro"
+                            ? COLOR_NEUTRO
+                            : COLOR_DETRATOR,
+                      }));
+                    })()}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="nota" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
@@ -238,17 +455,25 @@ function NpsDashboard() {
                         fontSize: 12,
                       }}
                     />
-                    <Bar dataKey="qtd" radius={[4, 4, 0, 0]}>
-                      {distribuicao.map((d) => (
-                        <rect
-                          key={d.nota}
-                          fill={
-                            d.tipo === "promotor" ? "#059669"
-                              : d.tipo === "neutro" ? "#d97706"
-                              : "#dc2626"
-                          }
-                        />
-                      ))}
+                    <Bar dataKey="qtd" radius={[6, 6, 0, 0]}>
+                      {(() => {
+                        const counts: Record<number, number> = {};
+                        for (let i = 0; i <= 10; i++) counts[i] = 0;
+                        for (const r of respostasFiltradas)
+                          counts[r.score] = (counts[r.score] ?? 0) + 1;
+                        return Object.entries(counts).map(([nota]) => (
+                          <Cell
+                            key={nota}
+                            fill={
+                              classifyNps(Number(nota)) === "promotor"
+                                ? COLOR_PROMOTOR
+                                : classifyNps(Number(nota)) === "neutro"
+                                ? COLOR_NEUTRO
+                                : COLOR_DETRATOR
+                            }
+                          />
+                        ));
+                      })()}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -256,9 +481,10 @@ function NpsDashboard() {
             </CardContent>
           </Card>
 
+          {/* Evolução */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Evolução do NPS</CardTitle>
+              <CardTitle className="text-base">Evolução do NPS por mês</CardTitle>
               <CardDescription>NPS mensal nos últimos 12 meses.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -276,7 +502,14 @@ function NpsDashboard() {
                         fontSize: 12,
                       }}
                     />
-                    <Line type="monotone" dataKey="nps" stroke="#059669" strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="nps"
+                      stroke={COLOR_LINE}
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: COLOR_LINE }}
+                      activeDot={{ r: 6 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -295,13 +528,13 @@ function NpsDashboard() {
               const c = clientesById.get(r.cliente_id);
               const tipo = classifyNps(r.score);
               const cls =
-                tipo === "promotor" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
-                  : tipo === "neutro" ? "bg-amber-500/15 text-amber-700 border-amber-500/30"
-                  : "bg-red-500/15 text-red-700 border-red-500/30";
+                tipo === "promotor" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40"
+                  : tipo === "neutro" ? "bg-amber-500/15 text-amber-700 border-amber-500/40"
+                  : "bg-red-500/15 text-red-700 border-red-500/40";
               return (
-                <div key={r.id} className="rounded-lg border p-3">
+                <div key={r.id} className="rounded-lg border p-3 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={cls}>NPS {r.score}</Badge>
+                    <Badge variant="outline" className={`${cls} font-semibold`}>NPS {r.score}</Badge>
                     <Link
                       to="/clientes/$clienteId"
                       params={{ clienteId: r.cliente_id }}
@@ -330,39 +563,58 @@ function NpsDashboard() {
   );
 }
 
+function FaixaPill({ color, label, active }: { color: string; label: string; active: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-all ${
+        active ? "border-2 font-semibold shadow-sm" : "border-border/60 opacity-70"
+      }`}
+      style={active ? { borderColor: color, background: `${color}15` } : {}}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+      <span style={active ? { color } : {}}>{label}</span>
+    </div>
+  );
+}
+
 function KpiCard({
   label,
   value,
   icon: Icon,
   accent,
   sub,
+  highlight,
 }: {
   label: string;
   value: string | number;
   icon: any;
-  accent: "emerald" | "red" | "amber" | "blue" | "violet";
+  accent: "emerald" | "red" | "amber" | "blue" | "violet" | "indigo" | "pink";
   sub?: string;
+  highlight?: boolean;
 }) {
-  const colors: Record<string, string> = {
-    emerald: "text-emerald-600 bg-emerald-500/10",
-    red: "text-red-600 bg-red-500/10",
-    amber: "text-amber-600 bg-amber-500/10",
-    blue: "text-blue-600 bg-blue-500/10",
-    violet: "text-violet-600 bg-violet-500/10",
+  const colors: Record<string, { icon: string; ring: string; text: string }> = {
+    emerald: { icon: "text-white bg-emerald-500", ring: "ring-emerald-500/30", text: "text-emerald-600" },
+    red: { icon: "text-white bg-red-500", ring: "ring-red-500/30", text: "text-red-600" },
+    amber: { icon: "text-white bg-amber-500", ring: "ring-amber-500/30", text: "text-amber-600" },
+    blue: { icon: "text-white bg-blue-500", ring: "ring-blue-500/30", text: "text-blue-600" },
+    violet: { icon: "text-white bg-violet-500", ring: "ring-violet-500/30", text: "text-violet-600" },
+    indigo: { icon: "text-white bg-indigo-500", ring: "ring-indigo-500/30", text: "text-indigo-600" },
+    pink: { icon: "text-white bg-pink-500", ring: "ring-pink-500/30", text: "text-pink-600" },
   };
+  const c = colors[accent];
   return (
-    <Card>
+    <Card className={highlight ? `ring-2 ${c.ring}` : ""}>
       <CardContent className="flex flex-col gap-2 p-4">
         <div className="flex items-center gap-3">
-          <div className={`rounded-md p-2 ${colors[accent]}`}>
+          <div className={`rounded-lg p-2 shadow-sm ${c.icon}`}>
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+            <div className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
               {label}
             </div>
-            <div className="text-xl font-semibold tabular-nums">{value}</div>
-            {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+            <div className={`text-2xl font-bold tabular-nums ${highlight ? c.text : ""}`}>{value}</div>
+            {sub && <div className="text-[10px] font-medium text-muted-foreground">{sub}</div>}
           </div>
         </div>
       </CardContent>
