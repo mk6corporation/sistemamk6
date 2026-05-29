@@ -208,7 +208,20 @@ function AdminMetricas() {
           </CardHeader>
           <CardContent><p className="text-2xl font-semibold">{totalClientesAtivos}</p></CardContent>
         </Card>
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() =>
+            setDrilldown({ title: "Steps em atraso", items: atrasosDetalhe })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setDrilldown({ title: "Steps em atraso", items: atrasosDetalhe });
+            }
+          }}
+          className="cursor-pointer transition-colors hover:bg-accent/40"
+        >
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
               <AlertTriangle className="h-3 w-3" /> Steps em atraso
@@ -218,8 +231,12 @@ function AdminMetricas() {
             <p className={`text-2xl font-semibold ${totalAtrasados > 0 ? "text-red-600" : "text-emerald-600"}`}>
               {totalAtrasados}
             </p>
+            <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              Clique para ver clientes
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
