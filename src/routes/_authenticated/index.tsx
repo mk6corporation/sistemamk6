@@ -1256,3 +1256,97 @@ function EstagioSelect({ clienteId, estagio }: { clienteId: string; estagio: str
 }
 
 
+type RenovacaoItem = {
+  id: string;
+  clienteId: string;
+  nome: string;
+  operacional: Array<{ id: string; name: string; avatar_url: string | null }>;
+  inicio: Date | null;
+  fim: Date | null;
+  fee: number | null;
+  valorTotal: number | null;
+};
+
+function RenovacoesKpi({ mesLabel, itens }: { mesLabel: string; itens: RenovacaoItem[] }) {
+  const [open, setOpen] = useState(false);
+  const total = itens.length;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button type="button" className="text-left">
+          <Card className="cursor-pointer transition hover:shadow-md">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-md p-2 text-violet-600 bg-violet-500/10">
+                <RotateCw className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs text-muted-foreground">
+                  Renovações em {mesLabel}
+                </p>
+                <p className="text-2xl font-semibold tabular-nums">{total}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Renovações em {mesLabel}</DialogTitle>
+          <DialogDescription>
+            Clientes que renovaram o contrato no mês selecionado.
+          </DialogDescription>
+        </DialogHeader>
+        {total === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhuma renovação registrada neste mês.
+          </p>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Operacional</TableHead>
+                  <TableHead className="text-right">Início</TableHead>
+                  <TableHead className="text-right">Fim</TableHead>
+                  <TableHead className="text-right">Fee</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {itens.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        to="/clientes/$clienteId"
+                        params={{ clienteId: r.clienteId }}
+                        className="hover:underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        {r.nome}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.operacional.map((o) => o.name).join(", ") || "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {r.inicio ? r.inicio.toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {r.fim ? r.fim.toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {formatMoney(r.fee)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+
