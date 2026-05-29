@@ -443,8 +443,6 @@ function NpsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
                     <Pie
                       data={distribuicaoDonut}
                       dataKey="value"
@@ -455,6 +453,21 @@ function NpsDashboard() {
                       outerRadius={110}
                       paddingAngle={3}
                       stroke="none"
+                      onClick={(slice: any) => {
+                        const name = slice?.name as string;
+                        const filtro =
+                          name === "Promotores"
+                            ? (r: NpsResposta) => r.score >= 9
+                            : name === "Neutros"
+                            ? (r: NpsResposta) => r.score >= 7 && r.score <= 8
+                            : (r: NpsResposta) => r.score <= 6;
+                        setDrilldown({
+                          title: name,
+                          description: `${respostasFiltradas.filter(filtro).length} respostas`,
+                          respostas: respostasFiltradas.filter(filtro),
+                        });
+                      }}
+                      className="cursor-pointer"
                     >
                       {distribuicaoDonut.map((d) => (
                         <Cell key={d.name} fill={d.color} />
