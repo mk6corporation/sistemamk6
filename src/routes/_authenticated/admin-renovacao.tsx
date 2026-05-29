@@ -44,6 +44,7 @@ type Cliente = {
   valor_mensal: number | null;
   removido_em: string | null;
   operacional: Array<{ id?: string; name?: string }> | null;
+  estagio: string | null;
 };
 
 type Equipe = {
