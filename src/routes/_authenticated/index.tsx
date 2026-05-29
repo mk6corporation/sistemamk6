@@ -47,6 +47,7 @@ import {
   Trash2,
   Sparkles,
   LineChart as LineChartIcon,
+  CalendarClock,
 } from "lucide-react";
 import {
   ResponsiveContainer,
