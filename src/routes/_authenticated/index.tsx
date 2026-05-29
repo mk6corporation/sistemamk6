@@ -1063,12 +1063,7 @@ function VencimentosCard({
                     {(c.operacional ?? []).map((o) => o.name).join(", ") || "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={CATEGORIA_STYLE[c.categoria ?? "OUTRO"]}
-                    >
-                      {c.estagio ?? "—"}
-                    </Badge>
+                    <EstagioSelect clienteId={c.id} estagio={c.estagio} />
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {c._fim.toLocaleDateString("pt-BR")}
