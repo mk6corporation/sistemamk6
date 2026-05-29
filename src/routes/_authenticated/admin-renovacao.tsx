@@ -130,6 +130,7 @@ function AdminRenovacao() {
   }, [equipeQuery.data]);
 
   // Filtros
+  const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroGestor, setFiltroGestor] = useState("todos");
   const [filtroCs, setFiltroCs] = useState("todos");
   const [filtroVendedor, setFiltroVendedor] = useState("todos");
