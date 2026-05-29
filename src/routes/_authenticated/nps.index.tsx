@@ -530,7 +530,23 @@ function NpsDashboard() {
                           p.payload.plano,
                         ]}
                       />
-                      <Bar dataKey="nps" radius={[6, 6, 0, 0]}>
+                      <Bar
+                        dataKey="nps"
+                        radius={[6, 6, 0, 0]}
+                        className="cursor-pointer"
+                        onClick={(d: any) => {
+                          const plano = d?.plano as string;
+                          const lista = respostasFiltradas.filter((r) => {
+                            const c = clientesById.get(r.cliente_id);
+                            return (c?.plano ?? "Sem plano") === plano;
+                          });
+                          setDrilldown({
+                            title: `Serviço: ${plano}`,
+                            description: `${lista.length} respostas • NPS ${d?.nps}`,
+                            respostas: lista,
+                          });
+                        }}
+                      >
                         {npsPorServico.map((d) => (
                           <Cell key={d.plano} fill={d.color} />
                         ))}
