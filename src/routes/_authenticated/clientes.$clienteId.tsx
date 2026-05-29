@@ -364,11 +364,33 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
       };
       const { error } = await supabase.from("contratos").update(payload).eq("id", contratoId);
       if (error) throw error;
+
+      // Sincroniza clientes.fim_contrato / inicio_contrato com o contrato mais recente
+      const { data: all } = await supabase
+        .from("contratos")
+        .select("inicio_contrato,fim_contrato")
+        .eq("cliente_id", clienteId);
+      const fins = (all ?? [])
+        .map((c: any) => c.fim_contrato)
+        .filter(Boolean)
+        .sort();
+      const inicios = (all ?? [])
+        .map((c: any) => c.inicio_contrato)
+        .filter(Boolean)
+        .sort();
+      const maiorFim = fins.length ? fins[fins.length - 1] : null;
+      const menorInicio = inicios.length ? inicios[0] : null;
+      await supabase
+        .from("clientes")
+        .update({ fim_contrato: maiorFim, inicio_contrato: menorInicio })
+        .eq("id", clienteId);
     },
     onSuccess: () => {
       toast.success("Contrato salvo!");
       qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
       qc.invalidateQueries({ queryKey: ["contrato", contratoId] });
+      qc.invalidateQueries({ queryKey: ["cliente", clienteId] });
+      qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
