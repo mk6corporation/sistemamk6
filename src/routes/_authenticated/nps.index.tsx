@@ -669,9 +669,17 @@ function NpsDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <DrilldownDialog
+        open={!!drilldown}
+        onOpenChange={(o) => !o && setDrilldown(null)}
+        data={drilldown}
+        clientesById={clientesById}
+      />
     </div>
   );
 }
+
 
 function FaixaPill({ color, label, active }: { color: string; label: string; active: boolean }) {
   return (
