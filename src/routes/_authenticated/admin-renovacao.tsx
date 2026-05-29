@@ -104,7 +104,7 @@ function AdminRenovacao() {
       const { data, error } = await supabase
         .from("clientes")
         .select(
-          "id,nome,categoria,plano,fim_contrato,resultado_renovacao,valor_mensal,removido_em,operacional",
+          "id,nome,categoria,plano,fim_contrato,resultado_renovacao,valor_mensal,removido_em,operacional,estagio",
         );
       if (error) throw error;
       return ((data ?? []) as Cliente[]).filter((c) => !c.removido_em);
