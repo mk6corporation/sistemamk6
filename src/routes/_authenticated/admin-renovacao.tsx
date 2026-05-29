@@ -267,7 +267,7 @@ function AdminRenovacao() {
   type RankRow = { nome: string; renovou: number; nao: number; total: number; taxa: number };
   function ranking(key: "gestor_nome" | "cs_nome" | "vendedor_nome"): RankRow[] {
     const m = new Map<string, { renovou: number; nao: number; total: number }>();
-    (clientesQuery.data ?? []).filter(aplicaFiltros).forEach((c) => {
+    (clientesBase ?? []).filter(aplicaFiltros).forEach((c) => {
       const dias = diasParaVencer(c.fim_contrato, hoje);
       if (dias === null || dias > 0) return;
       const cls = classifyResultado(c.resultado_renovacao);
