@@ -694,6 +694,7 @@ function KpiCard({
   accent,
   sub,
   highlight,
+  onClick,
 }: {
   label: string;
   value: string | number;
@@ -701,6 +702,7 @@ function KpiCard({
   accent: "emerald" | "red" | "amber" | "blue" | "violet" | "indigo" | "pink";
   sub?: string;
   highlight?: boolean;
+  onClick?: () => void;
 }) {
   const colors: Record<string, { icon: string; ring: string; text: string }> = {
     emerald: { icon: "text-white bg-emerald-500", ring: "ring-emerald-500/30", text: "text-emerald-600" },
@@ -712,8 +714,26 @@ function KpiCard({
     pink: { icon: "text-white bg-pink-500", ring: "ring-pink-500/30", text: "text-pink-600" },
   };
   const c = colors[accent];
+  const clickable = !!onClick;
   return (
-    <Card className={highlight ? `ring-2 ${c.ring}` : ""}>
+    <Card
+      className={`${highlight ? `ring-2 ${c.ring}` : ""} ${
+        clickable ? "cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5" : ""
+      }`}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+    >
       <CardContent className="flex flex-col gap-2 p-4">
         <div className="flex items-center gap-3">
           <div className={`rounded-lg p-2 shadow-sm ${c.icon}`}>
@@ -731,3 +751,86 @@ function KpiCard({
     </Card>
   );
 }
+
+function DrilldownDialog({
+  open,
+  onOpenChange,
+  data,
+  clientesById,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  data: { title: string; description?: string; respostas: NpsResposta[] } | null;
+  clientesById: Map<string, { id: string; nome: string; plano: string | null }>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{data?.title ?? ""}</DialogTitle>
+          {data?.description && <DialogDescription>{data.description}</DialogDescription>}
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-auto">
+          {!data || data.respostas.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhum cliente nesta seleção.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">Nota</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead>Comentário</TableHead>
+                  <TableHead className="text-right">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.respostas.map((r) => {
+                  const c = clientesById.get(r.cliente_id);
+                  const tipo = classifyNps(r.score);
+                  const cls =
+                    tipo === "promotor"
+                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40"
+                      : tipo === "neutro"
+                      ? "bg-amber-500/15 text-amber-700 border-amber-500/40"
+                      : "bg-red-500/15 text-red-700 border-red-500/40";
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <Badge variant="outline" className={`${cls} font-semibold`}>
+                          {r.score}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/clientes/$clienteId"
+                          params={{ clienteId: r.cliente_id }}
+                          className="hover:underline"
+                          onClick={() => onOpenChange(false)}
+                        >
+                          {c?.nome ?? "—"}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {c?.plano ?? "—"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                        {r.comentario ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                        {new Date(r.respondido_em).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
