@@ -114,6 +114,34 @@ function AdminMetricas() {
       .sort((a, b) => b.atrasados - a.atrasados);
   }, [steps, clienteById, hoje]);
 
+  // Lista detalhada de steps atrasados (para drilldown)
+  const atrasosDetalhe = useMemo<AtrasoItem[]>(() => {
+    const out: AtrasoItem[] = [];
+    (steps ?? []).forEach((s) => {
+      if (s.status === "concluido") return;
+      if (!s.data_prevista || s.data_prevista >= hoje) return;
+      const cliente = clienteById.get(s.cliente_id);
+      if (!cliente) return;
+      const colabs = (cliente.operacional ?? []).map((m) => m?.name).filter(Boolean) as string[];
+      const diasAtraso = Math.floor(
+        (new Date(hoje).getTime() - new Date(s.data_prevista).getTime()) / 86400000,
+      );
+      out.push({
+        cliente_id: s.cliente_id,
+        cliente_nome: cliente.nome,
+        fase: s.fase,
+        ordem: s.ordem,
+        data_prevista: s.data_prevista,
+        diasAtraso,
+        responsaveis: colabs.length > 0 ? colabs.join(", ") : "(Sem responsável)",
+      });
+    });
+    return out.sort((a, b) => b.diasAtraso - a.diasAtraso);
+  }, [steps, clienteById, hoje]);
+
+  const [drilldown, setDrilldown] = useState<{ title: string; items: AtrasoItem[] } | null>(null);
+
+
   // Clientes por fase + tempo médio na fase
   const fasesStat = useMemo(() => {
     // Determina fase atual de cada cliente
