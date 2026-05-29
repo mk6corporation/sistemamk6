@@ -302,6 +302,7 @@ function NpsDashboard() {
         </div>
 
         {/* KPIs com cores */}
+        {/* KPIs com cores */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
           <KpiCard
             label="NPS"
@@ -315,14 +316,103 @@ function NpsDashboard() {
             }
             sub={bain.label}
             highlight
+            onClick={() =>
+              setDrilldown({
+                title: `Todas as respostas — ${bain.label}`,
+                description: `NPS ${stats.nps} • ${stats.total} respostas`,
+                respostas: respostasFiltradas,
+              })
+            }
           />
-          <KpiCard label="Nota média" value={stats.media.toFixed(1)} icon={TrendingUp} accent="indigo" />
-          <KpiCard label="Respostas" value={stats.total} icon={Star} accent="violet" />
-          <KpiCard label="Promotores" value={stats.promotores} icon={Smile} accent="emerald" />
-          <KpiCard label="Neutros" value={stats.neutros} icon={Meh} accent="amber" />
-          <KpiCard label="Detratores" value={stats.detratores} icon={Frown} accent="red" />
-          <KpiCard label="A tratar" value={clientesStats.aTratar} icon={Award} accent="pink" sub={`${clientesStats.unicos} clientes`} />
+          <KpiCard
+            label="Nota média"
+            value={stats.media.toFixed(1)}
+            icon={TrendingUp}
+            accent="indigo"
+            onClick={() =>
+              setDrilldown({
+                title: "Todas as respostas",
+                description: `Nota média ${stats.media.toFixed(1)}`,
+                respostas: respostasFiltradas,
+              })
+            }
+          />
+          <KpiCard
+            label="Respostas"
+            value={stats.total}
+            icon={Star}
+            accent="violet"
+            onClick={() =>
+              setDrilldown({
+                title: "Todas as respostas",
+                description: `${stats.total} respostas no período`,
+                respostas: respostasFiltradas,
+              })
+            }
+          />
+          <KpiCard
+            label="Promotores"
+            value={stats.promotores}
+            icon={Smile}
+            accent="emerald"
+            onClick={() =>
+              setDrilldown({
+                title: "Promotores (notas 9–10)",
+                description: `${stats.promotores} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score >= 9),
+              })
+            }
+          />
+          <KpiCard
+            label="Neutros"
+            value={stats.neutros}
+            icon={Meh}
+            accent="amber"
+            onClick={() =>
+              setDrilldown({
+                title: "Neutros (notas 7–8)",
+                description: `${stats.neutros} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score >= 7 && r.score <= 8),
+              })
+            }
+          />
+          <KpiCard
+            label="Detratores"
+            value={stats.detratores}
+            icon={Frown}
+            accent="red"
+            onClick={() =>
+              setDrilldown({
+                title: "Detratores (notas 0–6)",
+                description: `${stats.detratores} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score <= 6),
+              })
+            }
+          />
+          <KpiCard
+            label="A tratar"
+            value={clientesStats.aTratar}
+            icon={Award}
+            accent="pink"
+            sub={`${clientesStats.unicos} clientes`}
+            onClick={() => {
+              const ids = new Set<string>();
+              const lista: NpsResposta[] = [];
+              for (const r of respostasFiltradas) {
+                if (r.score <= 6 && !ids.has(r.cliente_id)) {
+                  ids.add(r.cliente_id);
+                  lista.push(r);
+                }
+              }
+              setDrilldown({
+                title: "Clientes a tratar",
+                description: `${ids.size} clientes detratores únicos`,
+                respostas: lista,
+              });
+            }}
+          />
         </div>
+
 
         {/* Faixas Bain */}
         <Card className="border-l-4" style={{ borderLeftColor: bain.hex }}>
