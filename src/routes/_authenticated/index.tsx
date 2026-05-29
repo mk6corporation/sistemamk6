@@ -78,6 +78,7 @@ type Cliente = {
   plano: string | null;
   operacional: Array<{ id: string; name: string; avatar_url: string | null }> | null;
   inicio_contrato: string | null;
+  fim_contrato: string | null;
   valor_mensal: number | null;
   removido_em: string | null;
   notion_last_edited_time: string | null;
