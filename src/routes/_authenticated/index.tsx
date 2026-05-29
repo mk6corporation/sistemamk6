@@ -47,6 +47,7 @@ import {
   Trash2,
   Sparkles,
   LineChart as LineChartIcon,
+  CalendarClock,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -77,6 +78,7 @@ type Cliente = {
   plano: string | null;
   operacional: Array<{ id: string; name: string; avatar_url: string | null }> | null;
   inicio_contrato: string | null;
+  fim_contrato: string | null;
   valor_mensal: number | null;
   removido_em: string | null;
   notion_last_edited_time: string | null;
@@ -551,6 +553,38 @@ function Dashboard() {
     return { entradas, saidas, saldo: entradas - saidas };
   }, [diarioMes]);
 
+  // ===== Projetos a vencer (mês atual do filtro + mês seguinte) =====
+  const vencimentos = useMemo(() => {
+    const mes = comparacaoMes.mes.date;
+    const anoAtual = mes.getFullYear();
+    const mesAtual = mes.getMonth();
+    const anoProx = mesAtual === 11 ? anoAtual + 1 : anoAtual;
+    const mesProx = (mesAtual + 1) % 12;
+
+    const labelAtual = formatMes(mes);
+    const labelProx = formatMes(new Date(anoProx, mesProx, 1));
+
+    type Item = Cliente & { _fim: Date };
+    const noMes: Item[] = [];
+    const noProx: Item[] = [];
+
+    for (const c of clientesFiltrados) {
+      if (!c.fim_contrato) continue;
+      // tratar como data local (YYYY-MM-DD)
+      const [y, m, d] = c.fim_contrato.split("-").map(Number);
+      if (!y || !m || !d) continue;
+      const dt = new Date(y, m - 1, d);
+      if (dt.getFullYear() === anoAtual && dt.getMonth() === mesAtual) {
+        noMes.push({ ...c, _fim: dt });
+      } else if (dt.getFullYear() === anoProx && dt.getMonth() === mesProx) {
+        noProx.push({ ...c, _fim: dt });
+      }
+    }
+    noMes.sort((a, b) => a._fim.getTime() - b._fim.getTime());
+    noProx.sort((a, b) => a._fim.getTime() - b._fim.getTime());
+    return { noMes, noProx, labelAtual, labelProx };
+  }, [clientesFiltrados, comparacaoMes]);
+
 
 
   const ultimaSync = runsQuery.data?.[0] as any;
@@ -887,8 +921,104 @@ function Dashboard() {
           </Card>
         </div>
 
+        {/* Projetos a vencer */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <VencimentosCard
+            title={`Vencem em ${vencimentos.labelAtual}`}
+            description="Clientes cujo projeto vence no mês selecionado no filtro."
+            itens={vencimentos.noMes}
+            accent="amber"
+          />
+          <VencimentosCard
+            title={`Vencem em ${vencimentos.labelProx}`}
+            description="Clientes cujo projeto vence no mês seguinte."
+            itens={vencimentos.noProx}
+            accent="blue"
+          />
+        </div>
+
       </div>
     </div>
+  );
+}
+
+function VencimentosCard({
+  title,
+  description,
+  itens,
+  accent,
+}: {
+  title: string;
+  description: string;
+  itens: Array<Cliente & { _fim: Date }>;
+  accent: "amber" | "blue";
+}) {
+  const accentCls =
+    accent === "amber"
+      ? "text-amber-600 bg-amber-500/10"
+      : "text-blue-600 bg-blue-500/10";
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <div className={`rounded-md p-2 ${accentCls}`}>
+            <CalendarClock className="h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          <Badge variant="secondary" className="ml-auto">{itens.length}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {itens.length === 0 ? (
+          <p className="px-6 pb-6 text-sm text-muted-foreground">
+            Nenhum cliente com vencimento neste período.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Operacional</TableHead>
+                <TableHead>Estágio</TableHead>
+                <TableHead className="text-right">Vencimento</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {itens.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">
+                    <Link
+                      to="/clientes/$clienteId"
+                      params={{ clienteId: c.id }}
+                      className="hover:underline"
+                    >
+                      {c.nome}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {(c.operacional ?? []).map((o) => o.name).join(", ") || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={CATEGORIA_STYLE[c.categoria ?? "OUTRO"]}
+                    >
+                      {c.estagio ?? "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {c._fim.toLocaleDateString("pt-BR")}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
