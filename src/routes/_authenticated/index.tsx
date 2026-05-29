@@ -972,10 +972,13 @@ function VencimentosCard({
             const pausados = itens.filter((c) =>
               (c.estagio ?? "").toLowerCase().includes("pausad"),
             ).length;
-            const ativos = itens.length - pausados;
+            const churn = itens.filter((c) =>
+              (c.estagio ?? "").toLowerCase().includes("churn"),
+            ).length;
+            const ativos = itens.length - pausados - churn;
             return (
               <div className="ml-auto flex items-center gap-1.5">
-                <Badge variant="secondary" title="Ativos (sem pausados)">
+                <Badge variant="secondary" title="Ativos (sem pausados e churn)">
                   {ativos}
                 </Badge>
                 <Badge
@@ -985,9 +988,17 @@ function VencimentosCard({
                 >
                   {pausados} pausad{pausados === 1 ? "o" : "os"}
                 </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
+                  title="Churn"
+                >
+                  {churn} churn
+                </Badge>
               </div>
             );
           })()}
+
         </div>
       </CardHeader>
       <CardContent className="p-0">
