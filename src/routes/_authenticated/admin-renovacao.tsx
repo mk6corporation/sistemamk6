@@ -235,7 +235,7 @@ function AdminRenovacao() {
 
   // Taxa de renovação histórica (clientes com fim_contrato passado, com resultado preenchido)
   const taxaRenovacao = useMemo(() => {
-    const todos = (clientesQuery.data ?? []).filter(aplicaFiltros);
+    const todos = (clientesBase ?? []).filter(aplicaFiltros);
     const decididos = todos.filter((c) => {
       if (!c.fim_contrato) return false;
       const d = diasParaVencer(c.fim_contrato, hoje);
@@ -253,9 +253,10 @@ function AdminRenovacao() {
     return { renovou, naoRenovou, total, taxa };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    clientesQuery.data,
+    clientesBase,
     hoje,
     equipeByCliente,
+    filtroStatus,
     filtroGestor,
     filtroCs,
     filtroVendedor,
