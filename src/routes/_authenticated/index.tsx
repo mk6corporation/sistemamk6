@@ -552,6 +552,38 @@ function Dashboard() {
     return { entradas, saidas, saldo: entradas - saidas };
   }, [diarioMes]);
 
+  // ===== Projetos a vencer (mês atual do filtro + mês seguinte) =====
+  const vencimentos = useMemo(() => {
+    const mes = comparacaoMes.mes.date;
+    const anoAtual = mes.getFullYear();
+    const mesAtual = mes.getMonth();
+    const anoProx = mesAtual === 11 ? anoAtual + 1 : anoAtual;
+    const mesProx = (mesAtual + 1) % 12;
+
+    const labelAtual = formatMes(mes);
+    const labelProx = formatMes(new Date(anoProx, mesProx, 1));
+
+    type Item = Cliente & { _fim: Date };
+    const noMes: Item[] = [];
+    const noProx: Item[] = [];
+
+    for (const c of clientesFiltrados) {
+      if (!c.fim_contrato) continue;
+      // tratar como data local (YYYY-MM-DD)
+      const [y, m, d] = c.fim_contrato.split("-").map(Number);
+      if (!y || !m || !d) continue;
+      const dt = new Date(y, m - 1, d);
+      if (dt.getFullYear() === anoAtual && dt.getMonth() === mesAtual) {
+        noMes.push({ ...c, _fim: dt });
+      } else if (dt.getFullYear() === anoProx && dt.getMonth() === mesProx) {
+        noProx.push({ ...c, _fim: dt });
+      }
+    }
+    noMes.sort((a, b) => a._fim.getTime() - b._fim.getTime());
+    noProx.sort((a, b) => a._fim.getTime() - b._fim.getTime());
+    return { noMes, noProx, labelAtual, labelProx };
+  }, [clientesFiltrados, comparacaoMes]);
+
 
 
   const ultimaSync = runsQuery.data?.[0] as any;
