@@ -1,15 +1,41 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Loader2, BarChart3, AlertTriangle, Users, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin-metricas")({
   component: AdminMetricas,
 });
+
+type AtrasoItem = {
+  cliente_id: string;
+  cliente_nome: string;
+  fase: string;
+  ordem: number;
+  data_prevista: string | null;
+  diasAtraso: number;
+  responsaveis: string;
+};
+
 
 type OperacionalMember = { id?: string; name?: string };
 type Cliente = {
