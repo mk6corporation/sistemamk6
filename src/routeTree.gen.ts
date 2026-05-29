@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenticated/minha-rotina'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
+import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authenticated/admin-renovacao'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
@@ -56,6 +57,12 @@ const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRenovacaoRoute =
+  AuthenticatedAdminRenovacaoRouteImport.update({
+    id: '/admin-renovacao',
+    path: '/admin-renovacao',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminMetricasRoute =
   AuthenticatedAdminMetricasRouteImport.update({
     id: '/admin-metricas',
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
+  '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -132,6 +140,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
+  '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/admin-metricas': typeof AuthenticatedAdminMetricasRoute
+  '/_authenticated/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin-metricas'
+    | '/admin-renovacao'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/admin-metricas'
+    | '/admin-renovacao'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/admin-metricas'
+    | '/_authenticated/admin-renovacao'
     | '/_authenticated/feed'
     | '/_authenticated/kanban'
     | '/_authenticated/minha-rotina'
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/feed'
       fullPath: '/feed'
       preLoaderRoute: typeof AuthenticatedFeedRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin-renovacao': {
+      id: '/_authenticated/admin-renovacao'
+      path: '/admin-renovacao'
+      fullPath: '/admin-renovacao'
+      preLoaderRoute: typeof AuthenticatedAdminRenovacaoRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin-metricas': {
@@ -347,6 +367,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminMetricasRoute: typeof AuthenticatedAdminMetricasRoute
+  AuthenticatedAdminRenovacaoRoute: typeof AuthenticatedAdminRenovacaoRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
@@ -361,6 +382,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMetricasRoute: AuthenticatedAdminMetricasRoute,
+  AuthenticatedAdminRenovacaoRoute: AuthenticatedAdminRenovacaoRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,

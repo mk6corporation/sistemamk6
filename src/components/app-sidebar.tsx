@@ -12,6 +12,7 @@ import {
   Link2,
   MessageSquare,
   AlertTriangle,
+  Repeat,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const operacionalItems = [
   { title: "Clientes (Base)", url: "/clientes", icon: Users, exact: false },
   { title: "Feed de mudanças", url: "/feed", icon: Rss, exact: false },
   { title: "Métricas (admin)", url: "/admin-metricas", icon: BarChart3, exact: false },
+  { title: "Funil de Renovação", url: "/admin-renovacao", icon: Repeat, exact: false },
 ];
 
 const npsItems = [
