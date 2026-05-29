@@ -1063,12 +1063,7 @@ function VencimentosCard({
                     {(c.operacional ?? []).map((o) => o.name).join(", ") || "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={CATEGORIA_STYLE[c.categoria ?? "OUTRO"]}
-                    >
-                      {c.estagio ?? "—"}
-                    </Badge>
+                    <EstagioSelect clienteId={c.id} estagio={c.estagio} />
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {c._fim.toLocaleDateString("pt-BR")}
@@ -1139,4 +1134,60 @@ function KpiCard({
     </Card>
   );
 }
+
+const ESTAGIO_OPCOES = ["Cliente", "Pausado", "Churn"] as const;
+
+function estagioBadgeClass(estagio: string | null | undefined) {
+  const e = (estagio ?? "").toLowerCase();
+  if (e.includes("pausad")) return CATEGORIA_STYLE.PAUSADO;
+  if (e.includes("churn") && !e.includes("aviso")) return CATEGORIA_STYLE.CHURN;
+  if (e.includes("finaliz")) return CATEGORIA_STYLE.FINALIZADO;
+  if (!estagio) return CATEGORIA_STYLE.OUTRO;
+  return CATEGORIA_STYLE.ATIVO;
+}
+
+function EstagioSelect({ clienteId, estagio }: { clienteId: string; estagio: string | null }) {
+  const queryClient = useQueryClient();
+  const current = estagio ?? "Cliente";
+  const options = ESTAGIO_OPCOES.includes(current as any)
+    ? [...ESTAGIO_OPCOES]
+    : [current, ...ESTAGIO_OPCOES];
+
+  const mutation = useMutation({
+    mutationFn: async (novo: string) => {
+      const { error } = await supabase
+        .from("clientes")
+        .update({ estagio: novo })
+        .eq("id", clienteId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clientes-vencimento"] });
+      queryClient.invalidateQueries({ queryKey: ["clientes-base"] });
+      queryClient.invalidateQueries();
+    },
+  });
+
+  return (
+    <Select
+      value={current}
+      onValueChange={(v) => v !== current && mutation.mutate(v)}
+      disabled={mutation.isPending}
+    >
+      <SelectTrigger
+        className={`h-7 w-auto min-w-[110px] gap-1 rounded-full border px-2.5 py-0 text-xs font-medium ${estagioBadgeClass(current)}`}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((opt) => (
+          <SelectItem key={opt} value={opt} className="text-xs">
+            {opt}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 
