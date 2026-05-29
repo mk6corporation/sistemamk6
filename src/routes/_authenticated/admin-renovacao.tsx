@@ -191,20 +191,21 @@ function AdminRenovacao() {
 
   // Vencimentos (ATIVOS + futuro)
   const vencimentos = useMemo(() => {
-    return ativos
+    return clientesBase
       .filter(aplicaFiltros)
-      .map((c) => {
+      .map((c: Cliente) => {
         const dias = diasParaVencer(c.fim_contrato, hoje);
         const bucket = bucketize(dias);
         return { cliente: c, dias, bucket };
       })
-      .filter((v) => v.bucket !== null && v.bucket !== "futuro")
-      .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0));
+      .filter((v: { bucket: string | null }) => v.bucket !== null && v.bucket !== "futuro")
+      .sort((a: { dias: number | null }, b: { dias: number | null }) => (a.dias ?? 0) - (b.dias ?? 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    ativos,
+    clientesBase,
     hoje,
     equipeByCliente,
+    filtroStatus,
     filtroGestor,
     filtroCs,
     filtroVendedor,
