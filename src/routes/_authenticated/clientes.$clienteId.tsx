@@ -594,10 +594,14 @@ function EquipeComercialTab({ clienteId }: { clienteId: string }) {
       const { error } = await supabase.from("equipe_comercial_cliente").update({
         vendedor_nome: form.vendedor_nome, pre_vendedor_nome: form.pre_vendedor_nome,
         data_venda: form.data_venda || null, observacoes: form.observacoes,
+        gestor_nome: form.gestor_nome, cs_nome: form.cs_nome,
       }).eq("cliente_id", clienteId);
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Equipe comercial salva!"),
+    onSuccess: () => {
+      toast.success("Equipe salva!");
+      qc.invalidateQueries({ queryKey: ["equipe", clienteId] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -606,21 +610,35 @@ function EquipeComercialTab({ clienteId }: { clienteId: string }) {
   const f = (k: string) => (e: any) => setForm({ ...form, [k]: e.target.value });
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-lg"><Users className="h-5 w-5 text-primary" />Equipe Comercial</CardTitle>
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Salvar
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Field label="Vendedor"><Input value={form.vendedor_nome ?? ""} onChange={f("vendedor_nome")} placeholder="Nome do vendedor" /></Field>
-          <Field label="Pré-Vendedor (SDR)"><Input value={form.pre_vendedor_nome ?? ""} onChange={f("pre_vendedor_nome")} placeholder="Nome do SDR" /></Field>
-          <Field label="Data da Venda"><Input type="date" value={form.data_venda ?? ""} onChange={f("data_venda")} /></Field>
-        </div>
-        <Field label="Observações"><Textarea value={form.observacoes ?? ""} onChange={f("observacoes")} rows={3} /></Field>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg"><Users className="h-5 w-5 text-primary" />Equipe do Cliente</CardTitle>
+          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Salvar
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Comercial</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Vendedor"><Input value={form.vendedor_nome ?? ""} onChange={f("vendedor_nome")} placeholder="Nome do vendedor" /></Field>
+              <Field label="Pré-Vendedor (SDR)"><Input value={form.pre_vendedor_nome ?? ""} onChange={f("pre_vendedor_nome")} placeholder="Nome do SDR" /></Field>
+              <Field label="Data da Venda"><Input type="date" value={form.data_venda ?? ""} onChange={f("data_venda")} /></Field>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Operacional</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Gestor"><Input value={form.gestor_nome ?? ""} onChange={f("gestor_nome")} placeholder="Nome do gestor responsável" /></Field>
+              <Field label="CS (Sucesso do Cliente)"><Input value={form.cs_nome ?? ""} onChange={f("cs_nome")} placeholder="Nome do CS responsável" /></Field>
+            </div>
+          </div>
+
+          <Field label="Observações"><Textarea value={form.observacoes ?? ""} onChange={f("observacoes")} rows={3} /></Field>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
