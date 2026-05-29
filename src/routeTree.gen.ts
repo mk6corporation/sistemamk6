@@ -23,6 +23,7 @@ import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authent
 import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
 import { Route as AuthenticatedNpsDetratoresRouteImport } from './routes/_authenticated/nps.detratores'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
+import { Route as ApiPublicNpsSubmitRouteImport } from './routes/api/public/nps/submit'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
 
 const LoginRoute = LoginRouteImport.update({
@@ -100,6 +101,11 @@ const AuthenticatedClientesClienteIdRoute =
     path: '/clientes/$clienteId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicNpsSubmitRoute = ApiPublicNpsSubmitRouteImport.update({
+  id: '/api/public/nps/submit',
+  path: '/api/public/nps/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksNpsRoute = ApiPublicHooksNpsRouteImport.update({
   id: '/api/public/hooks/nps',
   path: '/api/public/hooks/nps',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
+  '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
+  '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
+  '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/clientes/'
     | '/nps/'
     | '/api/public/hooks/nps'
+    | '/api/public/nps/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/nps'
     | '/api/public/hooks/nps'
+    | '/api/public/nps/submit'
   id:
     | '__root__'
     | '/_authenticated'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes/'
     | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
+    | '/api/public/nps/submit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
+  ApiPublicNpsSubmitRoute: typeof ApiPublicNpsSubmitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -315,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesClienteIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/nps/submit': {
+      id: '/api/public/nps/submit'
+      path: '/api/public/nps/submit'
+      fullPath: '/api/public/nps/submit'
+      preLoaderRoute: typeof ApiPublicNpsSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/nps': {
       id: '/api/public/hooks/nps'
       path: '/api/public/hooks/nps'
@@ -362,6 +382,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
+  ApiPublicNpsSubmitRoute: ApiPublicNpsSubmitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
