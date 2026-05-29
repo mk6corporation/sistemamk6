@@ -957,6 +957,30 @@ function VencimentosCard({
     accent === "amber"
       ? "text-amber-600 bg-amber-500/10"
       : "text-blue-600 bg-blue-500/10";
+  const [filtro, setFiltro] = useState<"todos" | "ativo" | "pausado" | "churn">("todos");
+
+  const pausados = itens.filter((c) =>
+    (c.estagio ?? "").toLowerCase().includes("pausad"),
+  ).length;
+  const churn = itens.filter((c) =>
+    (c.estagio ?? "").toLowerCase().includes("churn"),
+  ).length;
+  const ativos = itens.length - pausados - churn;
+  const totalSemPausa = ativos + churn;
+
+  const itensFiltrados = itens.filter((c) => {
+    const est = (c.estagio ?? "").toLowerCase();
+    const isPausado = est.includes("pausad");
+    const isChurn = est.includes("churn");
+    if (filtro === "pausado") return isPausado;
+    if (filtro === "churn") return isChurn;
+    if (filtro === "ativo") return !isPausado && !isChurn;
+    return true;
+  });
+
+  const toggle = (v: "ativo" | "pausado" | "churn") =>
+    setFiltro((f) => (f === v ? "todos" : v));
+
   return (
     <Card>
       <CardHeader>
@@ -968,43 +992,50 @@ function VencimentosCard({
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          {(() => {
-            const pausados = itens.filter((c) =>
-              (c.estagio ?? "").toLowerCase().includes("pausad"),
-            ).length;
-            const churn = itens.filter((c) =>
-              (c.estagio ?? "").toLowerCase().includes("churn"),
-            ).length;
-            const ativos = itens.length - pausados - churn;
-            return (
-              <div className="ml-auto flex items-center gap-1.5">
-                <Badge variant="secondary" title="Ativos (sem pausados e churn)">
-                  {ativos}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                  title="Pausados"
-                >
-                  {pausados} pausad{pausados === 1 ? "o" : "os"}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
-                  title="Churn"
-                >
-                  {churn} churn
-                </Badge>
-              </div>
-            );
-          })()}
-
+          <div className="ml-auto flex items-center gap-1.5">
+            <Badge
+              variant="secondary"
+              title="Total (ativos + churn, exclui pausados)"
+              role="button"
+              onClick={() => setFiltro("todos")}
+              className={`cursor-pointer ${filtro === "todos" ? "ring-2 ring-primary" : ""}`}
+            >
+              {totalSemPausa}
+            </Badge>
+            <Badge
+              variant="outline"
+              role="button"
+              onClick={() => toggle("ativo")}
+              className={`cursor-pointer border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ${filtro === "ativo" ? "ring-2 ring-emerald-500" : ""}`}
+              title="Apenas ativos"
+            >
+              {ativos} ativo{ativos === 1 ? "" : "s"}
+            </Badge>
+            <Badge
+              variant="outline"
+              role="button"
+              onClick={() => toggle("pausado")}
+              className={`cursor-pointer border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 ${filtro === "pausado" ? "ring-2 ring-amber-500" : ""}`}
+              title="Apenas pausados"
+            >
+              {pausados} pausad{pausados === 1 ? "o" : "os"}
+            </Badge>
+            <Badge
+              variant="outline"
+              role="button"
+              onClick={() => toggle("churn")}
+              className={`cursor-pointer border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300 ${filtro === "churn" ? "ring-2 ring-red-500" : ""}`}
+              title="Apenas churn"
+            >
+              {churn} churn
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        {itens.length === 0 ? (
+        {itensFiltrados.length === 0 ? (
           <p className="px-6 pb-6 text-sm text-muted-foreground">
-            Nenhum cliente com vencimento neste período.
+            Nenhum cliente neste recorte.
           </p>
         ) : (
           <Table>
@@ -1017,7 +1048,7 @@ function VencimentosCard({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {itens.map((c) => (
+              {itensFiltrados.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">
                     <Link
