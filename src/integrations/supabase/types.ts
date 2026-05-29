@@ -545,7 +545,9 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          cs_nome: string | null
           data_venda: string | null
+          gestor_nome: string | null
           id: string
           observacoes: string | null
           pre_vendedor_nome: string | null
@@ -557,7 +559,9 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          cs_nome?: string | null
           data_venda?: string | null
+          gestor_nome?: string | null
           id?: string
           observacoes?: string | null
           pre_vendedor_nome?: string | null
@@ -569,7 +573,9 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          cs_nome?: string | null
           data_venda?: string | null
+          gestor_nome?: string | null
           id?: string
           observacoes?: string | null
           pre_vendedor_nome?: string | null
