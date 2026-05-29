@@ -341,6 +341,17 @@ function AdminRenovacao() {
               className="w-[220px] pl-8"
             />
           </div>
+          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativos</SelectItem>
+              <SelectItem value="pausado">Pausados</SelectItem>
+              <SelectItem value="churn">Churn</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={filtroGestor} onValueChange={setFiltroGestor}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Gestor" />
