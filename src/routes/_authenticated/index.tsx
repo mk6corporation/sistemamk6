@@ -921,8 +921,104 @@ function Dashboard() {
           </Card>
         </div>
 
+        {/* Projetos a vencer */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <VencimentosCard
+            title={`Vencem em ${vencimentos.labelAtual}`}
+            description="Clientes cujo projeto vence no mês selecionado no filtro."
+            itens={vencimentos.noMes}
+            accent="amber"
+          />
+          <VencimentosCard
+            title={`Vencem em ${vencimentos.labelProx}`}
+            description="Clientes cujo projeto vence no mês seguinte."
+            itens={vencimentos.noProx}
+            accent="blue"
+          />
+        </div>
+
       </div>
     </div>
+  );
+}
+
+function VencimentosCard({
+  title,
+  description,
+  itens,
+  accent,
+}: {
+  title: string;
+  description: string;
+  itens: Array<Cliente & { _fim: Date }>;
+  accent: "amber" | "blue";
+}) {
+  const accentCls =
+    accent === "amber"
+      ? "text-amber-600 bg-amber-500/10"
+      : "text-blue-600 bg-blue-500/10";
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <div className={`rounded-md p-2 ${accentCls}`}>
+            <CalendarClock className="h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          <Badge variant="secondary" className="ml-auto">{itens.length}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {itens.length === 0 ? (
+          <p className="px-6 pb-6 text-sm text-muted-foreground">
+            Nenhum cliente com vencimento neste período.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Operacional</TableHead>
+                <TableHead>Estágio</TableHead>
+                <TableHead className="text-right">Vencimento</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {itens.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">
+                    <Link
+                      to="/clientes/$clienteId"
+                      params={{ clienteId: c.id }}
+                      className="hover:underline"
+                    >
+                      {c.nome}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {(c.operacional ?? []).map((o) => o.name).join(", ") || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={CATEGORIA_STYLE[c.categoria ?? "OUTRO"]}
+                    >
+                      {c.estagio ?? "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {c._fim.toLocaleDateString("pt-BR")}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
