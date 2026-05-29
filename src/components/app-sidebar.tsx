@@ -12,6 +12,7 @@ import {
   Link2,
   MessageSquare,
   AlertTriangle,
+  Repeat,
 } from "lucide-react";
 import {
   Sidebar,
