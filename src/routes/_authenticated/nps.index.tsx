@@ -443,6 +443,8 @@ function NpsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
                     <Pie
                       data={distribuicaoDonut}
                       dataKey="value"
