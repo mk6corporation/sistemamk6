@@ -401,6 +401,7 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
       qc.invalidateQueries({ queryKey: ["contrato", contratoId] });
       qc.invalidateQueries({ queryKey: ["cliente", clienteId] });
       qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
