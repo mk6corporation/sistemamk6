@@ -596,7 +596,20 @@ function NpsDashboard() {
                         fontSize: 12,
                       }}
                     />
-                    <Bar dataKey="qtd" radius={[6, 6, 0, 0]}>
+                    <Bar
+                      dataKey="qtd"
+                      radius={[6, 6, 0, 0]}
+                      className="cursor-pointer"
+                      onClick={(d: any) => {
+                        const nota = Number(d?.nota);
+                        const lista = respostasFiltradas.filter((r) => r.score === nota);
+                        setDrilldown({
+                          title: `Nota ${nota}`,
+                          description: `${lista.length} respostas`,
+                          respostas: lista,
+                        });
+                      }}
+                    >
                       {(() => {
                         const counts: Record<number, number> = {};
                         for (let i = 0; i <= 10; i++) counts[i] = 0;
