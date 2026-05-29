@@ -48,7 +48,16 @@ import {
   Sparkles,
   LineChart as LineChartIcon,
   CalendarClock,
+  RotateCw,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   ResponsiveContainer,
   LineChart,
@@ -276,6 +285,21 @@ function Dashboard() {
       return (data ?? []) as Mudanca[];
     },
   });
+
+  const renovacoesQuery = useQuery({
+    queryKey: ["renovacoes-contratos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id,cliente_id,tipo,inicio_contrato,fim_contrato,fee_mensal,valor_total,created_at")
+        .eq("tipo", "renovacao")
+        .order("inicio_contrato", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+
 
   const runsQuery = useQuery({
     queryKey: ["sync_runs"],
@@ -586,8 +610,48 @@ function Dashboard() {
   }, [clientesFiltrados, comparacaoMes]);
 
 
+  // ===== Renovações do mês selecionado =====
+  const renovacoesDoMes = useMemo(() => {
+    const mes = comparacaoMes.mes.date;
+    const ano = mes.getFullYear();
+    const mIdx = mes.getMonth();
+    const contratos = renovacoesQuery.data ?? [];
+    const clientesById = new Map(clientesFiltrados.map((c) => [c.id, c]));
+    const idsPermitidos = new Set(clientesFiltrados.map((c) => c.id));
+
+    const itens = contratos
+      .filter((r) => {
+        if (!r.inicio_contrato) return false;
+        const [y, m, d] = r.inicio_contrato.split("-").map(Number);
+        if (!y || !m || !d) return false;
+        if (y !== ano || m - 1 !== mIdx) return false;
+        if (!r.cliente_id || !idsPermitidos.has(r.cliente_id)) return false;
+        return true;
+      })
+      .map((r) => {
+        const cliente = clientesById.get(r.cliente_id!);
+        const [iy, im, id] = (r.inicio_contrato ?? "").split("-").map(Number);
+        const [fy, fm, fd] = (r.fim_contrato ?? "").split("-").map(Number);
+        return {
+          id: r.id,
+          clienteId: r.cliente_id!,
+          nome: cliente?.nome ?? "—",
+          operacional: cliente?.operacional ?? [],
+          inicio: iy ? new Date(iy, im - 1, id) : null,
+          fim: fy ? new Date(fy, fm - 1, fd) : null,
+          fee: r.fee_mensal,
+          valorTotal: r.valor_total,
+        };
+      })
+      .sort((a, b) => (a.inicio?.getTime() ?? 0) - (b.inicio?.getTime() ?? 0));
+
+    return itens;
+  }, [renovacoesQuery.data, clientesFiltrados, comparacaoMes]);
+
 
   const ultimaSync = runsQuery.data?.[0] as any;
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -818,6 +882,7 @@ function Dashboard() {
             icon={Flag}
           />
           <KpiCard label="Aviso de Churn" value={kpis.avisoChurn} accent="amber" icon={AlertCircle} />
+          <RenovacoesKpi mesLabel={comparacaoMes.mes.label} itens={renovacoesDoMes} />
           <KpiCard label="MRR (ativos)" value={formatMoney(kpis.mrr)} accent="emerald" icon={Sparkles} />
         </div>
 
@@ -1189,5 +1254,99 @@ function EstagioSelect({ clienteId, estagio }: { clienteId: string; estagio: str
     </Select>
   );
 }
+
+
+type RenovacaoItem = {
+  id: string;
+  clienteId: string;
+  nome: string;
+  operacional: Array<{ id: string; name: string; avatar_url: string | null }>;
+  inicio: Date | null;
+  fim: Date | null;
+  fee: number | null;
+  valorTotal: number | null;
+};
+
+function RenovacoesKpi({ mesLabel, itens }: { mesLabel: string; itens: RenovacaoItem[] }) {
+  const [open, setOpen] = useState(false);
+  const total = itens.length;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button type="button" className="text-left">
+          <Card className="cursor-pointer transition hover:shadow-md">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-md p-2 text-violet-600 bg-violet-500/10">
+                <RotateCw className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs text-muted-foreground">
+                  Renovações em {mesLabel}
+                </p>
+                <p className="text-2xl font-semibold tabular-nums">{total}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Renovações em {mesLabel}</DialogTitle>
+          <DialogDescription>
+            Clientes que renovaram o contrato no mês selecionado.
+          </DialogDescription>
+        </DialogHeader>
+        {total === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhuma renovação registrada neste mês.
+          </p>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Operacional</TableHead>
+                  <TableHead className="text-right">Início</TableHead>
+                  <TableHead className="text-right">Fim</TableHead>
+                  <TableHead className="text-right">Fee</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {itens.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        to="/clientes/$clienteId"
+                        params={{ clienteId: r.clienteId }}
+                        className="hover:underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        {r.nome}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.operacional.map((o) => o.name).join(", ") || "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {r.inicio ? r.inicio.toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {r.fim ? r.fim.toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {formatMoney(r.fee)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 
