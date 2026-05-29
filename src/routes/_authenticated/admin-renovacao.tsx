@@ -138,9 +138,21 @@ function AdminRenovacao() {
   const [filtroBucket, setFiltroBucket] = useState<string>("todos");
   const [busca, setBusca] = useState("");
 
-  const ativos = useMemo(
-    () => (clientesQuery.data ?? []).filter((c) => c.categoria === "ATIVO"),
-    [clientesQuery.data],
+  function filtrarPorStatus(c: Cliente): boolean {
+    const estagioLower = (c.estagio ?? "").toLowerCase();
+    const pausado = estagioLower.includes("pausad");
+    const categoria = (c.categoria ?? "").toUpperCase();
+    const resultado = classifyResultado(c.resultado_renovacao);
+
+    if (filtroStatus === "ativo") return categoria === "ATIVO" && !pausado;
+    if (filtroStatus === "pausado") return categoria === "ATIVO" && pausado;
+    if (filtroStatus === "churn") return categoria === "CHURN" || resultado === "nao_renovou";
+    return true; // todos
+  }
+
+  const clientesBase = useMemo(
+    () => (clientesQuery.data ?? []).filter(filtrarPorStatus),
+    [clientesQuery.data, filtroStatus],
   );
 
   const opcoes = useMemo(() => {
@@ -148,7 +160,7 @@ function AdminRenovacao() {
     const css = new Set<string>();
     const vendedores = new Set<string>();
     const planos = new Set<string>();
-    (clientesQuery.data ?? []).forEach((c) => {
+    (clientesBase ?? []).forEach((c) => {
       if (c.plano) planos.add(c.plano);
       const eq = equipeByCliente.get(c.id);
       if (eq?.gestor_nome) gestores.add(eq.gestor_nome);
@@ -161,9 +173,10 @@ function AdminRenovacao() {
       vendedores: Array.from(vendedores).sort(),
       planos: Array.from(planos).sort(),
     };
-  }, [clientesQuery.data, equipeByCliente]);
+  }, [clientesBase, equipeByCliente]);
 
   function aplicaFiltros(c: Cliente): boolean {
+    if (!filtrarPorStatus(c)) return false;
     const eq = equipeByCliente.get(c.id);
     if (filtroGestor !== "todos" && eq?.gestor_nome !== filtroGestor) return false;
     if (filtroCs !== "todos" && eq?.cs_nome !== filtroCs) return false;
