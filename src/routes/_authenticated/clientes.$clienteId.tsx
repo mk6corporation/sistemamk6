@@ -249,7 +249,12 @@ function ContratosTab({ clienteId }: { clienteId: string }) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => { qc.invalidateQueries({ queryKey: ["contratos", clienteId] }); setEditingId(data.id); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
+      qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      setEditingId(data.id);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -258,7 +263,12 @@ function ContratosTab({ clienteId }: { clienteId: string }) {
       const { error } = await supabase.from("contratos").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contratos", clienteId] }); toast.success("Contrato removido"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
+      qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      toast.success("Contrato removido");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -391,6 +401,7 @@ function ContratoEditor({ contratoId, clienteId, onClose }: { contratoId: string
       qc.invalidateQueries({ queryKey: ["contrato", contratoId] });
       qc.invalidateQueries({ queryKey: ["cliente", clienteId] });
       qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
