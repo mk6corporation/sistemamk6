@@ -346,6 +346,76 @@ function AdminMetricas() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!drilldown} onOpenChange={(open) => !open && setDrilldown(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{drilldown?.title}</DialogTitle>
+            <DialogDescription>
+              {drilldown?.items.length ?? 0} step(s) em atraso. Clique no cliente para abrir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {drilldown && drilldown.items.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Fase</TableHead>
+                    <TableHead>Step</TableHead>
+                    <TableHead>Prevista</TableHead>
+                    <TableHead className="text-right">Atraso</TableHead>
+                    <TableHead>Responsáveis</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drilldown.items.map((it, idx) => (
+                    <TableRow key={`${it.cliente_id}-${it.ordem}-${idx}`}>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/clientes/$clienteId"
+                          params={{ clienteId: it.cliente_id }}
+                          className="text-primary hover:underline"
+                          onClick={() => setDrilldown(null)}
+                        >
+                          {it.cliente_nome}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{it.fase}</TableCell>
+                      <TableCell className="text-xs">#{it.ordem}</TableCell>
+                      <TableCell className="text-xs">
+                        {it.data_prevista
+                          ? new Date(it.data_prevista).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant="outline"
+                          className={
+                            it.diasAtraso > 7
+                              ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
+                              : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          }
+                        >
+                          {it.diasAtraso} dia(s)
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {it.responsaveis}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nenhum step em atraso.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
