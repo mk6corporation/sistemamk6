@@ -1,5 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Briefcase, ChevronDown, Rss, CalendarClock, KanbanSquare, BarChart3 } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  ChevronDown,
+  Rss,
+  CalendarClock,
+  KanbanSquare,
+  BarChart3,
+  Star,
+  Link2,
+  MessageSquare,
+  AlertTriangle,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,9 +23,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -30,6 +40,13 @@ const operacionalItems = [
   { title: "Métricas (admin)", url: "/admin-metricas", icon: BarChart3, exact: false },
 ];
 
+const npsItems = [
+  { title: "Dashboard", url: "/nps", icon: LayoutDashboard, exact: true },
+  { title: "Links de NPS", url: "/nps/links", icon: Link2, exact: false },
+  { title: "Respostas", url: "/nps/respostas", icon: MessageSquare, exact: false },
+  { title: "Detratores", url: "/nps/detratores", icon: AlertTriangle, exact: false },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -37,7 +54,8 @@ export function AppSidebar() {
 
   const isOperacionalActive = operacionalItems.some((i) =>
     i.exact ? currentPath === i.url : currentPath.startsWith(i.url),
-  );
+  ) && !currentPath.startsWith("/nps");
+  const isNpsActive = currentPath === "/nps" || currentPath.startsWith("/nps/");
 
   return (
     <Sidebar collapsible="icon">
@@ -71,6 +89,41 @@ export function AppSidebar() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {operacionalItems.map((item) => {
+                    const active = item.exact
+                      ? currentPath === item.url
+                      : currentPath.startsWith(item.url);
+                    return (
+                      <SidebarMenuItem key={item.url}>
+                        <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                          <Link to={item.url}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </SidebarGroup>
+        </Collapsible>
+
+        <Collapsible defaultOpen={isNpsActive} className="group/collapsible">
+          <SidebarGroup>
+            <SidebarGroupLabel asChild>
+              <CollapsibleTrigger className="flex w-full items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  NPS
+                </span>
+                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]/collapsible:-rotate-90" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {npsItems.map((item) => {
                     const active = item.exact
                       ? currentPath === item.url
                       : currentPath.startsWith(item.url);
