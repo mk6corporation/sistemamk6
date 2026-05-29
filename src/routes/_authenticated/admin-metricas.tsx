@@ -267,7 +267,31 @@ function AdminMetricas() {
                 const max = atrasadosPorColab[0].atrasados || 1;
                 const pct = Math.round((row.atrasados / max) * 100);
                 return (
-                  <div key={row.nome} className="space-y-1">
+                  <div
+                    key={row.nome}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      setDrilldown({
+                        title: `Atrasos · ${row.nome}`,
+                        items: atrasosDetalhe.filter((a) =>
+                          a.responsaveis.split(", ").includes(row.nome),
+                        ),
+                      })
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDrilldown({
+                          title: `Atrasos · ${row.nome}`,
+                          items: atrasosDetalhe.filter((a) =>
+                            a.responsaveis.split(", ").includes(row.nome),
+                          ),
+                        });
+                      }
+                    }}
+                    className="cursor-pointer space-y-1 rounded-md p-2 transition-colors hover:bg-accent/40"
+                  >
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{row.nome}</span>
                       <span className="text-xs text-muted-foreground">
@@ -291,6 +315,7 @@ function AdminMetricas() {
                       />
                     </div>
                   </div>
+
                 );
               })}
             </div>
