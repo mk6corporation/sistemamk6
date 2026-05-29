@@ -249,7 +249,12 @@ function ContratosTab({ clienteId }: { clienteId: string }) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => { qc.invalidateQueries({ queryKey: ["contratos", clienteId] }); setEditingId(data.id); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
+      qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      setEditingId(data.id);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
