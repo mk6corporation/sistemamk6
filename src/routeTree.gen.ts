@@ -16,7 +16,9 @@ import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenti
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
+import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
+import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
 
@@ -56,12 +58,22 @@ const AuthenticatedAdminMetricasRoute =
     path: '/admin-metricas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNpsIndexRoute = AuthenticatedNpsIndexRouteImport.update({
+  id: '/nps/',
+  path: '/nps/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedClientesIndexRoute =
   AuthenticatedClientesIndexRouteImport.update({
     id: '/clientes/',
     path: '/clientes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNpsLinksRoute = AuthenticatedNpsLinksRouteImport.update({
+  id: '/nps/links',
+  path: '/nps/links',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedClientesClienteIdRoute =
   AuthenticatedClientesClienteIdRouteImport.update({
     id: '/clientes/$clienteId',
@@ -82,7 +94,9 @@ export interface FileRoutesByFullPath {
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRoutesByTo {
@@ -93,7 +107,9 @@ export interface FileRoutesByTo {
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRoutesById {
@@ -106,7 +122,9 @@ export interface FileRoutesById {
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/_authenticated/nps/links': typeof AuthenticatedNpsLinksRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
 }
 export interface FileRouteTypes {
@@ -119,7 +137,9 @@ export interface FileRouteTypes {
     | '/kanban'
     | '/minha-rotina'
     | '/clientes/$clienteId'
+    | '/nps/links'
     | '/clientes/'
+    | '/nps/'
     | '/api/public/hooks/nps'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -130,7 +150,9 @@ export interface FileRouteTypes {
     | '/minha-rotina'
     | '/'
     | '/clientes/$clienteId'
+    | '/nps/links'
     | '/clientes'
+    | '/nps'
     | '/api/public/hooks/nps'
   id:
     | '__root__'
@@ -142,7 +164,9 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-rotina'
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
+    | '/_authenticated/nps/links'
     | '/_authenticated/clientes/'
+    | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
   fileRoutesById: FileRoutesById
 }
@@ -203,11 +227,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMetricasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/nps/': {
+      id: '/_authenticated/nps/'
+      path: '/nps'
+      fullPath: '/nps/'
+      preLoaderRoute: typeof AuthenticatedNpsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
       fullPath: '/clientes/'
       preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/nps/links': {
+      id: '/_authenticated/nps/links'
+      path: '/nps/links'
+      fullPath: '/nps/links'
+      preLoaderRoute: typeof AuthenticatedNpsLinksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/clientes/$clienteId': {
@@ -234,7 +272,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedClientesClienteIdRoute: typeof AuthenticatedClientesClienteIdRoute
+  AuthenticatedNpsLinksRoute: typeof AuthenticatedNpsLinksRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedNpsIndexRoute: typeof AuthenticatedNpsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -244,7 +284,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedClientesClienteIdRoute: AuthenticatedClientesClienteIdRoute,
+  AuthenticatedNpsLinksRoute: AuthenticatedNpsLinksRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedNpsIndexRoute: AuthenticatedNpsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -259,3 +301,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
