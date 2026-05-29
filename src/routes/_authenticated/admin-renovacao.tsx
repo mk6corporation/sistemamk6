@@ -294,17 +294,17 @@ function AdminRenovacao() {
   const rankGestor = useMemo(
     () => ranking("gestor_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
   const rankCs = useMemo(
     () => ranking("cs_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
   const rankVendedor = useMemo(
     () => ranking("vendedor_nome"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clientesQuery.data, equipeByCliente, hoje, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
+    [clientesBase, equipeByCliente, hoje, filtroStatus, filtroGestor, filtroCs, filtroVendedor, filtroPlano, busca],
   );
 
   if (roleLoading) {
