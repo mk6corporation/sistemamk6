@@ -263,7 +263,12 @@ function ContratosTab({ clienteId }: { clienteId: string }) {
       const { error } = await supabase.from("contratos").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contratos", clienteId] }); toast.success("Contrato removido"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contratos", clienteId] });
+      qc.invalidateQueries({ queryKey: ["renovacoes-contratos"] });
+      qc.invalidateQueries({ queryKey: ["renovacao-clientes"] });
+      toast.success("Contrato removido");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
