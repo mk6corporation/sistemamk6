@@ -610,8 +610,48 @@ function Dashboard() {
   }, [clientesFiltrados, comparacaoMes]);
 
 
+  // ===== Renovações do mês selecionado =====
+  const renovacoesDoMes = useMemo(() => {
+    const mes = comparacaoMes.mes.date;
+    const ano = mes.getFullYear();
+    const mIdx = mes.getMonth();
+    const contratos = renovacoesQuery.data ?? [];
+    const clientesById = new Map(clientesFiltrados.map((c) => [c.id, c]));
+    const idsPermitidos = new Set(clientesFiltrados.map((c) => c.id));
+
+    const itens = contratos
+      .filter((r) => {
+        if (!r.inicio_contrato) return false;
+        const [y, m, d] = r.inicio_contrato.split("-").map(Number);
+        if (!y || !m || !d) return false;
+        if (y !== ano || m - 1 !== mIdx) return false;
+        if (!r.cliente_id || !idsPermitidos.has(r.cliente_id)) return false;
+        return true;
+      })
+      .map((r) => {
+        const cliente = clientesById.get(r.cliente_id!);
+        const [iy, im, id] = (r.inicio_contrato ?? "").split("-").map(Number);
+        const [fy, fm, fd] = (r.fim_contrato ?? "").split("-").map(Number);
+        return {
+          id: r.id,
+          clienteId: r.cliente_id!,
+          nome: cliente?.nome ?? "—",
+          operacional: cliente?.operacional ?? [],
+          inicio: iy ? new Date(iy, im - 1, id) : null,
+          fim: fy ? new Date(fy, fm - 1, fd) : null,
+          fee: r.fee_mensal,
+          valorTotal: r.valor_total,
+        };
+      })
+      .sort((a, b) => (a.inicio?.getTime() ?? 0) - (b.inicio?.getTime() ?? 0));
+
+    return itens;
+  }, [renovacoesQuery.data, clientesFiltrados, comparacaoMes]);
+
 
   const ultimaSync = runsQuery.data?.[0] as any;
+
+
 
   return (
     <div className="min-h-screen bg-background">
