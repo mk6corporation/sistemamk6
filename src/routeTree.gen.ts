@@ -18,6 +18,7 @@ import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
+import { Route as NpsFormSlugRouteImport } from './routes/nps.form.$slug'
 import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authenticated/nps.respostas'
 import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
 import { Route as AuthenticatedNpsDetratoresRouteImport } from './routes/_authenticated/nps.detratores'
@@ -71,6 +72,11 @@ const AuthenticatedClientesIndexRoute =
     path: '/clientes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const NpsFormSlugRoute = NpsFormSlugRouteImport.update({
+  id: '/nps/form/$slug',
+  path: '/nps/form/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedNpsRespostasRoute =
   AuthenticatedNpsRespostasRouteImport.update({
     id: '/nps/respostas',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/_authenticated/nps/links': typeof AuthenticatedNpsLinksRoute
   '/_authenticated/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/nps/form/$slug': typeof NpsFormSlugRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
+    | '/nps/form/$slug'
     | '/clientes/'
     | '/nps/'
     | '/api/public/hooks/nps'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
+    | '/nps/form/$slug'
     | '/clientes'
     | '/nps'
     | '/api/public/hooks/nps'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/nps/detratores'
     | '/_authenticated/nps/links'
     | '/_authenticated/nps/respostas'
+    | '/nps/form/$slug'
     | '/_authenticated/clientes/'
     | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  NpsFormSlugRoute: typeof NpsFormSlugRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
 }
 
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/clientes/'
       preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/nps/form/$slug': {
+      id: '/nps/form/$slug'
+      path: '/nps/form/$slug'
+      fullPath: '/nps/form/$slug'
+      preLoaderRoute: typeof NpsFormSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/nps/respostas': {
       id: '/_authenticated/nps/respostas'
@@ -340,6 +360,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  NpsFormSlugRoute: NpsFormSlugRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
 }
 export const routeTree = rootRouteImport
