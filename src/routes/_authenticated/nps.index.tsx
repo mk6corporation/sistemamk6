@@ -9,6 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -92,6 +107,11 @@ function classificarBain(nps: number): {
 function NpsDashboard() {
   const [filtroProduto, setFiltroProduto] = useState<string>("todos");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
+  const [drilldown, setDrilldown] = useState<{
+    title: string;
+    description?: string;
+    respostas: NpsResposta[];
+  } | null>(null);
 
   const respostasQuery = useQuery({
     queryKey: ["nps-respostas-all"],
@@ -282,6 +302,7 @@ function NpsDashboard() {
         </div>
 
         {/* KPIs com cores */}
+        {/* KPIs com cores */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
           <KpiCard
             label="NPS"
@@ -295,14 +316,103 @@ function NpsDashboard() {
             }
             sub={bain.label}
             highlight
+            onClick={() =>
+              setDrilldown({
+                title: `Todas as respostas — ${bain.label}`,
+                description: `NPS ${stats.nps} • ${stats.total} respostas`,
+                respostas: respostasFiltradas,
+              })
+            }
           />
-          <KpiCard label="Nota média" value={stats.media.toFixed(1)} icon={TrendingUp} accent="indigo" />
-          <KpiCard label="Respostas" value={stats.total} icon={Star} accent="violet" />
-          <KpiCard label="Promotores" value={stats.promotores} icon={Smile} accent="emerald" />
-          <KpiCard label="Neutros" value={stats.neutros} icon={Meh} accent="amber" />
-          <KpiCard label="Detratores" value={stats.detratores} icon={Frown} accent="red" />
-          <KpiCard label="A tratar" value={clientesStats.aTratar} icon={Award} accent="pink" sub={`${clientesStats.unicos} clientes`} />
+          <KpiCard
+            label="Nota média"
+            value={stats.media.toFixed(1)}
+            icon={TrendingUp}
+            accent="indigo"
+            onClick={() =>
+              setDrilldown({
+                title: "Todas as respostas",
+                description: `Nota média ${stats.media.toFixed(1)}`,
+                respostas: respostasFiltradas,
+              })
+            }
+          />
+          <KpiCard
+            label="Respostas"
+            value={stats.total}
+            icon={Star}
+            accent="violet"
+            onClick={() =>
+              setDrilldown({
+                title: "Todas as respostas",
+                description: `${stats.total} respostas no período`,
+                respostas: respostasFiltradas,
+              })
+            }
+          />
+          <KpiCard
+            label="Promotores"
+            value={stats.promotores}
+            icon={Smile}
+            accent="emerald"
+            onClick={() =>
+              setDrilldown({
+                title: "Promotores (notas 9–10)",
+                description: `${stats.promotores} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score >= 9),
+              })
+            }
+          />
+          <KpiCard
+            label="Neutros"
+            value={stats.neutros}
+            icon={Meh}
+            accent="amber"
+            onClick={() =>
+              setDrilldown({
+                title: "Neutros (notas 7–8)",
+                description: `${stats.neutros} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score >= 7 && r.score <= 8),
+              })
+            }
+          />
+          <KpiCard
+            label="Detratores"
+            value={stats.detratores}
+            icon={Frown}
+            accent="red"
+            onClick={() =>
+              setDrilldown({
+                title: "Detratores (notas 0–6)",
+                description: `${stats.detratores} respostas`,
+                respostas: respostasFiltradas.filter((r) => r.score <= 6),
+              })
+            }
+          />
+          <KpiCard
+            label="A tratar"
+            value={clientesStats.aTratar}
+            icon={Award}
+            accent="pink"
+            sub={`${clientesStats.unicos} clientes`}
+            onClick={() => {
+              const ids = new Set<string>();
+              const lista: NpsResposta[] = [];
+              for (const r of respostasFiltradas) {
+                if (r.score <= 6 && !ids.has(r.cliente_id)) {
+                  ids.add(r.cliente_id);
+                  lista.push(r);
+                }
+              }
+              setDrilldown({
+                title: "Clientes a tratar",
+                description: `${ids.size} clientes detratores únicos`,
+                respostas: lista,
+              });
+            }}
+          />
         </div>
+
 
         {/* Faixas Bain */}
         <Card className="border-l-4" style={{ borderLeftColor: bain.hex }}>
@@ -345,6 +455,21 @@ function NpsDashboard() {
                       outerRadius={110}
                       paddingAngle={3}
                       stroke="none"
+                      onClick={(slice: any) => {
+                        const name = slice?.name as string;
+                        const filtro =
+                          name === "Promotores"
+                            ? (r: NpsResposta) => r.score >= 9
+                            : name === "Neutros"
+                            ? (r: NpsResposta) => r.score >= 7 && r.score <= 8
+                            : (r: NpsResposta) => r.score <= 6;
+                        setDrilldown({
+                          title: name,
+                          description: `${respostasFiltradas.filter(filtro).length} respostas`,
+                          respostas: respostasFiltradas.filter(filtro),
+                        });
+                      }}
+                      className="cursor-pointer"
                     >
                       {distribuicaoDonut.map((d) => (
                         <Cell key={d.name} fill={d.color} />
@@ -405,7 +530,23 @@ function NpsDashboard() {
                           p.payload.plano,
                         ]}
                       />
-                      <Bar dataKey="nps" radius={[6, 6, 0, 0]}>
+                      <Bar
+                        dataKey="nps"
+                        radius={[6, 6, 0, 0]}
+                        className="cursor-pointer"
+                        onClick={(d: any) => {
+                          const plano = d?.plano as string;
+                          const lista = respostasFiltradas.filter((r) => {
+                            const c = clientesById.get(r.cliente_id);
+                            return (c?.plano ?? "Sem plano") === plano;
+                          });
+                          setDrilldown({
+                            title: `Serviço: ${plano}`,
+                            description: `${lista.length} respostas • NPS ${d?.nps}`,
+                            respostas: lista,
+                          });
+                        }}
+                      >
                         {npsPorServico.map((d) => (
                           <Cell key={d.plano} fill={d.color} />
                         ))}
@@ -455,7 +596,20 @@ function NpsDashboard() {
                         fontSize: 12,
                       }}
                     />
-                    <Bar dataKey="qtd" radius={[6, 6, 0, 0]}>
+                    <Bar
+                      dataKey="qtd"
+                      radius={[6, 6, 0, 0]}
+                      className="cursor-pointer"
+                      onClick={(d: any) => {
+                        const nota = Number(d?.nota);
+                        const lista = respostasFiltradas.filter((r) => r.score === nota);
+                        setDrilldown({
+                          title: `Nota ${nota}`,
+                          description: `${lista.length} respostas`,
+                          respostas: lista,
+                        });
+                      }}
+                    >
                       {(() => {
                         const counts: Record<number, number> = {};
                         for (let i = 0; i <= 10; i++) counts[i] = 0;
@@ -559,9 +713,17 @@ function NpsDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <DrilldownDialog
+        open={!!drilldown}
+        onOpenChange={(o) => !o && setDrilldown(null)}
+        data={drilldown}
+        clientesById={clientesById}
+      />
     </div>
   );
 }
+
 
 function FaixaPill({ color, label, active }: { color: string; label: string; active: boolean }) {
   return (
@@ -584,6 +746,7 @@ function KpiCard({
   accent,
   sub,
   highlight,
+  onClick,
 }: {
   label: string;
   value: string | number;
@@ -591,6 +754,7 @@ function KpiCard({
   accent: "emerald" | "red" | "amber" | "blue" | "violet" | "indigo" | "pink";
   sub?: string;
   highlight?: boolean;
+  onClick?: () => void;
 }) {
   const colors: Record<string, { icon: string; ring: string; text: string }> = {
     emerald: { icon: "text-white bg-emerald-500", ring: "ring-emerald-500/30", text: "text-emerald-600" },
@@ -602,8 +766,26 @@ function KpiCard({
     pink: { icon: "text-white bg-pink-500", ring: "ring-pink-500/30", text: "text-pink-600" },
   };
   const c = colors[accent];
+  const clickable = !!onClick;
   return (
-    <Card className={highlight ? `ring-2 ${c.ring}` : ""}>
+    <Card
+      className={`${highlight ? `ring-2 ${c.ring}` : ""} ${
+        clickable ? "cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5" : ""
+      }`}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+    >
       <CardContent className="flex flex-col gap-2 p-4">
         <div className="flex items-center gap-3">
           <div className={`rounded-lg p-2 shadow-sm ${c.icon}`}>
@@ -621,3 +803,86 @@ function KpiCard({
     </Card>
   );
 }
+
+function DrilldownDialog({
+  open,
+  onOpenChange,
+  data,
+  clientesById,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  data: { title: string; description?: string; respostas: NpsResposta[] } | null;
+  clientesById: Map<string, { id: string; nome: string; plano: string | null }>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{data?.title ?? ""}</DialogTitle>
+          {data?.description && <DialogDescription>{data.description}</DialogDescription>}
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-auto">
+          {!data || data.respostas.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhum cliente nesta seleção.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">Nota</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead>Comentário</TableHead>
+                  <TableHead className="text-right">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.respostas.map((r) => {
+                  const c = clientesById.get(r.cliente_id);
+                  const tipo = classifyNps(r.score);
+                  const cls =
+                    tipo === "promotor"
+                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40"
+                      : tipo === "neutro"
+                      ? "bg-amber-500/15 text-amber-700 border-amber-500/40"
+                      : "bg-red-500/15 text-red-700 border-red-500/40";
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <Badge variant="outline" className={`${cls} font-semibold`}>
+                          {r.score}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/clientes/$clienteId"
+                          params={{ clienteId: r.cliente_id }}
+                          className="hover:underline"
+                          onClick={() => onOpenChange(false)}
+                        >
+                          {c?.nome ?? "—"}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {c?.plano ?? "—"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                        {r.comentario ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                        {new Date(r.respondido_em).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
