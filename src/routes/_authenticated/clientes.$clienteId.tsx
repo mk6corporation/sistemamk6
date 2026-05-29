@@ -544,7 +544,13 @@ function ComprovantesSection({ contratoId, clienteId }: { contratoId: string; cl
 
   const upload = useMutation({
     mutationFn: async (file: File) => {
-      const path = `${clienteId}/${contratoId}/${Date.now()}_${file.name}`;
+      const safeName = file.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      const path = `${clienteId}/${contratoId}/${Date.now()}_${safeName || "arquivo"}`;
       const { error: upErr } = await supabase.storage.from("comprovantes").upload(path, file);
       if (upErr) throw upErr;
       const { error } = await supabase.from("comprovantes").insert({
