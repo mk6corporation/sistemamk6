@@ -845,7 +845,7 @@ function Dashboard() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           <KpiCard
             label="Ativos"
             value={kpis.counts.ATIVO}
@@ -1186,7 +1186,7 @@ function KpiCard({
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground leading-tight break-words">
               {label}
             </div>
             <div className="text-xl font-semibold tabular-nums">{value}</div>
