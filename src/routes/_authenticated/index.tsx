@@ -1186,7 +1186,7 @@ function KpiCard({
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground leading-tight break-words">
               {label}
             </div>
             <div className="text-xl font-semibold tabular-nums">{value}</div>
