@@ -18,11 +18,13 @@ import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authenticated/admin-renovacao'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
+import { Route as AuthenticatedDesempenhoIndexRouteImport } from './routes/_authenticated/desempenho.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as NpsFormSlugRouteImport } from './routes/nps.form.$slug'
 import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authenticated/nps.respostas'
 import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
 import { Route as AuthenticatedNpsDetratoresRouteImport } from './routes/_authenticated/nps.detratores'
+import { Route as AuthenticatedDesempenhoClienteIdRouteImport } from './routes/_authenticated/desempenho.$clienteId'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
 import { Route as ApiPublicNpsSubmitRouteImport } from './routes/api/public/nps/submit'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
@@ -74,6 +76,12 @@ const AuthenticatedNpsIndexRoute = AuthenticatedNpsIndexRouteImport.update({
   path: '/nps/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDesempenhoIndexRoute =
+  AuthenticatedDesempenhoIndexRouteImport.update({
+    id: '/desempenho/',
+    path: '/desempenho/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClientesIndexRoute =
   AuthenticatedClientesIndexRouteImport.update({
     id: '/clientes/',
@@ -102,6 +110,12 @@ const AuthenticatedNpsDetratoresRoute =
     path: '/nps/detratores',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDesempenhoClienteIdRoute =
+  AuthenticatedDesempenhoClienteIdRouteImport.update({
+    id: '/desempenho/$clienteId',
+    path: '/desempenho/$clienteId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClientesClienteIdRoute =
   AuthenticatedClientesClienteIdRouteImport.update({
     id: '/clientes/$clienteId',
@@ -128,11 +142,13 @@ export interface FileRoutesByFullPath {
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -146,11 +162,13 @@ export interface FileRoutesByTo {
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/desempenho': typeof AuthenticatedDesempenhoIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -166,11 +184,13 @@ export interface FileRoutesById {
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/_authenticated/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/_authenticated/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/_authenticated/nps/links': typeof AuthenticatedNpsLinksRoute
   '/_authenticated/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -186,11 +206,13 @@ export interface FileRouteTypes {
     | '/kanban'
     | '/minha-rotina'
     | '/clientes/$clienteId'
+    | '/desempenho/$clienteId'
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
     | '/nps/form/$slug'
     | '/clientes/'
+    | '/desempenho/'
     | '/nps/'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -204,11 +226,13 @@ export interface FileRouteTypes {
     | '/minha-rotina'
     | '/'
     | '/clientes/$clienteId'
+    | '/desempenho/$clienteId'
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
     | '/nps/form/$slug'
     | '/clientes'
+    | '/desempenho'
     | '/nps'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -223,11 +247,13 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-rotina'
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
+    | '/_authenticated/desempenho/$clienteId'
     | '/_authenticated/nps/detratores'
     | '/_authenticated/nps/links'
     | '/_authenticated/nps/respostas'
     | '/nps/form/$slug'
     | '/_authenticated/clientes/'
+    | '/_authenticated/desempenho/'
     | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -306,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNpsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/desempenho/': {
+      id: '/_authenticated/desempenho/'
+      path: '/desempenho'
+      fullPath: '/desempenho/'
+      preLoaderRoute: typeof AuthenticatedDesempenhoIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
@@ -341,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNpsDetratoresRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/desempenho/$clienteId': {
+      id: '/_authenticated/desempenho/$clienteId'
+      path: '/desempenho/$clienteId'
+      fullPath: '/desempenho/$clienteId'
+      preLoaderRoute: typeof AuthenticatedDesempenhoClienteIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/$clienteId': {
       id: '/_authenticated/clientes/$clienteId'
       path: '/clientes/$clienteId'
@@ -373,10 +413,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedClientesClienteIdRoute: typeof AuthenticatedClientesClienteIdRoute
+  AuthenticatedDesempenhoClienteIdRoute: typeof AuthenticatedDesempenhoClienteIdRoute
   AuthenticatedNpsDetratoresRoute: typeof AuthenticatedNpsDetratoresRoute
   AuthenticatedNpsLinksRoute: typeof AuthenticatedNpsLinksRoute
   AuthenticatedNpsRespostasRoute: typeof AuthenticatedNpsRespostasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedDesempenhoIndexRoute: typeof AuthenticatedDesempenhoIndexRoute
   AuthenticatedNpsIndexRoute: typeof AuthenticatedNpsIndexRoute
 }
 
@@ -388,10 +430,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedClientesClienteIdRoute: AuthenticatedClientesClienteIdRoute,
+  AuthenticatedDesempenhoClienteIdRoute: AuthenticatedDesempenhoClienteIdRoute,
   AuthenticatedNpsDetratoresRoute: AuthenticatedNpsDetratoresRoute,
   AuthenticatedNpsLinksRoute: AuthenticatedNpsLinksRoute,
   AuthenticatedNpsRespostasRoute: AuthenticatedNpsRespostasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedDesempenhoIndexRoute: AuthenticatedDesempenhoIndexRoute,
   AuthenticatedNpsIndexRoute: AuthenticatedNpsIndexRoute,
 }
 
