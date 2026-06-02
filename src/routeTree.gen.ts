@@ -18,6 +18,7 @@ import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authenticated/admin-renovacao'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
+import { Route as AuthenticatedDesempenhoIndexRouteImport } from './routes/_authenticated/desempenho.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as NpsFormSlugRouteImport } from './routes/nps.form.$slug'
 import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authenticated/nps.respostas'
@@ -74,6 +75,12 @@ const AuthenticatedNpsIndexRoute = AuthenticatedNpsIndexRouteImport.update({
   path: '/nps/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDesempenhoIndexRoute =
+  AuthenticatedDesempenhoIndexRouteImport.update({
+    id: '/desempenho/',
+    path: '/desempenho/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClientesIndexRoute =
   AuthenticatedClientesIndexRouteImport.update({
     id: '/clientes/',
@@ -133,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/desempenho': typeof AuthenticatedDesempenhoIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -171,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/nps/respostas'
     | '/nps/form/$slug'
     | '/clientes/'
+    | '/desempenho/'
     | '/nps/'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/nps/respostas'
     | '/nps/form/$slug'
     | '/clientes'
+    | '/desempenho'
     | '/nps'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -228,6 +240,7 @@ export interface FileRouteTypes {
     | '/_authenticated/nps/respostas'
     | '/nps/form/$slug'
     | '/_authenticated/clientes/'
+    | '/_authenticated/desempenho/'
     | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNpsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/desempenho/': {
+      id: '/_authenticated/desempenho/'
+      path: '/desempenho'
+      fullPath: '/desempenho/'
+      preLoaderRoute: typeof AuthenticatedDesempenhoIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
@@ -377,6 +397,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNpsLinksRoute: typeof AuthenticatedNpsLinksRoute
   AuthenticatedNpsRespostasRoute: typeof AuthenticatedNpsRespostasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedDesempenhoIndexRoute: typeof AuthenticatedDesempenhoIndexRoute
   AuthenticatedNpsIndexRoute: typeof AuthenticatedNpsIndexRoute
 }
 
@@ -392,6 +413,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNpsLinksRoute: AuthenticatedNpsLinksRoute,
   AuthenticatedNpsRespostasRoute: AuthenticatedNpsRespostasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedDesempenhoIndexRoute: AuthenticatedDesempenhoIndexRoute,
   AuthenticatedNpsIndexRoute: AuthenticatedNpsIndexRoute,
 }
 
@@ -409,3 +431,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
