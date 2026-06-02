@@ -75,7 +75,7 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
         .lte("data", end)
         .order("data", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as VendedorRegistro[];
+      return (data ?? []) as unknown as VendedorRegistro[];
     },
     enabled: !!vendedor,
   });
