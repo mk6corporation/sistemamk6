@@ -1,0 +1,1 @@
+DELETE FROM public.vendedor_profiles WHERE user_id = '6f19d490-7a53-4acd-8cb4-cec1d6b0442b';
