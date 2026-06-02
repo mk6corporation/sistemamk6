@@ -52,6 +52,12 @@ const DEFAULTS: Record<Cenario, ParamsCenario> = {
 const MK_COLOR = "#f59e0b"; // amber - marketing
 const CO_COLOR = "#3b82f6"; // blue - commercial
 
+const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+] as const;
+
+
 import { fmtBRL, fmtInt, fmtPct as fmtPctShared } from "@/lib/format";
 
 function fmtMoney(v: number) {
