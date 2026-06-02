@@ -180,8 +180,8 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 </div>
                 <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing</h4>
               </div>
-              <ParamRow label="CPL (R$ por lead)" k="cpl" params={params} onChange={updateParam} />
-              <ParamRow label="% Qualificação dos leads" k="qualificacao_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="CPL por lead" k="cpl" params={params} onChange={updateParam} prefix="R$" />
+              <ParamRow label="Qualificação dos leads" k="qualificacao_pct" params={params} onChange={updateParam} suffix="%" />
             </div>
 
             {/* COMERCIAL */}
@@ -192,9 +192,10 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 </div>
                 <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial</h4>
               </div>
-              <ParamRow label="% Cotação → Venda" k="cot_para_venda_pct" params={params} onChange={updateParam} suffix="%" />
-              <ParamRow label="Ticket médio (R$)" k="ticket_medio" params={params} onChange={updateParam} />
-              <ParamRow label="% Margem líquida" k="margem_liquida_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="Cotação → Venda" k="cot_para_venda_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="Ticket médio" k="ticket_medio" params={params} onChange={updateParam} prefix="R$" />
+              <ParamRow label="Margem líquida" k="margem_liquida_pct" params={params} onChange={updateParam} suffix="%" />
+
             </div>
           </div>
 
