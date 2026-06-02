@@ -293,7 +293,7 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing — Realizado</h4>
               </div>
               <div className="space-y-2">
-                <RealInput label="Investimento (R$)" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
+                <RealInput label="Investimento" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
                 <RealInput label="Leads gerados" value={realizado.leads} onChange={(v) => setRealizado({ ...realizado, leads: v })} />
                 <RealInput label="Leads qualificados" value={realizado.qualificados} onChange={(v) => setRealizado({ ...realizado, qualificados: v })} />
               </div>
