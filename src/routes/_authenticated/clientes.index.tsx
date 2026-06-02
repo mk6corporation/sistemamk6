@@ -120,6 +120,10 @@ function ClientesBase() {
     const q = query.trim().toLowerCase();
     return clientes.filter((c) => {
       if (categoria !== "TODOS" && c.categoria !== categoria) return false;
+      const planoNorm = normalize(c.plano);
+      const isAceleracao = planoNorm.includes("aceleracao");
+      if (tipoPlano === "ACELERACAO" && !isAceleracao) return false;
+      if (tipoPlano === "DEMAIS" && isAceleracao) return false;
       if (!q) return true;
       return (
         c.nome.toLowerCase().includes(q) ||
@@ -127,7 +131,13 @@ function ClientesBase() {
         (c.plano ?? "").toLowerCase().includes(q)
       );
     });
-  }, [clientes, query, categoria]);
+  }, [clientes, query, categoria, tipoPlano]);
+
+  const aceleracaoCount = useMemo(
+    () => clientes.filter((c) => normalize(c.plano).includes("aceleracao")).length,
+    [clientes],
+  );
+
 
 
   return (
