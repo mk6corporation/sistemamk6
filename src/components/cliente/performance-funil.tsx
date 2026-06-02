@@ -556,22 +556,32 @@ function FunilVisual({
   );
 }
 
-function RealInput({ label, value, onChange, money }: { label: string; value: number; onChange: (v: number) => void; money?: boolean }) {
+function RealInput({ label, value, onChange, money, percent }: { label: string; value: number; onChange: (v: number) => void; money?: boolean; percent?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-2">
+      <div className="relative">
+        {money && (
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+            R$
+          </span>
+        )}
         <Input
           type="number"
-          className="h-8 w-32 text-right text-sm"
+          className={`h-8 w-36 text-right text-sm ${money ? "pl-8" : ""} ${percent ? "pr-6" : ""}`}
           value={value}
           onChange={(e) => onChange(Number(e.target.value) || 0)}
         />
-        {money && <span className="text-[10px] text-muted-foreground">R$</span>}
+        {percent && (
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+            %
+          </span>
+        )}
       </div>
     </div>
   );
 }
+
 
 function Computed({ label, value }: { label: string; value: string }) {
   return (
