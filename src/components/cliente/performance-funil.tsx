@@ -162,13 +162,20 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
             <Label className="text-xs font-semibold uppercase tracking-wide text-primary">
               Investimento em ADS (R$)
             </Label>
-            <Input
-              type="number"
-              className="mt-1 max-w-[280px] text-lg font-semibold"
-              value={investimento}
-              onChange={(e) => setInvestimento(Number(e.target.value) || 0)}
-            />
+            <div className="relative mt-1 max-w-[280px]">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-primary">
+                R$
+              </span>
+              <Input
+                type="number"
+                className="pl-10 text-lg font-semibold"
+                value={investimento}
+                onChange={(e) => setInvestimento(Number(e.target.value) || 0)}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Valor atual: {fmtMoney(investimento)}</p>
           </div>
+
 
           {/* Parâmetros: Marketing (amber) + Comercial (blue) */}
           <div className="grid gap-4 md:grid-cols-2">
