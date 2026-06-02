@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Save, Smile, Meh, Frown, TrendingUp, Users, LineChart as LineChartIcon } from "lucide-react";
 import { toast } from "sonner";
+import { PerformanceFunil } from "./performance-funil";
 import {
   LineChart,
   Line,
