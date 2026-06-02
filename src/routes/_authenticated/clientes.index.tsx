@@ -58,6 +58,7 @@ function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [categoria, setCategoria] = useState<string>("TODOS");
+  const [tipoPlano, setTipoPlano] = useState<"TODOS" | "ACELERACAO" | "DEMAIS">("TODOS");
   const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
@@ -119,6 +120,10 @@ function ClientesBase() {
     const q = query.trim().toLowerCase();
     return clientes.filter((c) => {
       if (categoria !== "TODOS" && c.categoria !== categoria) return false;
+      const planoNorm = normalize(c.plano);
+      const isAceleracao = planoNorm.includes("aceleracao");
+      if (tipoPlano === "ACELERACAO" && !isAceleracao) return false;
+      if (tipoPlano === "DEMAIS" && isAceleracao) return false;
       if (!q) return true;
       return (
         c.nome.toLowerCase().includes(q) ||
@@ -126,7 +131,13 @@ function ClientesBase() {
         (c.plano ?? "").toLowerCase().includes(q)
       );
     });
-  }, [clientes, query, categoria]);
+  }, [clientes, query, categoria, tipoPlano]);
+
+  const aceleracaoCount = useMemo(
+    () => clientes.filter((c) => normalize(c.plano).includes("aceleracao")).length,
+    [clientes],
+  );
+
 
 
   return (
@@ -202,6 +213,29 @@ function ClientesBase() {
               ))}
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Plano:</span>
+            {([
+              { key: "TODOS", label: "Todos planos" },
+              { key: "ACELERACAO", label: `Aceleração (${aceleracaoCount})` },
+              { key: "DEMAIS", label: "Demais planos" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setTipoPlano(opt.key)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  tipoPlano === opt.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background hover:bg-muted"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
 
           <div className="text-xs text-muted-foreground">
             {isLoading
