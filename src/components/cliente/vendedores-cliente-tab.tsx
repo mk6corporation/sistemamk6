@@ -29,10 +29,10 @@ export function VendedoresClienteTab({ clienteId, clienteNome }: { clienteId: st
   const [metricasMes, setMetricasMes] = useState<Record<string, { leads: number; vendas: number; faturamento: number; cotacoes: number }>>({});
   const [loading, setLoading] = useState(true);
 
-  // URL pública do preview: os links criados no editor ficam no banco de teste,
-  // então precisam abrir no preview público, não no app publicado.
-  const PUBLIC_PREVIEW_URL = "https://id-preview--fb9aba7f-9d2d-454f-8b5b-c17ba03a5151.lovable.app";
-  const url = link ? `${PUBLIC_PREVIEW_URL}/v/${link.slug}` : "";
+  // URL pública estável do app publicado.
+  const PUBLIC_APP_URL = "https://sistemamk6.lovable.app";
+  const url = link ? `${PUBLIC_APP_URL}/v/${link.slug}` : "";
+
 
 
 
