@@ -117,7 +117,13 @@ export function VendedoresFunilSelector({
   );
 
   if (vendedores.length === 0 && !loading) {
-    if (compact) return null;
+    if (compact) {
+      return (
+        <Badge variant="outline" className="gap-1 text-[10px] text-muted-foreground">
+          <Users className="h-3 w-3" /> Sem vendedores · manual
+        </Badge>
+      );
+    }
     return (
       <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
@@ -126,6 +132,7 @@ export function VendedoresFunilSelector({
       </div>
     );
   }
+
 
   if (compact) {
     return (
