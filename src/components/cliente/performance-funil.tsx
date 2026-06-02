@@ -45,17 +45,16 @@ const DEFAULTS: Record<Cenario, ParamsCenario> = {
 const MK_COLOR = "#f59e0b"; // amber - marketing
 const CO_COLOR = "#3b82f6"; // blue - commercial
 
+import { fmtBRL, fmtInt, fmtPct as fmtPctShared } from "@/lib/format";
+
 function fmtMoney(v: number) {
-  if (!isFinite(v)) return "—";
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return fmtBRL(v);
 }
 function fmtNum(v: number) {
-  if (!isFinite(v)) return "—";
-  return v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  return fmtInt(v);
 }
 function fmtPct(v: number) {
-  if (!isFinite(v)) return "—";
-  return `${v.toFixed(1)}%`;
+  return fmtPctShared(v, 1);
 }
 function pct(realizado: number, meta: number) {
   if (!meta) return 0;
@@ -163,13 +162,20 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
             <Label className="text-xs font-semibold uppercase tracking-wide text-primary">
               Investimento em ADS (R$)
             </Label>
-            <Input
-              type="number"
-              className="mt-1 max-w-[280px] text-lg font-semibold"
-              value={investimento}
-              onChange={(e) => setInvestimento(Number(e.target.value) || 0)}
-            />
+            <div className="relative mt-1 max-w-[280px]">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-primary">
+                R$
+              </span>
+              <Input
+                type="number"
+                className="pl-10 text-lg font-semibold"
+                value={investimento}
+                onChange={(e) => setInvestimento(Number(e.target.value) || 0)}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Valor atual: {fmtMoney(investimento)}</p>
           </div>
+
 
           {/* Parâmetros: Marketing (amber) + Comercial (blue) */}
           <div className="grid gap-4 md:grid-cols-2">
@@ -181,8 +187,8 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 </div>
                 <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing</h4>
               </div>
-              <ParamRow label="CPL (R$ por lead)" k="cpl" params={params} onChange={updateParam} />
-              <ParamRow label="% Qualificação dos leads" k="qualificacao_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="CPL por lead" k="cpl" params={params} onChange={updateParam} prefix="R$" />
+              <ParamRow label="Qualificação dos leads" k="qualificacao_pct" params={params} onChange={updateParam} suffix="%" />
             </div>
 
             {/* COMERCIAL */}
@@ -193,9 +199,10 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 </div>
                 <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial</h4>
               </div>
-              <ParamRow label="% Cotação → Venda" k="cot_para_venda_pct" params={params} onChange={updateParam} suffix="%" />
-              <ParamRow label="Ticket médio (R$)" k="ticket_medio" params={params} onChange={updateParam} />
-              <ParamRow label="% Margem líquida" k="margem_liquida_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="Cotação → Venda" k="cot_para_venda_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="Ticket médio" k="ticket_medio" params={params} onChange={updateParam} prefix="R$" />
+              <ParamRow label="Margem líquida" k="margem_liquida_pct" params={params} onChange={updateParam} suffix="%" />
+
             </div>
           </div>
 
@@ -286,7 +293,7 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
                 <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing — Realizado</h4>
               </div>
               <div className="space-y-2">
-                <RealInput label="Investimento (R$)" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
+                <RealInput label="Investimento" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
                 <RealInput label="Leads gerados" value={realizado.leads} onChange={(v) => setRealizado({ ...realizado, leads: v })} />
                 <RealInput label="Leads qualificados" value={realizado.qualificados} onChange={(v) => setRealizado({ ...realizado, qualificados: v })} />
               </div>
@@ -308,8 +315,9 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
               <div className="space-y-2">
                 <RealInput label="Cotações enviadas" value={realizado.cotacoes} onChange={(v) => setRealizado({ ...realizado, cotacoes: v })} />
                 <RealInput label="Vendas fechadas" value={realizado.vendas} onChange={(v) => setRealizado({ ...realizado, vendas: v })} />
-                <RealInput label="Faturamento Bruto (R$)" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
-                <RealInput label="Faturamento Líquido (R$)" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
+                <RealInput label="Faturamento Bruto" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
+                <RealInput label="Faturamento Líquido" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
+
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
                 <Computed label="Tx. Conversão" value={fmtPct(realTaxaConv)} />
@@ -408,28 +416,42 @@ function ParamRow({
   params,
   onChange,
   suffix,
+  prefix,
 }: {
   label: string;
   k: keyof ParamsCenario;
   params: Record<Cenario, ParamsCenario>;
   onChange: (cen: Cenario, key: keyof ParamsCenario, v: number) => void;
   suffix?: string;
+  prefix?: string;
 }) {
   return (
     <div className="mb-2">
-      <Label className="text-[11px] text-muted-foreground">{label}{suffix ? ` (${suffix})` : ""}</Label>
+      <Label className="text-[11px] text-muted-foreground">
+        {label} {prefix ? `(${prefix})` : suffix ? `(${suffix})` : ""}
+      </Label>
       <div className="mt-1 grid grid-cols-3 gap-1.5">
         {(["pessimista", "mediano", "otimista"] as Cenario[]).map((cen) => {
           const cor = cen === "pessimista" ? "rgb(239 68 68)" : cen === "mediano" ? "rgb(245 158 11)" : "rgb(16 185 129)";
           return (
             <div key={cen} className="relative">
               <span className="absolute left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full" style={{ background: cor }} />
+              {prefix && (
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+                  {prefix}
+                </span>
+              )}
               <Input
                 type="number"
-                className="h-8 pl-4 text-xs"
+                className={`h-8 text-xs ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-6" : ""}`}
                 value={params[cen][k]}
                 onChange={(e) => onChange(cen, k, Number(e.target.value) || 0)}
               />
+              {suffix && (
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+                  {suffix}
+                </span>
+              )}
             </div>
           );
         })}
@@ -437,6 +459,7 @@ function ParamRow({
     </div>
   );
 }
+
 
 function CenarioCard({
   nome,
@@ -541,22 +564,32 @@ function FunilVisual({
   );
 }
 
-function RealInput({ label, value, onChange, money }: { label: string; value: number; onChange: (v: number) => void; money?: boolean }) {
+function RealInput({ label, value, onChange, money, percent }: { label: string; value: number; onChange: (v: number) => void; money?: boolean; percent?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-2">
+      <div className="relative">
+        {money && (
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+            R$
+          </span>
+        )}
         <Input
           type="number"
-          className="h-8 w-32 text-right text-sm"
+          className={`h-8 w-36 text-right text-sm ${money ? "pl-8" : ""} ${percent ? "pr-6" : ""}`}
           value={value}
           onChange={(e) => onChange(Number(e.target.value) || 0)}
         />
-        {money && <span className="text-[10px] text-muted-foreground">R$</span>}
+        {percent && (
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+            %
+          </span>
+        )}
       </div>
     </div>
   );
 }
+
 
 function Computed({ label, value }: { label: string; value: string }) {
   return (
