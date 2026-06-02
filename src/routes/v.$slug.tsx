@@ -34,20 +34,30 @@ function VendedorSignupPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendedor_links")
-        .select("id, cliente_id, ativo, titulo, descricao, clientes:cliente_id(nome)")
+        .select("id, cliente_id, ativo, titulo, descricao")
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
-      return data as {
+      if (!data) return null;
+      const { data: cliente } = await supabase
+        .from("clientes")
+        .select("nome")
+        .eq("id", data.cliente_id)
+        .maybeSingle();
+      return {
+        ...data,
+        clientes: cliente ? { nome: cliente.nome } : null,
+      } as {
         id: string;
         cliente_id: string;
         ativo: boolean;
         titulo: string | null;
         descricao: string | null;
         clientes: { nome: string } | null;
-      } | null;
+      };
     },
   });
+
 
   if (user && !authLoading) {
     return <Navigate to="/v/painel" />;
