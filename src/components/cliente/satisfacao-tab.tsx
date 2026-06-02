@@ -280,24 +280,26 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
                   <p className="text-sm text-muted-foreground">Sem dados suficientes para gerar o gráfico.</p>
                 ) : (
                   <div className="h-[260px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyEvolution} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                        <YAxis yAxisId="left" domain={[0, 10]} tick={{ fontSize: 12 }} label={{ value: "Média", angle: -90, position: "insideLeft", style: { fontSize: 11 } }} />
-                        <YAxis yAxisId="right" orientation="right" domain={[-100, 100]} tick={{ fontSize: 12 }} label={{ value: "NPS", angle: 90, position: "insideRight", style: { fontSize: 11 } }} />
-                        <Tooltip
-                          contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: 12 }}
-                          formatter={(value: number, name: string) => {
-                            if (name === "Média (0-10)") return [value.toFixed(1), name];
-                            return [value, name];
-                          }}
-                        />
-                        <ReferenceLine yAxisId="right" y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                        <Line yAxisId="left" type="monotone" dataKey="media" name="Média (0-10)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                        <Line yAxisId="right" type="monotone" dataKey="nps" name="NPS" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {mounted && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={monthlyEvolution} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                          <YAxis yAxisId="left" domain={[0, 10]} tick={{ fontSize: 12 }} />
+                          <YAxis yAxisId="right" orientation="right" domain={[-100, 100]} tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: 12 }}
+                            formatter={(value: number, name: string) => {
+                              if (name === "Média (0-10)") return [Number(value).toFixed(1), name];
+                              return [value, name];
+                            }}
+                          />
+                          <ReferenceLine yAxisId="right" y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                          <Line yAxisId="left" type="monotone" dataKey="media" name="Média (0-10)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="nps" name="NPS" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
                 )}
               </div>
