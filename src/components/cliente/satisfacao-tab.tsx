@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Save, Smile, Meh, Frown, TrendingUp, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Save, Smile, Meh, Frown, TrendingUp, Users, LineChart as LineChartIcon } from "lucide-react";
 import { toast } from "sonner";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 
 type NPS = {
   id: string;
@@ -78,18 +89,63 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
   });
 
   const npsRows = npsQuery.data ?? [];
-  const recent = npsRows.filter((n) => {
-    const d = new Date(n.respondido_em).getTime();
-    return Date.now() - d <= 90 * 24 * 60 * 60 * 1000;
-  });
-  const avg90 = recent.length
-    ? recent.reduce((s, n) => s + n.score, 0) / recent.length
+
+  // Month filter: "all" or "YYYY-MM"
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of npsRows) {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      set.add(ym);
+    }
+    return Array.from(set).sort((a, b) => (a < b ? 1 : -1));
+  }, [npsRows]);
+
+  const filteredRows = useMemo(() => {
+    if (monthFilter === "all") return npsRows;
+    return npsRows.filter((n) => {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return ym === monthFilter;
+    });
+  }, [npsRows, monthFilter]);
+
+  // Cards: when "all", usa últimos 90 dias; senão usa o mês filtrado
+  const baseRows = monthFilter === "all"
+    ? npsRows.filter((n) => Date.now() - new Date(n.respondido_em).getTime() <= 90 * 24 * 60 * 60 * 1000)
+    : filteredRows;
+
+  const avgBase = baseRows.length ? baseRows.reduce((s, n) => s + n.score, 0) / baseRows.length : null;
+  const promoters = baseRows.filter((n) => n.score >= 9).length;
+  const detractors = baseRows.filter((n) => n.score <= 6).length;
+  const npsScore = baseRows.length
+    ? Math.round(((promoters - detractors) / baseRows.length) * 100)
     : null;
-  const promoters = recent.filter((n) => n.score >= 9).length;
-  const detractors = recent.filter((n) => n.score <= 6).length;
-  const npsScore = recent.length
-    ? Math.round(((promoters - detractors) / recent.length) * 100)
-    : null;
+
+  // Evolução mensal (média e NPS por mês), ordem crescente
+  const monthlyEvolution = useMemo(() => {
+    const map = new Map<string, { scores: number[] }>();
+    for (const n of npsRows) {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!map.has(ym)) map.set(ym, { scores: [] });
+      map.get(ym)!.scores.push(n.score);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([ym, v]) => {
+        const total = v.scores.length;
+        const media = v.scores.reduce((s, x) => s + x, 0) / total;
+        const p = v.scores.filter((s) => s >= 9).length;
+        const d = v.scores.filter((s) => s <= 6).length;
+        const nps = Math.round(((p - d) / total) * 100);
+        const [y, m] = ym.split("-");
+        const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+        return { ym, label, media: Number(media.toFixed(2)), nps, respostas: total };
+      });
+  }, [npsRows]);
 
   const [perf, setPerf] = useState<Perf>({
     cliente_id: clienteId,
@@ -143,9 +199,31 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
       {/* NPS */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smile className="h-5 w-5" /> Satisfação (NPS)
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <Smile className="h-5 w-5" /> Satisfação (NPS)
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Filtrar por mês</Label>
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="h-9 w-[180px]">
+                  <SelectValue placeholder="Selecionar mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Últimos 90 dias</SelectItem>
+                  {monthOptions.map((ym) => {
+                    const [y, m] = ym.split("-");
+                    const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+                    return (
+                      <SelectItem key={ym} value={ym}>
+                        {label.charAt(0).toUpperCase() + label.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {npsQuery.isLoading ? (
@@ -155,9 +233,11 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card>
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Média (90 dias)</p>
-                    <p className="text-3xl font-bold">{avg90 != null ? avg90.toFixed(1) : "—"}</p>
-                    <p className="text-xs text-muted-foreground">{recent.length} resposta(s)</p>
+                    <p className="text-xs text-muted-foreground">
+                      {monthFilter === "all" ? "Média (90 dias)" : "Média do mês"}
+                    </p>
+                    <p className="text-3xl font-bold">{avgBase != null ? avgBase.toFixed(1) : "—"}</p>
+                    <p className="text-xs text-muted-foreground">{baseRows.length} resposta(s)</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -171,30 +251,68 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Última resposta</p>
+                    <p className="text-xs text-muted-foreground">
+                      {monthFilter === "all" ? "Última resposta" : "Resposta mais recente do mês"}
+                    </p>
                     <p className="text-lg font-medium">
-                      {npsRows[0]
-                        ? new Date(npsRows[0].respondido_em).toLocaleDateString("pt-BR")
+                      {baseRows[0]
+                        ? new Date(baseRows[0].respondido_em).toLocaleDateString("pt-BR")
                         : "—"}
                     </p>
-                    {npsRows[0] && (
-                      <Badge className={classifyNPS(npsRows[0].score).color} variant="secondary">
-                        Nota {npsRows[0].score} · {classifyNPS(npsRows[0].score).label}
+                    {baseRows[0] && (
+                      <Badge className={classifyNPS(baseRows[0].score).color} variant="secondary">
+                        Nota {baseRows[0].score} · {classifyNPS(baseRows[0].score).label}
                       </Badge>
                     )}
                   </CardContent>
                 </Card>
               </div>
 
+              {/* Evolução mensal */}
+              <div className="rounded-lg border p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <LineChartIcon className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-medium">Evolução do NPS ao longo dos meses</p>
+                </div>
+                {monthlyEvolution.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados suficientes para gerar o gráfico.</p>
+                ) : (
+                  <div className="h-[260px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyEvolution} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                        <YAxis yAxisId="left" domain={[0, 10]} tick={{ fontSize: 12 }} label={{ value: "Média", angle: -90, position: "insideLeft", style: { fontSize: 11 } }} />
+                        <YAxis yAxisId="right" orientation="right" domain={[-100, 100]} tick={{ fontSize: 12 }} label={{ value: "NPS", angle: 90, position: "insideRight", style: { fontSize: 11 } }} />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: 12 }}
+                          formatter={(value: number, name: string) => {
+                            if (name === "Média (0-10)") return [value.toFixed(1), name];
+                            return [value, name];
+                          }}
+                        />
+                        <ReferenceLine yAxisId="right" y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                        <Line yAxisId="left" type="monotone" dataKey="media" name="Média (0-10)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line yAxisId="right" type="monotone" dataKey="nps" name="NPS" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+
               <div>
-                <p className="mb-2 text-sm font-medium">Histórico</p>
-                {npsRows.length === 0 ? (
+                <p className="mb-2 text-sm font-medium">
+                  Histórico {monthFilter !== "all" && <span className="text-xs text-muted-foreground">· filtrado</span>}
+                </p>
+                {filteredRows.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    Nenhuma resposta de NPS ainda. As respostas enviadas pelo sistema externo aparecem aqui automaticamente.
+                    {npsRows.length === 0
+                      ? "Nenhuma resposta de NPS ainda. As respostas enviadas pelo sistema externo aparecem aqui automaticamente."
+                      : "Nenhuma resposta neste mês."}
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {npsRows.map((n) => {
+                    {filteredRows.map((n) => {
                       const c = classifyNPS(n.score);
                       const Icon = c.Icon;
                       return (
