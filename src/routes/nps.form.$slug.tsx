@@ -165,7 +165,12 @@ function NpsFormPage() {
       });
       if (!res.ok) {
         const t = await res.text();
-        throw new Error(t || "Erro ao enviar");
+        let msg = t || "Erro ao enviar";
+        try {
+          const j = JSON.parse(t);
+          if (j?.error) msg = typeof j.error === "string" ? j.error : JSON.stringify(j.error);
+        } catch {}
+        throw new Error(msg);
       }
     },
     onSuccess: () => setEnviado(true),
