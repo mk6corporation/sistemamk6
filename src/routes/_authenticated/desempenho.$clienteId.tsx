@@ -13,6 +13,9 @@ export const Route = createFileRoute("/_authenticated/desempenho/$clienteId")({
 
 function DesempenhoCliente() {
   const { clienteId } = Route.useParams();
+  const now = new Date();
+  const [ano] = useState(now.getFullYear());
+  const [mes] = useState(now.getMonth() + 1);
 
   const { data: cliente, isLoading } = useQuery({
     queryKey: ["cliente-desempenho", clienteId],
