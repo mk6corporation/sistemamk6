@@ -102,6 +102,7 @@ function ClienteDetailPage() {
           <TabsTrigger value="timeline"><CalendarDays className="mr-2 h-4 w-4" />Linha do Tempo</TabsTrigger>
           <TabsTrigger value="checkins"><MessageSquare className="mr-2 h-4 w-4" />Check-ins</TabsTrigger>
           <TabsTrigger value="satisfacao"><Smile className="mr-2 h-4 w-4" />Desempenho</TabsTrigger>
+          <TabsTrigger value="vendedores"><Briefcase className="mr-2 h-4 w-4" />Vendedores</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados"><DadosCorporativosTab clienteId={clienteId} /></TabsContent>
@@ -110,6 +111,8 @@ function ClienteDetailPage() {
         <TabsContent value="timeline"><TimelineTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="checkins"><CheckinsTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="satisfacao"><SatisfacaoTab clienteId={clienteId} /></TabsContent>
+        <TabsContent value="vendedores"><VendedoresClienteTab clienteId={clienteId} clienteNome={cliente.nome} /></TabsContent>
+
       </Tabs>
     </div>
   );
