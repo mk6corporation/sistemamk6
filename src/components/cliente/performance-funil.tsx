@@ -810,11 +810,14 @@ function FunilRealizadoVisual({
   realizado,
   setRealizado,
   metricas,
+  readOnly = false,
 }: {
   realizado: Realizado;
   setRealizado: (r: Realizado) => void;
   metricas: { cpl: number; cplq: number; taxaQual: number; taxaConv: number; ticket: number };
+  readOnly?: boolean;
 }) {
+
   const update = (k: RealizadoStageKey, v: number) => setRealizado({ ...realizado, [k]: v });
 
   const stages: Array<{
