@@ -29,8 +29,16 @@ export function VendedoresClienteTab({ clienteId, clienteNome }: { clienteId: st
   const [metricasMes, setMetricasMes] = useState<Record<string, { leads: number; vendas: number; faturamento: number; cotacoes: number }>>({});
   const [loading, setLoading] = useState(true);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  // URL pública estável do app publicado. Quando o componente roda dentro
+  // do editor (lovable.dev), window.location.origin aponta pro editor e o
+  // link cai numa tela de login. Forçamos o domínio público.
+  const PUBLIC_APP_URL = "https://sistemamk6.lovable.app";
+  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = /lovable\.(dev|app)$/.test(new URL(currentOrigin || PUBLIC_APP_URL).hostname) && !currentOrigin.includes("sistemamk6")
+    ? PUBLIC_APP_URL
+    : currentOrigin || PUBLIC_APP_URL;
   const url = link ? `${baseUrl}/v/${link.slug}` : "";
+
 
   const load = async () => {
     setLoading(true);
