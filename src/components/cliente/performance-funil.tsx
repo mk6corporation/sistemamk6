@@ -600,30 +600,69 @@ function CenarioCard({
 }) {
   return (
     <div
-      className={`rounded-lg border-2 p-4 ${destaque ? "ring-2 ring-offset-2" : ""}`}
-      style={{ borderColor: cor, background: `${cor}10`, ...(destaque ? { boxShadow: `0 0 0 2px ${cor}30` } : {}) }}
+      className={`relative overflow-hidden rounded-xl border-2 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+        destaque ? "shadow-md" : ""
+      }`}
+      style={{
+        borderColor: cor,
+        background: `linear-gradient(180deg, ${cor}18 0%, ${cor}05 60%, transparent 100%)`,
+      }}
     >
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cor }}>{nome}</span>
-        {destaque && <Badge variant="secondary" className="text-[10px]">Esperado</Badge>}
-      </div>
-      <p className="text-xs text-muted-foreground">Faturamento líquido previsto</p>
-      <p className="mt-1 text-2xl font-bold" style={{ color: cor }}>{fmtMoney(data.faturamentoLiquido)}</p>
-      <div className="mt-3 space-y-1 text-xs">
-        <Linha label="Leads" value={fmtNum(data.leads)} />
-        <Linha label="Qualificados" value={fmtNum(data.qualificados)} />
-        <Linha label="Vendas" value={fmtNum(data.vendas)} />
-        <Linha label="Ticket" value={fmtMoney(data.ticket)} />
+      {/* faixa colorida no topo */}
+      <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${cor}, ${cor}cc)` }} />
+
+      <div className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span
+            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white"
+            style={{ background: cor }}
+          >
+            {nome}
+          </span>
+          {destaque && (
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <CheckCircle2 className="h-3 w-3" /> Esperado
+            </Badge>
+          )}
+        </div>
+
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Faturamento líquido
+        </p>
+        <p className="mt-0.5 text-3xl font-bold tabular-nums leading-tight" style={{ color: cor }}>
+          {fmtMoney(data.faturamentoLiquido)}
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          Bruto: <span className="font-semibold text-foreground">{fmtMoney(data.faturamentoBruto)}</span>
+        </p>
+
+        {/* mini funil de quantidades */}
+        <div className="mt-4 space-y-1.5">
+          <MiniFunil label="Leads" value={fmtNum(data.leads)} cor={cor} fill={1} />
+          <MiniFunil label="Qualificados" value={fmtNum(data.qualificados)} cor={cor} fill={data.leads > 0 ? data.qualificados / data.leads : 0} />
+          <MiniFunil label="Vendas" value={fmtNum(data.vendas)} cor={cor} fill={data.leads > 0 ? data.vendas / data.leads : 0} />
+        </div>
+
+        <div className="mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
+          <span className="text-muted-foreground">Ticket médio</span>
+          <span className="font-bold tabular-nums" style={{ color: cor }}>{fmtMoney(data.ticket)}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-function Linha({ label, value }: { label: string; value: string }) {
+function MiniFunil({ label, value, cor, fill }: { label: string; value: string; cor: string; fill: number }) {
+  const pct = Math.max(4, Math.min(100, fill * 100));
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div>
+      <div className="mb-0.5 flex items-center justify-between text-[10px]">
+        <span className="font-medium text-muted-foreground">{label}</span>
+        <span className="font-bold tabular-nums text-foreground">{value}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${cor}, ${cor}aa)` }} />
+      </div>
     </div>
   );
 }
