@@ -408,28 +408,42 @@ function ParamRow({
   params,
   onChange,
   suffix,
+  prefix,
 }: {
   label: string;
   k: keyof ParamsCenario;
   params: Record<Cenario, ParamsCenario>;
   onChange: (cen: Cenario, key: keyof ParamsCenario, v: number) => void;
   suffix?: string;
+  prefix?: string;
 }) {
   return (
     <div className="mb-2">
-      <Label className="text-[11px] text-muted-foreground">{label}{suffix ? ` (${suffix})` : ""}</Label>
+      <Label className="text-[11px] text-muted-foreground">
+        {label} {prefix ? `(${prefix})` : suffix ? `(${suffix})` : ""}
+      </Label>
       <div className="mt-1 grid grid-cols-3 gap-1.5">
         {(["pessimista", "mediano", "otimista"] as Cenario[]).map((cen) => {
           const cor = cen === "pessimista" ? "rgb(239 68 68)" : cen === "mediano" ? "rgb(245 158 11)" : "rgb(16 185 129)";
           return (
             <div key={cen} className="relative">
               <span className="absolute left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full" style={{ background: cor }} />
+              {prefix && (
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+                  {prefix}
+                </span>
+              )}
               <Input
                 type="number"
-                className="h-8 pl-4 text-xs"
+                className={`h-8 text-xs ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-6" : ""}`}
                 value={params[cen][k]}
                 onChange={(e) => onChange(cen, k, Number(e.target.value) || 0)}
               />
+              {suffix && (
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">
+                  {suffix}
+                </span>
+              )}
             </div>
           );
         })}
@@ -437,6 +451,7 @@ function ParamRow({
     </div>
   );
 }
+
 
 function CenarioCard({
   nome,
