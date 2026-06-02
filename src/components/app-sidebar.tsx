@@ -13,6 +13,7 @@ import {
   MessageSquare,
   AlertTriangle,
   Repeat,
+  TrendingUp,
 } from "lucide-react";
 import {
   Sidebar,
