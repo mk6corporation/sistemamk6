@@ -156,14 +156,6 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
     faturamento_meta: null,
     observacoes: null,
   });
-    cliente_id: clienteId,
-    leads_inicial: null,
-    leads_atual: null,
-    faturamento_inicial: null,
-    faturamento_atual: null,
-    faturamento_meta: null,
-    observacoes: null,
-  });
 
   useEffect(() => {
     if (perfQuery.data) setPerf(perfQuery.data);
