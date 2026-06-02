@@ -734,6 +734,53 @@ export type Database = {
         }
         Relationships: []
       }
+      projecoes_cliente: {
+        Row: {
+          ano: number
+          cliente_id: string
+          created_at: string
+          id: string
+          investimento: number
+          mes: number
+          observacoes: string | null
+          params: Json
+          realizado: Json
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          cliente_id: string
+          created_at?: string
+          id?: string
+          investimento?: number
+          mes: number
+          observacoes?: string | null
+          params?: Json
+          realizado?: Json
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          investimento?: number
+          mes?: number
+          observacoes?: string | null
+          params?: Json
+          realizado?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projecoes_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rotina_recorrente: {
         Row: {
           cliente_id: string
