@@ -60,6 +60,8 @@ function DesempenhoCliente() {
             </div>
           </div>
 
+          <ComercialDashboard clienteId={clienteId} ano={ano} mes={mes} selecaoVendedor="macro" />
+
           <PerformanceFunil clienteId={clienteId} />
         </>
       )}
