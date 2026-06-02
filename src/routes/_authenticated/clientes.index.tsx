@@ -58,6 +58,7 @@ function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [categoria, setCategoria] = useState<string>("TODOS");
+  const [tipoPlano, setTipoPlano] = useState<"TODOS" | "ACELERACAO" | "DEMAIS">("TODOS");
   const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
