@@ -446,9 +446,33 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
           </Select>
         </CardHeader>
         <CardContent className="space-y-6">
+          <VendedoresFunilSelector
+            clienteId={clienteId}
+            ano={ano}
+            mes={mes}
+            mode={vendedorMode}
+            onChange={(mode, agg, count) => {
+              setVendedorMode(mode);
+              setVendedoresCount(count);
+              if (mode !== "manual" && agg) {
+                const margem = params.mediano.margem_liquida_pct / 100;
+                setRealizado({
+                  ...realizado,
+                  leads: agg.leads,
+                  qualificados: realizado.qualificados || agg.leads,
+                  cotacoes: agg.cotacoes,
+                  vendas: agg.vendas,
+                  faturamentoBruto: agg.faturamentoBruto,
+                  faturamentoLiquido: agg.faturamentoBruto * margem,
+                });
+              }
+            }}
+          />
+
           <FunilRealizadoVisual
             realizado={realizado}
             setRealizado={setRealizado}
+            readOnly={vendedoresCount > 0 && vendedorMode !== "manual"}
             metricas={{
               cpl: realCPL,
               cplq: realCPLQ,
@@ -457,6 +481,7 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
               ticket: realTicket,
             }}
           />
+
 
           {/* Diagnóstico */}
           <div className="rounded-lg border bg-muted/20 p-4">
