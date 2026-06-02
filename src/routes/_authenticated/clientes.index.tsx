@@ -57,7 +57,7 @@ function formatBRL(v: number | null) {
 function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
-  const [categoria, setCategoria] = useState<string>("ATIVO");
+  const [categoria, setCategoria] = useState<string>("TODOS");
   const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
