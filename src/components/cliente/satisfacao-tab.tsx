@@ -61,6 +61,8 @@ function growthPct(inicial: number | null, atual: number | null, meta: number | 
 
 export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
   const qc = useQueryClient();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const npsQuery = useQuery({
     queryKey: ["nps", clienteId],
