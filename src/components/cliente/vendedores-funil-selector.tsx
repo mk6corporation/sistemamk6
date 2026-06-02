@@ -28,12 +28,14 @@ export function VendedoresFunilSelector({
   mes,
   mode,
   onChange,
+  compact = false,
 }: {
   clienteId: string;
   ano: number;
   mes: number;
   mode: SelectionMode;
   onChange: (mode: SelectionMode, agg: VendedorAgregado | null, vendedoresCount: number) => void;
+  compact?: boolean;
 }) {
   const [vendedores, setVendedores] = useState<VendedorRow[]>([]);
   const [macro, setMacro] = useState<VendedorAgregado | null>(null);
@@ -115,11 +117,49 @@ export function VendedoresFunilSelector({
   );
 
   if (vendedores.length === 0 && !loading) {
+    if (compact) return null;
     return (
       <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4" /> Nenhum vendedor cadastrado para este cliente. Preenchimento manual ativo.
         </div>
+      </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge variant="secondary" className="gap-1 text-[10px]">
+          <Users className="h-3 w-3" /> {vendedores.length}
+        </Badge>
+        <Button
+          size="sm"
+          variant={mode === "macro" ? "default" : "outline"}
+          className="h-8 gap-1 text-xs"
+          onClick={() => onChange("macro", macro, vendedores.length)}
+        >
+          <BarChart2 className="h-3 w-3" /> Macro
+        </Button>
+        {top.map((v) => (
+          <Button
+            key={v.user_id}
+            size="sm"
+            variant={mode === v.user_id ? "default" : "outline"}
+            className="h-8 text-xs"
+            onClick={() => onChange(v.user_id, v.agg, vendedores.length)}
+          >
+            {v.nome.split(" ")[0]}
+          </Button>
+        ))}
+        <Button
+          size="sm"
+          variant={mode === "manual" ? "default" : "ghost"}
+          className="h-8 gap-1 text-xs"
+          onClick={() => onChange("manual", null, vendedores.length)}
+        >
+          <UserCog className="h-3 w-3" /> Manual
+        </Button>
       </div>
     );
   }

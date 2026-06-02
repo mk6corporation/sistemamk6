@@ -433,41 +433,44 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
             </CardTitle>
             <p className="mt-1 text-xs text-muted-foreground">Dados reais do período selecionado.</p>
           </div>
-          <Select value={realizadoFiltro} onValueChange={(v) => setRealizadoFiltro(v as typeof realizadoFiltro)}>
-            <SelectTrigger className="h-9 w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="15d">Últimos 15 dias</SelectItem>
-              <SelectItem value="30d">Últimos 30 dias</SelectItem>
-              <SelectItem value="mes">Mês atual</SelectItem>
-              <SelectItem value="trimestre">Trimestre</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <VendedoresFunilSelector
+              compact
+              clienteId={clienteId}
+              ano={ano}
+              mes={mes}
+              mode={vendedorMode}
+              onChange={(mode, agg, count) => {
+                setVendedorMode(mode);
+                setVendedoresCount(count);
+                if (mode !== "manual" && agg) {
+                  const margem = params.mediano.margem_liquida_pct / 100;
+                  setRealizado({
+                    ...realizado,
+                    leads: agg.leads,
+                    qualificados: realizado.qualificados || agg.leads,
+                    cotacoes: agg.cotacoes,
+                    vendas: agg.vendas,
+                    faturamentoBruto: agg.faturamentoBruto,
+                    faturamentoLiquido: agg.faturamentoBruto * margem,
+                  });
+                }
+              }}
+            />
+            <Select value={realizadoFiltro} onValueChange={(v) => setRealizadoFiltro(v as typeof realizadoFiltro)}>
+              <SelectTrigger className="h-9 w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15d">Últimos 15 dias</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="mes">Mês atual</SelectItem>
+                <SelectItem value="trimestre">Trimestre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <VendedoresFunilSelector
-            clienteId={clienteId}
-            ano={ano}
-            mes={mes}
-            mode={vendedorMode}
-            onChange={(mode, agg, count) => {
-              setVendedorMode(mode);
-              setVendedoresCount(count);
-              if (mode !== "manual" && agg) {
-                const margem = params.mediano.margem_liquida_pct / 100;
-                setRealizado({
-                  ...realizado,
-                  leads: agg.leads,
-                  qualificados: realizado.qualificados || agg.leads,
-                  cotacoes: agg.cotacoes,
-                  vendas: agg.vendas,
-                  faturamentoBruto: agg.faturamentoBruto,
-                  faturamentoLiquido: agg.faturamentoBruto * margem,
-                });
-              }
-            }}
-          />
 
           <FunilRealizadoVisual
             realizado={realizado}

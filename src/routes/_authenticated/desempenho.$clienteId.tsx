@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, TrendingUp } from "lucide-react";
 import { PerformanceFunil } from "@/components/cliente/performance-funil";
+import { ComercialDashboard } from "@/components/cliente/comercial-dashboard";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/desempenho/$clienteId")({
   component: DesempenhoCliente,
@@ -11,6 +13,9 @@ export const Route = createFileRoute("/_authenticated/desempenho/$clienteId")({
 
 function DesempenhoCliente() {
   const { clienteId } = Route.useParams();
+  const now = new Date();
+  const [ano] = useState(now.getFullYear());
+  const [mes] = useState(now.getMonth() + 1);
 
   const { data: cliente, isLoading } = useQuery({
     queryKey: ["cliente-desempenho", clienteId],
@@ -54,6 +59,8 @@ function DesempenhoCliente() {
               </p>
             </div>
           </div>
+
+          <ComercialDashboard clienteId={clienteId} ano={ano} mes={mes} selecaoVendedor="macro" />
 
           <PerformanceFunil clienteId={clienteId} />
         </>
