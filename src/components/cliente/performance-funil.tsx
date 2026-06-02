@@ -440,48 +440,17 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
           </Select>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Marketing realizado */}
-            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${MK_COLOR}40` }}>
-              <div className="mb-3 flex items-center gap-2">
-                <div className="rounded-md p-1.5" style={{ background: `${MK_COLOR}20` }}>
-                  <Megaphone className="h-4 w-4" style={{ color: MK_COLOR }} />
-                </div>
-                <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing — Realizado</h4>
-              </div>
-              <div className="space-y-2">
-                <RealInput label="Investimento" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
-                <RealInput label="Leads gerados" value={realizado.leads} onChange={(v) => setRealizado({ ...realizado, leads: v })} />
-                <RealInput label="Leads qualificados" value={realizado.qualificados} onChange={(v) => setRealizado({ ...realizado, qualificados: v })} />
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-xs">
-                <Computed label="CPL" value={fmtMoney(realCPL)} />
-                <Computed label="CPLQ" value={fmtMoney(realCPLQ)} />
-                <Computed label="Tx. Qualif." value={fmtPct(realTaxaQual)} />
-              </div>
-            </div>
-
-            {/* Comercial realizado */}
-            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${CO_COLOR}40` }}>
-              <div className="mb-3 flex items-center gap-2">
-                <div className="rounded-md p-1.5" style={{ background: `${CO_COLOR}20` }}>
-                  <Handshake className="h-4 w-4" style={{ color: CO_COLOR }} />
-                </div>
-                <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial — Realizado</h4>
-              </div>
-              <div className="space-y-2">
-                <RealInput label="Cotações enviadas" value={realizado.cotacoes} onChange={(v) => setRealizado({ ...realizado, cotacoes: v })} />
-                <RealInput label="Vendas fechadas" value={realizado.vendas} onChange={(v) => setRealizado({ ...realizado, vendas: v })} />
-                <RealInput label="Faturamento Bruto" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
-                <RealInput label="Faturamento Líquido" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
-
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
-                <Computed label="Tx. Conversão" value={fmtPct(realTaxaConv)} />
-                <Computed label="Ticket Médio" value={fmtMoney(realTicket)} />
-              </div>
-            </div>
-          </div>
+          <FunilRealizadoVisual
+            realizado={realizado}
+            setRealizado={setRealizado}
+            metricas={{
+              cpl: realCPL,
+              cplq: realCPLQ,
+              taxaQual: realTaxaQual,
+              taxaConv: realTaxaConv,
+              ticket: realTicket,
+            }}
+          />
 
           {/* Diagnóstico */}
           <div className="rounded-lg border bg-muted/20 p-4">
