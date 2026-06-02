@@ -183,12 +183,13 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
       ano,
       mes,
       investimento,
-      params: params as unknown as Record<string, unknown>,
-      realizado: realizado as unknown as Record<string, unknown>,
+      params: JSON.parse(JSON.stringify(params)),
+      realizado: JSON.parse(JSON.stringify(realizado)),
     };
     const { error } = await supabase
       .from("projecoes_cliente")
       .upsert(payload, { onConflict: "cliente_id,ano,mes" });
+
     setSaving(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
