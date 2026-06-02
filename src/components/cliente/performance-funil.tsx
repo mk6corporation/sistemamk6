@@ -45,17 +45,16 @@ const DEFAULTS: Record<Cenario, ParamsCenario> = {
 const MK_COLOR = "#f59e0b"; // amber - marketing
 const CO_COLOR = "#3b82f6"; // blue - commercial
 
+import { fmtBRL, fmtInt, fmtPct as fmtPctShared } from "@/lib/format";
+
 function fmtMoney(v: number) {
-  if (!isFinite(v)) return "—";
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return fmtBRL(v);
 }
 function fmtNum(v: number) {
-  if (!isFinite(v)) return "—";
-  return v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  return fmtInt(v);
 }
 function fmtPct(v: number) {
-  if (!isFinite(v)) return "—";
-  return `${v.toFixed(1)}%`;
+  return fmtPctShared(v, 1);
 }
 function pct(realizado: number, meta: number) {
   if (!meta) return 0;
