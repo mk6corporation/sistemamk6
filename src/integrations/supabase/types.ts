@@ -868,6 +868,153 @@ export type Database = {
         }
         Relationships: []
       }
+      vendedor_links: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          slug: string
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          slug: string
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          slug?: string
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendedor_motivos_perda_catalogo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
+      vendedor_profiles: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          ultimo_acesso: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vendedor_registros_diarios: {
+        Row: {
+          cliente_id: string
+          cotacoes_enviadas: number
+          created_at: string
+          data: string
+          faturamento_bruto: number
+          follow_ups: number
+          id: string
+          leads_recebidos: number
+          ligacoes: number
+          motivos_perda: Json
+          observacoes: string | null
+          updated_at: string
+          vendas_fechadas: number
+          vendedor_user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          cotacoes_enviadas?: number
+          created_at?: string
+          data?: string
+          faturamento_bruto?: number
+          follow_ups?: number
+          id?: string
+          leads_recebidos?: number
+          ligacoes?: number
+          motivos_perda?: Json
+          observacoes?: string | null
+          updated_at?: string
+          vendas_fechadas?: number
+          vendedor_user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          cotacoes_enviadas?: number
+          created_at?: string
+          data?: string
+          faturamento_bruto?: number
+          follow_ups?: number
+          id?: string
+          leads_recebidos?: number
+          ligacoes?: number
+          motivos_perda?: Json
+          observacoes?: string | null
+          updated_at?: string
+          vendas_fechadas?: number
+          vendedor_user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
