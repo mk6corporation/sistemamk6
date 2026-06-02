@@ -28,12 +28,14 @@ export function VendedoresFunilSelector({
   mes,
   mode,
   onChange,
+  compact = false,
 }: {
   clienteId: string;
   ano: number;
   mes: number;
   mode: SelectionMode;
   onChange: (mode: SelectionMode, agg: VendedorAgregado | null, vendedoresCount: number) => void;
+  compact?: boolean;
 }) {
   const [vendedores, setVendedores] = useState<VendedorRow[]>([]);
   const [macro, setMacro] = useState<VendedorAgregado | null>(null);
