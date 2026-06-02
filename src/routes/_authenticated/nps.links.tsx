@@ -107,7 +107,10 @@ function NpsLinksPage() {
     },
   });
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  // Sempre usar o domínio publicado para que o link não passe pela
+  // proteção de preview do Lovable quando enviado aos clientes.
+  const PUBLISHED_URL = "https://sistemamk6.lovable.app";
+  const baseUrl = PUBLISHED_URL;
 
   const copyLink = (slug: string) => {
     const url = `${baseUrl}/nps/form/${slug}`;
