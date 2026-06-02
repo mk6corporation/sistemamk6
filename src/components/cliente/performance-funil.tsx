@@ -93,8 +93,10 @@ function calcCenario(investimento: number, p: ParamsCenario) {
   };
 }
 
-export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string }) {
-  void _clienteId;
+export function PerformanceFunil({ clienteId }: { clienteId: string }) {
+  const now = new Date();
+  const [ano, setAno] = useState<number>(now.getFullYear());
+  const [mes, setMes] = useState<number>(now.getMonth() + 1);
 
   const [investimento, setInvestimento] = useState<number>(2000);
   const [params, setParams] = useState<Record<Cenario, ParamsCenario>>(DEFAULTS);
@@ -119,11 +121,103 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
     qualificados: { mes: 60, trimestre: 180 },
   });
 
+  // ============ PERSISTÊNCIA ============
+  type ProjecaoRow = {
+    id: string;
+    ano: number;
+    mes: number;
+    investimento: number;
+    params: Record<Cenario, ParamsCenario>;
+    realizado: Realizado;
+  };
+  const [projecoes, setProjecoes] = useState<ProjecaoRow[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [loadingProj, setLoadingProj] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  // Carrega lista de projeções deste cliente
+  const reloadList = async () => {
+    const { data, error } = await supabase
+      .from("projecoes_cliente")
+      .select("id, ano, mes, investimento, params, realizado")
+      .eq("cliente_id", clienteId)
+      .order("ano", { ascending: false })
+      .order("mes", { ascending: false });
+    if (error) {
+      toast.error("Erro ao carregar projeções: " + error.message);
+      return;
+    }
+    setProjecoes((data ?? []) as unknown as ProjecaoRow[]);
+  };
+
+  useEffect(() => {
+    reloadList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteId]);
+
+  // Carrega projeção do mês/ano selecionado (ou mantém defaults se não existir)
+  useEffect(() => {
+    const found = projecoes.find((p) => p.ano === ano && p.mes === mes);
+    if (found) {
+      setInvestimento(Number(found.investimento) || 0);
+      setParams({ ...DEFAULTS, ...(found.params || {}) } as Record<Cenario, ParamsCenario>);
+      setRealizado({ ...realizado, ...(found.realizado || {}) });
+      setDirty(false);
+    } else {
+      setDirty(false);
+    }
+    setLoadingProj(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ano, mes, projecoes]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const payload = {
+      cliente_id: clienteId,
+      ano,
+      mes,
+      investimento,
+      params: params as unknown as Record<string, unknown>,
+      realizado: realizado as unknown as Record<string, unknown>,
+    };
+    const { error } = await supabase
+      .from("projecoes_cliente")
+      .upsert(payload, { onConflict: "cliente_id,ano,mes" });
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success(`Projeção de ${MESES[mes - 1]}/${ano} salva.`);
+    setDirty(false);
+    reloadList();
+  };
+
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm("Excluir esta projeção?");
+    if (!ok) return;
+    const { error } = await supabase.from("projecoes_cliente").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Projeção excluída.");
+    reloadList();
+  };
+
+  const projecaoAtualSalva = projecoes.find((p) => p.ano === ano && p.mes === mes);
+
   const cenarios = useMemo(() => ({
     pessimista: calcCenario(investimento, params.pessimista),
     mediano: calcCenario(investimento, params.mediano),
     otimista: calcCenario(investimento, params.otimista),
   }), [investimento, params]);
+
+  // Marca como modificado quando o usuário altera inputs
+  useEffect(() => {
+    if (!loadingProj) setDirty(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [investimento, params, realizado]);
 
   // Realizado calculados
   const realCPL = realizado.leads > 0 ? realizado.investimento / realizado.leads : 0;
@@ -151,9 +245,103 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
     setParams((prev) => ({ ...prev, [cen]: { ...prev[cen], [key]: value } }));
   };
 
+  const anosDisponiveis = useMemo(() => {
+    const set = new Set<number>([now.getFullYear(), now.getFullYear() - 1, now.getFullYear() + 1, ano]);
+    projecoes.forEach((p) => set.add(p.ano));
+    return Array.from(set).sort((a, b) => b - a);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projecoes, ano]);
+
   return (
     <div className="space-y-6">
-      {/* ============ CALCULADORA ============ */}
+      {/* ============ SELETOR DE MÊS + SALVAR ============ */}
+      <Card className="border-2 border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="h-5 w-5" /> Projeção mensal
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Cada mês tem sua própria projeção. Selecione o período, edite os parâmetros e salve.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Mês</Label>
+              <Select value={String(mes)} onValueChange={(v) => { setLoadingProj(true); setMes(Number(v)); }}>
+                <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MESES.map((nome, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Ano</Label>
+              <Select value={String(ano)} onValueChange={(v) => { setLoadingProj(true); setAno(Number(v)); }}>
+                <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {anosDisponiveis.map((a) => (
+                    <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              {projecaoAtualSalva ? (
+                <Badge variant="secondary" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Salva no banco</Badge>
+              ) : (
+                <Badge variant="outline">Não salva ainda</Badge>
+              )}
+              {dirty && <Badge variant="destructive" className="gap-1">Alterações pendentes</Badge>}
+              <Button onClick={handleSave} disabled={saving} className="gap-2">
+                <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar projeção"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Lista de projeções salvas */}
+          {projecoes.length > 0 && (
+            <div>
+              <Label className="text-xs text-muted-foreground">Histórico salvo ({projecoes.length})</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {projecoes.map((p) => {
+                  const ativo = p.ano === ano && p.mes === mes;
+                  return (
+                    <div
+                      key={p.id}
+                      className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition ${
+                        ativo ? "border-primary bg-primary/10 font-semibold text-primary" : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setLoadingProj(true); setAno(p.ano); setMes(p.mes); }}
+                        className="flex items-center gap-1"
+                      >
+                        <Calendar className="h-3 w-3" />
+                        {MESES[p.mes - 1].slice(0, 3)}/{p.ano}
+                        <span className="ml-1 text-muted-foreground">· {fmtMoney(Number(p.investimento))}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(p.id)}
+                        className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+
       <Card className="overflow-hidden border-2">
         <CardHeader className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10">
           <CardTitle className="flex items-center gap-2 text-base">
