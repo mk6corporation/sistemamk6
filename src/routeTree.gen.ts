@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as VPainelRouteImport } from './routes/v.painel'
+import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenticated/minha-rotina'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
@@ -42,6 +44,16 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const VPainelRoute = VPainelRouteImport.update({
+  id: '/v/painel',
+  path: '/v/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VSlugRoute = VSlugRouteImport.update({
+  id: '/v/$slug',
+  path: '/v/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMinhaRotinaRoute =
   AuthenticatedMinhaRotinaRouteImport.update({
@@ -141,6 +153,8 @@ export interface FileRoutesByFullPath {
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/painel': typeof VPainelRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
@@ -160,6 +174,8 @@ export interface FileRoutesByTo {
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/painel': typeof VPainelRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
@@ -182,6 +198,8 @@ export interface FileRoutesById {
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/painel': typeof VPainelRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/_authenticated/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
@@ -205,6 +223,8 @@ export interface FileRouteTypes {
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
+    | '/v/$slug'
+    | '/v/painel'
     | '/clientes/$clienteId'
     | '/desempenho/$clienteId'
     | '/nps/detratores'
@@ -224,6 +244,8 @@ export interface FileRouteTypes {
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
+    | '/v/$slug'
+    | '/v/painel'
     | '/'
     | '/clientes/$clienteId'
     | '/desempenho/$clienteId'
@@ -245,6 +267,8 @@ export interface FileRouteTypes {
     | '/_authenticated/feed'
     | '/_authenticated/kanban'
     | '/_authenticated/minha-rotina'
+    | '/v/$slug'
+    | '/v/painel'
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
     | '/_authenticated/desempenho/$clienteId'
@@ -262,6 +286,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  VSlugRoute: typeof VSlugRoute
+  VPainelRoute: typeof VPainelRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
   ApiPublicNpsSubmitRoute: typeof ApiPublicNpsSubmitRoute
@@ -289,6 +315,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/v/painel': {
+      id: '/v/painel'
+      path: '/v/painel'
+      fullPath: '/v/painel'
+      preLoaderRoute: typeof VPainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v/$slug': {
+      id: '/v/$slug'
+      path: '/v/$slug'
+      fullPath: '/v/$slug'
+      preLoaderRoute: typeof VSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/minha-rotina': {
       id: '/_authenticated/minha-rotina'
@@ -446,6 +486,8 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  VSlugRoute: VSlugRoute,
+  VPainelRoute: VPainelRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
   ApiPublicNpsSubmitRoute: ApiPublicNpsSubmitRoute,
@@ -453,13 +495,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
