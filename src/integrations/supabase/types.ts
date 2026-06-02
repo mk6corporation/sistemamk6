@@ -65,6 +65,8 @@ export type Database = {
           created_at: string
           id: string
           respondido_em: string
+          responsavel: string | null
+          respostas: Json
           score: number
           source: string | null
           source_id: string | null
@@ -75,6 +77,8 @@ export type Database = {
           created_at?: string
           id?: string
           respondido_em?: string
+          responsavel?: string | null
+          respostas?: Json
           score: number
           source?: string | null
           source_id?: string | null
@@ -85,6 +89,8 @@ export type Database = {
           created_at?: string
           id?: string
           respondido_em?: string
+          responsavel?: string | null
+          respostas?: Json
           score?: number
           source?: string | null
           source_id?: string | null
