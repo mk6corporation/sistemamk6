@@ -96,6 +96,62 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
     },
   });
 
+  useEffect(() => {
+    if (loadingVendedor || vendedor || linkingProfile || typeof window === "undefined") return;
+
+    const raw = window.localStorage.getItem(PENDING_VENDOR_LINK_KEY);
+    if (!raw) return;
+
+    let pending: PendingVendorLink | null = null;
+    try {
+      pending = JSON.parse(raw) as PendingVendorLink;
+    } catch {
+      window.localStorage.removeItem(PENDING_VENDOR_LINK_KEY);
+      return;
+    }
+
+    if (!pending?.slug) return;
+
+    let cancelled = false;
+    setLinkingProfile(true);
+
+    const createProfileFromPendingLink = async () => {
+      try {
+        const { data: link, error: linkError } = await supabase
+          .from("vendedor_links")
+          .select("cliente_id, ativo")
+          .eq("slug", pending.slug)
+          .maybeSingle();
+
+        if (linkError) throw linkError;
+        if (!link?.ativo) return;
+
+        const { error: insertError } = await supabase.from("vendedor_profiles").insert({
+          user_id: userId,
+          cliente_id: link.cliente_id,
+          nome: pending.nome || email.split("@")[0] || "Vendedor",
+          telefone: pending.telefone || null,
+          email: pending.email || email,
+        });
+
+        if (insertError && insertError.code !== "23505") throw insertError;
+
+        window.localStorage.removeItem(PENDING_VENDOR_LINK_KEY);
+        queryClient.invalidateQueries({ queryKey: ["vendedor-profile", userId] });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Não foi possível vincular seu acesso");
+      } finally {
+        if (!cancelled) setLinkingProfile(false);
+      }
+    };
+
+    createProfileFromPendingLink();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [email, linkingProfile, loadingVendedor, queryClient, userId, vendedor]);
+
   const [periodo, setPeriodo] = useState<Periodo>("dia");
 
   const { data: registros30 } = useQuery({
@@ -137,7 +193,7 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
   const semana = useMemo(() => evolucaoSemana(registros30 ?? []), [registros30]);
   const ultimos30Dias = useMemo(() => (registros30 ?? []).slice(0, 30), [registros30]);
 
-  if (loadingVendedor) {
+  if (loadingVendedor || linkingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
