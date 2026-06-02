@@ -440,48 +440,17 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
           </Select>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Marketing realizado */}
-            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${MK_COLOR}40` }}>
-              <div className="mb-3 flex items-center gap-2">
-                <div className="rounded-md p-1.5" style={{ background: `${MK_COLOR}20` }}>
-                  <Megaphone className="h-4 w-4" style={{ color: MK_COLOR }} />
-                </div>
-                <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing — Realizado</h4>
-              </div>
-              <div className="space-y-2">
-                <RealInput label="Investimento" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
-                <RealInput label="Leads gerados" value={realizado.leads} onChange={(v) => setRealizado({ ...realizado, leads: v })} />
-                <RealInput label="Leads qualificados" value={realizado.qualificados} onChange={(v) => setRealizado({ ...realizado, qualificados: v })} />
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-xs">
-                <Computed label="CPL" value={fmtMoney(realCPL)} />
-                <Computed label="CPLQ" value={fmtMoney(realCPLQ)} />
-                <Computed label="Tx. Qualif." value={fmtPct(realTaxaQual)} />
-              </div>
-            </div>
-
-            {/* Comercial realizado */}
-            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${CO_COLOR}40` }}>
-              <div className="mb-3 flex items-center gap-2">
-                <div className="rounded-md p-1.5" style={{ background: `${CO_COLOR}20` }}>
-                  <Handshake className="h-4 w-4" style={{ color: CO_COLOR }} />
-                </div>
-                <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial — Realizado</h4>
-              </div>
-              <div className="space-y-2">
-                <RealInput label="Cotações enviadas" value={realizado.cotacoes} onChange={(v) => setRealizado({ ...realizado, cotacoes: v })} />
-                <RealInput label="Vendas fechadas" value={realizado.vendas} onChange={(v) => setRealizado({ ...realizado, vendas: v })} />
-                <RealInput label="Faturamento Bruto" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
-                <RealInput label="Faturamento Líquido" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
-
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
-                <Computed label="Tx. Conversão" value={fmtPct(realTaxaConv)} />
-                <Computed label="Ticket Médio" value={fmtMoney(realTicket)} />
-              </div>
-            </div>
-          </div>
+          <FunilRealizadoVisual
+            realizado={realizado}
+            setRealizado={setRealizado}
+            metricas={{
+              cpl: realCPL,
+              cplq: realCPLQ,
+              taxaQual: realTaxaQual,
+              taxaConv: realTaxaConv,
+              ticket: realTicket,
+            }}
+          />
 
           {/* Diagnóstico */}
           <div className="rounded-lg border bg-muted/20 p-4">
@@ -753,6 +722,179 @@ function Computed({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+// ============= FUNIL VISUAL DO REALIZADO =============
+type RealizadoStageKey =
+  | "investimento"
+  | "leads"
+  | "qualificados"
+  | "cotacoes"
+  | "vendas"
+  | "faturamentoBruto"
+  | "faturamentoLiquido";
+
+function FunilRealizadoVisual({
+  realizado,
+  setRealizado,
+  metricas,
+}: {
+  realizado: Realizado;
+  setRealizado: (r: Realizado) => void;
+  metricas: { cpl: number; cplq: number; taxaQual: number; taxaConv: number; ticket: number };
+}) {
+  const update = (k: RealizadoStageKey, v: number) => setRealizado({ ...realizado, [k]: v });
+
+  const stages: Array<{
+    key: RealizadoStageKey;
+    label: string;
+    value: number;
+    money?: boolean;
+    color: string;
+    area: "mk" | "co";
+    badge?: { label: string; value: string };
+  }> = [
+    { key: "investimento", label: "Investimento em ADS", value: realizado.investimento, money: true, color: "#ea580c", area: "mk",
+      badge: { label: "CPL", value: fmtBRL(metricas.cpl) } },
+    { key: "leads", label: "Leads gerados", value: realizado.leads, color: "#f97316", area: "mk",
+      badge: { label: "Taxa de qualificação", value: fmtPctShared(metricas.taxaQual, 1) } },
+    { key: "qualificados", label: "Leads qualificados", value: realizado.qualificados, color: "#f59e0b", area: "mk",
+      badge: { label: "CPL qualificado", value: fmtBRL(metricas.cplq) } },
+    { key: "cotacoes", label: "Cotações enviadas", value: realizado.cotacoes, color: "#2563eb", area: "co",
+      badge: { label: "Taxa de conversão", value: fmtPctShared(metricas.taxaConv, 1) } },
+    { key: "vendas", label: "Vendas fechadas", value: realizado.vendas, color: "#3b82f6", area: "co",
+      badge: { label: "Ticket médio", value: fmtBRL(metricas.ticket) } },
+    { key: "faturamentoBruto", label: "Faturamento bruto", value: realizado.faturamentoBruto, money: true, color: "#10b981", area: "co" },
+    { key: "faturamentoLiquido", label: "Faturamento líquido", value: realizado.faturamentoLiquido, money: true, color: "#059669", area: "co" },
+  ];
+
+  const N = stages.length;
+  // afunilamento: cada etapa fica X% mais estreita que a anterior, partindo de 100% até ~38%
+  const widthAt = (i: number) => 100 - (i * (62 / N));
+
+  return (
+    <div className="space-y-6">
+      {/* Cabeçalho com legendas das duas áreas */}
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold" style={{ background: `${MK_COLOR}15`, color: MK_COLOR }}>
+          <Megaphone className="h-3.5 w-3.5" /> MARKETING (topo)
+        </span>
+        <span className="text-muted-foreground">→ alimenta →</span>
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold" style={{ background: `${CO_COLOR}15`, color: CO_COLOR }}>
+          <Handshake className="h-3.5 w-3.5" /> COMERCIAL (base)
+        </span>
+      </div>
+
+      <div className="relative mx-auto max-w-3xl">
+        {stages.map((s, i) => {
+          const topW = widthAt(i);
+          const botW = widthAt(i + 1);
+          const topInset = (100 - topW) / 2;
+          const botInset = (100 - botW) / 2;
+          const clip = `polygon(${topInset}% 0%, ${100 - topInset}% 0%, ${100 - botInset}% 100%, ${botInset}% 100%)`;
+          const isAreaSwitch = i > 0 && stages[i - 1].area !== s.area;
+
+          return (
+            <div key={s.key} className="relative">
+              {isAreaSwitch && (
+                <div className="my-2 flex items-center justify-center gap-2">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <span className="rounded-full border bg-background px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    funil comercial
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                </div>
+              )}
+
+              <div className="relative flex items-center" style={{ height: 86 }}>
+                {/* trapézio */}
+                <div
+                  className="absolute inset-0 transition-all"
+                  style={{
+                    clipPath: clip,
+                    background: `linear-gradient(135deg, ${s.color} 0%, ${s.color}dd 60%, ${s.color}aa 100%)`,
+                    boxShadow: `inset 0 -2px 0 ${s.color}99, inset 0 2px 0 #ffffff30`,
+                  }}
+                />
+                {/* conteúdo: input + label */}
+                <div className="relative z-10 flex w-full items-center justify-center gap-4 px-6 text-white">
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] opacity-90 drop-shadow">
+                      {s.label}
+                    </span>
+                    <span className="text-[10px] opacity-75 drop-shadow">
+                      {s.money ? "valor em R$" : "quantidade"}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    {s.money && (
+                      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/70">
+                        R$
+                      </span>
+                    )}
+                    <Input
+                      type="number"
+                      value={s.value || ""}
+                      onChange={(e) => update(s.key, Number(e.target.value) || 0)}
+                      className={`h-10 w-36 border-0 bg-white text-right text-lg font-bold text-foreground shadow-lg ring-2 ring-white/40 focus-visible:ring-white ${s.money ? "pl-9" : ""}`}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* badge lateral com métrica calculada */}
+                {s.badge && (
+                  <div className="absolute right-0 top-full z-20 hidden -translate-y-1/2 translate-x-[calc(100%+8px)] items-center md:flex">
+                    <div className="h-px w-6" style={{ background: CO_COLOR }} />
+                    <div
+                      className="flex items-center gap-2 rounded-md px-3 py-1.5 shadow-md"
+                      style={{ background: CO_COLOR, color: "white" }}
+                    >
+                      <span className="text-sm font-bold tabular-nums">{s.badge.value}</span>
+                      <span className="text-[10px] font-medium uppercase tracking-wide opacity-90 max-w-[120px] leading-tight">
+                        {s.badge.label}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* badge mobile (abaixo do estágio) */}
+              {s.badge && (
+                <div className="mb-1 flex justify-center md:hidden">
+                  <div
+                    className="flex items-center gap-2 rounded-md px-3 py-1 text-xs shadow"
+                    style={{ background: CO_COLOR, color: "white" }}
+                  >
+                    <span className="font-bold tabular-nums">{s.badge.value}</span>
+                    <span className="opacity-90">{s.badge.label}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Resumo das métricas calculadas */}
+      <div className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/30 p-3 md:grid-cols-5">
+        <ResumoMetrica label="CPL" value={fmtBRL(metricas.cpl)} cor={MK_COLOR} />
+        <ResumoMetrica label="CPL Qualificado" value={fmtBRL(metricas.cplq)} cor={MK_COLOR} />
+        <ResumoMetrica label="Tx. Qualificação" value={fmtPctShared(metricas.taxaQual, 1)} cor={MK_COLOR} />
+        <ResumoMetrica label="Tx. Conversão" value={fmtPctShared(metricas.taxaConv, 1)} cor={CO_COLOR} />
+        <ResumoMetrica label="Ticket Médio" value={fmtBRL(metricas.ticket)} cor={CO_COLOR} />
+      </div>
+    </div>
+  );
+}
+
+function ResumoMetrica({ label, value, cor }: { label: string; value: string; cor: string }) {
+  return (
+    <div className="rounded-md border bg-background p-2 text-center">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-bold tabular-nums" style={{ color: cor }}>{value}</p>
     </div>
   );
 }
