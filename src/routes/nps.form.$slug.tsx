@@ -28,7 +28,7 @@ const SERVICOS_INTERESSE = [
   "RH (Contratação de vendedores)",
   "Landing page",
   "Site institucional",
-  "IA (Inteligência Artificial)",
+  "IA de atendimento inicial",
   "Google meu negócio",
   "Nenhum no momento",
 ] as const;
