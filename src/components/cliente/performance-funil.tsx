@@ -20,6 +20,9 @@ import {
   Calendar,
   Trash2,
 } from "lucide-react";
+import { VendedoresFunilSelector, type SelectionMode, type VendedorAgregado } from "./vendedores-funil-selector";
+
+
 
 
 type Cenario = "pessimista" | "mediano" | "otimista";
