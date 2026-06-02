@@ -29,6 +29,15 @@ export const Route = createFileRoute("/v/painel")({
   component: VendedorPainel,
 });
 
+const PENDING_VENDOR_LINK_KEY = "mk6_pending_vendor_link";
+
+type PendingVendorLink = {
+  slug: string;
+  nome?: string;
+  telefone?: string;
+  email?: string;
+};
+
 function VendedorPainel() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -59,19 +68,31 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
   onSignOut: () => Promise<void>;
   queryClient: ReturnType<typeof useQueryClient>;
 }) {
+  const [linkingProfile, setLinkingProfile] = useState(false);
   const { data: vendedor, isLoading: loadingVendedor } = useQuery({
     queryKey: ["vendedor-profile", userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendedor_profiles")
-        .select("id, nome, cliente_id, telefone, clientes:cliente_id(nome)")
+        .select("id, nome, cliente_id, telefone")
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
-      return data as {
+      if (!data) return null;
+
+      const { data: cliente } = await supabase
+        .from("clientes")
+        .select("nome")
+        .eq("id", data.cliente_id)
+        .maybeSingle();
+
+      return {
+        ...data,
+        clientes: cliente ? { nome: cliente.nome } : null,
+      } as {
         id: string; nome: string; cliente_id: string; telefone: string | null;
         clientes: { nome: string } | null;
-      } | null;
+      };
     },
   });
 
