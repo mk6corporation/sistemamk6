@@ -911,9 +911,11 @@ function FunilRealizadoVisual({
                       type="number"
                       value={s.value || ""}
                       onChange={(e) => update(s.key, Number(e.target.value) || 0)}
-                      className={`h-10 w-36 border-0 bg-white text-right text-lg font-bold text-foreground shadow-lg ring-2 ring-white/40 focus-visible:ring-white ${s.money ? "pl-9" : ""}`}
+                      readOnly={readOnly && s.key !== "investimento" && s.key !== "qualificados"}
+                      className={`h-10 w-36 border-0 bg-white text-right text-lg font-bold text-foreground shadow-lg ring-2 ring-white/40 focus-visible:ring-white ${s.money ? "pl-9" : ""} ${readOnly && s.key !== "investimento" && s.key !== "qualificados" ? "cursor-not-allowed opacity-90" : ""}`}
                       placeholder="0"
                     />
+
                   </div>
                 </div>
 
