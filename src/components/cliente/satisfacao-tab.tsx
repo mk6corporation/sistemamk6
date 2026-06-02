@@ -89,20 +89,73 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
   });
 
   const npsRows = npsQuery.data ?? [];
-  const recent = npsRows.filter((n) => {
-    const d = new Date(n.respondido_em).getTime();
-    return Date.now() - d <= 90 * 24 * 60 * 60 * 1000;
-  });
-  const avg90 = recent.length
-    ? recent.reduce((s, n) => s + n.score, 0) / recent.length
-    : null;
-  const promoters = recent.filter((n) => n.score >= 9).length;
-  const detractors = recent.filter((n) => n.score <= 6).length;
-  const npsScore = recent.length
-    ? Math.round(((promoters - detractors) / recent.length) * 100)
+
+  // Month filter: "all" or "YYYY-MM"
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of npsRows) {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      set.add(ym);
+    }
+    return Array.from(set).sort((a, b) => (a < b ? 1 : -1));
+  }, [npsRows]);
+
+  const filteredRows = useMemo(() => {
+    if (monthFilter === "all") return npsRows;
+    return npsRows.filter((n) => {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return ym === monthFilter;
+    });
+  }, [npsRows, monthFilter]);
+
+  // Cards: when "all", usa últimos 90 dias; senão usa o mês filtrado
+  const baseRows = monthFilter === "all"
+    ? npsRows.filter((n) => Date.now() - new Date(n.respondido_em).getTime() <= 90 * 24 * 60 * 60 * 1000)
+    : filteredRows;
+
+  const avgBase = baseRows.length ? baseRows.reduce((s, n) => s + n.score, 0) / baseRows.length : null;
+  const promoters = baseRows.filter((n) => n.score >= 9).length;
+  const detractors = baseRows.filter((n) => n.score <= 6).length;
+  const npsScore = baseRows.length
+    ? Math.round(((promoters - detractors) / baseRows.length) * 100)
     : null;
 
+  // Evolução mensal (média e NPS por mês), ordem crescente
+  const monthlyEvolution = useMemo(() => {
+    const map = new Map<string, { scores: number[] }>();
+    for (const n of npsRows) {
+      const d = new Date(n.respondido_em);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!map.has(ym)) map.set(ym, { scores: [] });
+      map.get(ym)!.scores.push(n.score);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([ym, v]) => {
+        const total = v.scores.length;
+        const media = v.scores.reduce((s, x) => s + x, 0) / total;
+        const p = v.scores.filter((s) => s >= 9).length;
+        const d = v.scores.filter((s) => s <= 6).length;
+        const nps = Math.round(((p - d) / total) * 100);
+        const [y, m] = ym.split("-");
+        const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+        return { ym, label, media: Number(media.toFixed(2)), nps, respostas: total };
+      });
+  }, [npsRows]);
+
   const [perf, setPerf] = useState<Perf>({
+    cliente_id: clienteId,
+    leads_inicial: null,
+    leads_atual: null,
+    faturamento_inicial: null,
+    faturamento_atual: null,
+    faturamento_meta: null,
+    observacoes: null,
+  });
     cliente_id: clienteId,
     leads_inicial: null,
     leads_atual: null,
