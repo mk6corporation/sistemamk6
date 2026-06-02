@@ -99,7 +99,7 @@ function ClienteDetailPage() {
           <TabsTrigger value="equipe"><Users className="mr-2 h-4 w-4" />Equipe</TabsTrigger>
           <TabsTrigger value="timeline"><CalendarDays className="mr-2 h-4 w-4" />Linha do Tempo</TabsTrigger>
           <TabsTrigger value="checkins"><MessageSquare className="mr-2 h-4 w-4" />Check-ins</TabsTrigger>
-          <TabsTrigger value="satisfacao"><Smile className="mr-2 h-4 w-4" />Desempenho do cliente</TabsTrigger>
+          <TabsTrigger value="satisfacao"><Smile className="mr-2 h-4 w-4" />Desempenho</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados"><DadosCorporativosTab clienteId={clienteId} /></TabsContent>
