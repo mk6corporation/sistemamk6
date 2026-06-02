@@ -111,6 +111,9 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
   const [params, setParams] = useState<Record<Cenario, ParamsCenario>>(DEFAULTS);
 
   const [realizadoFiltro, setRealizadoFiltro] = useState<"15d" | "30d" | "mes" | "trimestre">("30d");
+  const [vendedorMode, setVendedorMode] = useState<SelectionMode>("macro");
+  const [vendedoresCount, setVendedoresCount] = useState(0);
+
 
   const [realizado, setRealizado] = useState<Realizado>({
     investimento: 0,
