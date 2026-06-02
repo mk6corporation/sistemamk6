@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, TrendingUp } from "lucide-react";
 import { PerformanceFunil } from "@/components/cliente/performance-funil";
+import { ComercialDashboard } from "@/components/cliente/comercial-dashboard";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/desempenho/$clienteId")({
   component: DesempenhoCliente,
