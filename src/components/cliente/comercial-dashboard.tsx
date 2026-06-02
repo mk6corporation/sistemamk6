@@ -81,19 +81,8 @@ export function ComercialDashboard({
       .sort((a, b) => b.somado.faturamento_bruto - a.somado.faturamento_bruto);
   }, [vendedores, registros]);
 
-  if (vendedores.length === 0) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="p-6 text-center">
-          <UsersIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-semibold">Nenhum vendedor cadastrado neste cliente.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Gere o link de cadastro na aba "Vendedores" dentro do cliente para começar a alimentar este painel.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const semVendedores = vendedores.length === 0;
+
 
   return (
     <div className="space-y-4">
