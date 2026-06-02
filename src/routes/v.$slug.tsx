@@ -11,6 +11,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+const PENDING_VENDOR_LINK_KEY = "mk6_pending_vendor_link";
+
+type PendingVendorLink = {
+  slug: string;
+  nome?: string;
+  telefone?: string;
+  email?: string;
+};
+
+const savePendingVendorLink = (payload: PendingVendorLink) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PENDING_VENDOR_LINK_KEY, JSON.stringify(payload));
+};
+
 export const Route = createFileRoute("/v/$slug")({
   component: VendedorSignupPage,
 });
@@ -58,11 +72,6 @@ function VendedorSignupPage() {
     },
   });
 
-
-  if (user && !authLoading) {
-    return <Navigate to="/v/painel" />;
-  }
-
   if (isLoading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-amber-500/5">
@@ -89,6 +98,15 @@ function VendedorSignupPage() {
     );
   }
 
+  if (user && !authLoading) {
+    savePendingVendorLink({
+      slug,
+      nome: user.user_metadata?.full_name ?? user.email ?? "Vendedor",
+      email: user.email ?? undefined,
+    });
+    return <Navigate to="/v/painel" />;
+  }
+
   const empresaNome = link.clientes?.nome ?? link.titulo ?? "sua empresa";
 
   const linkVendedorProfile = async (userId: string, nome: string, telefone: string, email: string) => {
@@ -106,6 +124,7 @@ function VendedorSignupPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      savePendingVendorLink({ slug, nome: signupNome, telefone: signupTelefone, email: signupEmail });
       const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupSenha,
@@ -142,6 +161,7 @@ function VendedorSignupPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      savePendingVendorLink({ slug, email: loginEmail });
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginSenha,
