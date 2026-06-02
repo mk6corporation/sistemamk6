@@ -315,8 +315,9 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
               <div className="space-y-2">
                 <RealInput label="Cotações enviadas" value={realizado.cotacoes} onChange={(v) => setRealizado({ ...realizado, cotacoes: v })} />
                 <RealInput label="Vendas fechadas" value={realizado.vendas} onChange={(v) => setRealizado({ ...realizado, vendas: v })} />
-                <RealInput label="Faturamento Bruto (R$)" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
-                <RealInput label="Faturamento Líquido (R$)" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
+                <RealInput label="Faturamento Bruto" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
+                <RealInput label="Faturamento Líquido" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
+
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
                 <Computed label="Tx. Conversão" value={fmtPct(realTaxaConv)} />
