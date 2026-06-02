@@ -417,51 +417,6 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
         </CardContent>
       </Card>
 
-      {/* ============ FUNIS VISUAIS (CENÁRIOS) ============ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-5 w-5" /> Funis projetados — Cenário Mediano
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Visualização do funil baseado nos parâmetros do cenário mediano.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <FunilVisual
-              titulo="Funil de Marketing"
-              icon={<Megaphone className="h-4 w-4" />}
-              cor={MK_COLOR}
-              etapas={[
-                { label: "Investimento", value: fmtMoney(investimento) },
-                { label: "Leads", value: fmtNum(cenarios.mediano.leads) },
-                { label: "Qualificados", value: fmtNum(cenarios.mediano.qualificados) },
-              ]}
-              metricas={[
-                { label: "CPL", value: fmtMoney(cenarios.mediano.cpl) },
-                { label: "CPLQ", value: fmtMoney(cenarios.mediano.cplq) },
-                { label: "Taxa Qualif.", value: fmtPct(cenarios.mediano.taxaQualificacao) },
-              ]}
-            />
-            <FunilVisual
-              titulo="Funil Comercial"
-              icon={<Handshake className="h-4 w-4" />}
-              cor={CO_COLOR}
-              etapas={[
-                { label: "Cotações", value: fmtNum(cenarios.mediano.cotacoes) },
-                { label: "Vendas", value: fmtNum(cenarios.mediano.vendas) },
-                { label: "Faturamento", value: fmtMoney(cenarios.mediano.faturamentoLiquido) },
-              ]}
-              metricas={[
-                { label: "Conv. Cot→Venda", value: fmtPct(cenarios.mediano.taxaConv) },
-                { label: "Fat. Bruto", value: fmtMoney(cenarios.mediano.faturamentoBruto) },
-                { label: "Ticket Médio", value: fmtMoney(cenarios.mediano.ticket) },
-              ]}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* ============ REALIZADO ============ */}
       <Card>
