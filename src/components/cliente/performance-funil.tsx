@@ -898,6 +898,8 @@ function ResumoMetrica({ label, value, cor }: { label: string; value: string; co
     </div>
   );
 }
+
+function MetaBarraGrande({
   label,
   cor,
   realizado,
