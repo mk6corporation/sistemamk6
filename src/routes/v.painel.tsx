@@ -29,6 +29,15 @@ export const Route = createFileRoute("/v/painel")({
   component: VendedorPainel,
 });
 
+const PENDING_VENDOR_LINK_KEY = "mk6_pending_vendor_link";
+
+type PendingVendorLink = {
+  slug: string;
+  nome?: string;
+  telefone?: string;
+  email?: string;
+};
+
 function VendedorPainel() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -59,21 +68,89 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
   onSignOut: () => Promise<void>;
   queryClient: ReturnType<typeof useQueryClient>;
 }) {
+  const [linkingProfile, setLinkingProfile] = useState(false);
   const { data: vendedor, isLoading: loadingVendedor } = useQuery({
     queryKey: ["vendedor-profile", userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendedor_profiles")
-        .select("id, nome, cliente_id, telefone, clientes:cliente_id(nome)")
+        .select("id, nome, cliente_id, telefone")
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
-      return data as {
+      if (!data) return null;
+
+      const { data: cliente } = await supabase
+        .from("clientes")
+        .select("nome")
+        .eq("id", data.cliente_id)
+        .maybeSingle();
+
+      return {
+        ...data,
+        clientes: cliente ? { nome: cliente.nome } : null,
+      } as {
         id: string; nome: string; cliente_id: string; telefone: string | null;
         clientes: { nome: string } | null;
-      } | null;
+      };
     },
   });
+
+  useEffect(() => {
+    if (loadingVendedor || vendedor || linkingProfile || typeof window === "undefined") return;
+
+    const raw = window.localStorage.getItem(PENDING_VENDOR_LINK_KEY);
+    if (!raw) return;
+
+    let pending: PendingVendorLink | null = null;
+    try {
+      pending = JSON.parse(raw) as PendingVendorLink;
+    } catch {
+      window.localStorage.removeItem(PENDING_VENDOR_LINK_KEY);
+      return;
+    }
+
+    if (!pending?.slug) return;
+
+    let cancelled = false;
+    setLinkingProfile(true);
+
+    const createProfileFromPendingLink = async () => {
+      try {
+        const { data: link, error: linkError } = await supabase
+          .from("vendedor_links")
+          .select("cliente_id, ativo")
+          .eq("slug", pending.slug)
+          .maybeSingle();
+
+        if (linkError) throw linkError;
+        if (!link?.ativo) return;
+
+        const { error: insertError } = await supabase.from("vendedor_profiles").insert({
+          user_id: userId,
+          cliente_id: link.cliente_id,
+          nome: pending.nome || email.split("@")[0] || "Vendedor",
+          telefone: pending.telefone || null,
+          email: pending.email || email,
+        });
+
+        if (insertError && insertError.code !== "23505") throw insertError;
+
+        window.localStorage.removeItem(PENDING_VENDOR_LINK_KEY);
+        queryClient.invalidateQueries({ queryKey: ["vendedor-profile", userId] });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Não foi possível vincular seu acesso");
+      } finally {
+        if (!cancelled) setLinkingProfile(false);
+      }
+    };
+
+    createProfileFromPendingLink();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [email, linkingProfile, loadingVendedor, queryClient, userId, vendedor]);
 
   const [periodo, setPeriodo] = useState<Periodo>("dia");
 
@@ -116,7 +193,7 @@ function PainelInner({ userId, email, onSignOut, queryClient }: {
   const semana = useMemo(() => evolucaoSemana(registros30 ?? []), [registros30]);
   const ultimos30Dias = useMemo(() => (registros30 ?? []).slice(0, 30), [registros30]);
 
-  if (loadingVendedor) {
+  if (loadingVendedor || linkingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
