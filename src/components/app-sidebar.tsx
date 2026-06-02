@@ -39,6 +39,7 @@ const operacionalItems = [
   { title: "Jornada (Kanban)", url: "/kanban", icon: KanbanSquare, exact: false },
   { title: "Clientes (Base)", url: "/clientes", icon: Users, exact: false },
   { title: "Feed de mudanças", url: "/feed", icon: Rss, exact: false },
+  { title: "Desempenho do cliente", url: "/desempenho", icon: TrendingUp, exact: false },
   { title: "Métricas (admin)", url: "/admin-metricas", icon: BarChart3, exact: false },
   { title: "Funil de Renovação", url: "/admin-renovacao", icon: Repeat, exact: false },
 ];
