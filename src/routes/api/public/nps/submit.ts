@@ -52,17 +52,36 @@ export const Route = createFileRoute("/api/public/nps/submit")({
         if (linkErr) return new Response(linkErr.message, { status: 500 });
         if (!link) return new Response("Link inválido", { status: 404 });
 
-        // Encontrar cliente por nome
-        const { data: cliente, error: clienteErr } = await supabaseAdmin
-          .from("clientes")
-          .select("id")
-          .ilike("nome", empresa)
-          .limit(1)
-          .maybeSingle();
-        if (clienteErr) return new Response(clienteErr.message, { status: 500 });
+        // Encontrar cliente por nome (matching flexível)
+        const empresaTrim = empresa.trim();
+        let cliente: { id: string } | null = null;
+
+        // 1) Match exato (case-insensitive)
+        {
+          const { data, error } = await supabaseAdmin
+            .from("clientes")
+            .select("id")
+            .ilike("nome", empresaTrim)
+            .limit(1)
+            .maybeSingle();
+          if (error) return new Response(error.message, { status: 500 });
+          if (data) cliente = data;
+        }
+
+        // 2) Fallback: match parcial com wildcards (apenas se único resultado)
+        if (!cliente) {
+          const { data, error } = await supabaseAdmin
+            .from("clientes")
+            .select("id,nome")
+            .ilike("nome", `%${empresaTrim}%`)
+            .limit(2);
+          if (error) return new Response(error.message, { status: 500 });
+          if (data && data.length === 1) cliente = { id: data[0].id };
+        }
+
         if (!cliente) {
           return Response.json(
-            { error: "Empresa não encontrada na nossa base. Verifique o nome." },
+            { error: "Empresa não encontrada na nossa base. Verifique o nome digitado exatamente como cadastrado." },
             { status: 404 },
           );
         }
