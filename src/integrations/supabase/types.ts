@@ -967,6 +967,8 @@ export type Database = {
       vendedor_registros_diarios: {
         Row: {
           cliente_id: string
+          contatados_2h: number
+          contatados_apos_2h: number
           cotacoes_enviadas: number
           created_at: string
           data: string
@@ -983,6 +985,8 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
+          contatados_2h?: number
+          contatados_apos_2h?: number
           cotacoes_enviadas?: number
           created_at?: string
           data?: string
@@ -999,6 +1003,8 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
+          contatados_2h?: number
+          contatados_apos_2h?: number
           cotacoes_enviadas?: number
           created_at?: string
           data?: string
