@@ -15,7 +15,20 @@ function AuthLayout() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  if (loading) {
+  const { data: isVendedor, isLoading: checkingVendedor } = useQuery({
+    queryKey: ["is-vendedor", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("vendedor_profiles")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  if (loading || (user && checkingVendedor)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -23,6 +36,7 @@ function AuthLayout() {
     );
   }
   if (!user) return <Navigate to="/login" />;
+  if (isVendedor) return <Navigate to="/v/painel" />;
 
   const handleSignOut = async () => {
     await signOut();
