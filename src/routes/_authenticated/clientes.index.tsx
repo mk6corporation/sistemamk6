@@ -57,7 +57,7 @@ function formatBRL(v: number | null) {
 function ClientesBase() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
-  const [categoria, setCategoria] = useState<string>("ATIVO");
+  const [categoria, setCategoria] = useState<string>("TODOS");
   const [scope, setScope] = useState<"meus" | "todos">("meus");
 
   const { data: viewer } = useQuery({
@@ -109,11 +109,11 @@ function ClientesBase() {
 
   const categorias = useMemo(() => {
     const set = new Set<string>();
-    clientes.forEach((c) => {
-      if (c.categoria && c.categoria !== "OUTRO") set.add(c.categoria);
+    allClientes.forEach((c) => {
+      if (c.categoria) set.add(c.categoria);
     });
     return ["TODOS", ...Array.from(set).sort()];
-  }, [clientes]);
+  }, [allClientes]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
