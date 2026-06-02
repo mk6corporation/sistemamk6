@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as VPainelRouteImport } from './routes/v.painel'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
+import { Route as AuthenticatedVendedoresRouteImport } from './routes/_authenticated/vendedores'
 import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenticated/minha-rotina'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
@@ -54,6 +55,11 @@ const VSlugRoute = VSlugRouteImport.update({
   id: '/v/$slug',
   path: '/v/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVendedoresRoute = AuthenticatedVendedoresRouteImport.update({
+  id: '/vendedores',
+  path: '/vendedores',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMinhaRotinaRoute =
   AuthenticatedMinhaRotinaRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/vendedores': typeof AuthenticatedVendedoresRoute
   '/v/$slug': typeof VSlugRoute
   '/v/painel': typeof VPainelRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/vendedores': typeof AuthenticatedVendedoresRoute
   '/v/$slug': typeof VSlugRoute
   '/v/painel': typeof VPainelRoute
   '/': typeof AuthenticatedIndexRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
+  '/_authenticated/vendedores': typeof AuthenticatedVendedoresRoute
   '/v/$slug': typeof VSlugRoute
   '/v/painel': typeof VPainelRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
+    | '/vendedores'
     | '/v/$slug'
     | '/v/painel'
     | '/clientes/$clienteId'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
+    | '/vendedores'
     | '/v/$slug'
     | '/v/painel'
     | '/'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/feed'
     | '/_authenticated/kanban'
     | '/_authenticated/minha-rotina'
+    | '/_authenticated/vendedores'
     | '/v/$slug'
     | '/v/painel'
     | '/_authenticated/'
@@ -329,6 +341,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/v/$slug'
       preLoaderRoute: typeof VSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/vendedores': {
+      id: '/_authenticated/vendedores'
+      path: '/vendedores'
+      fullPath: '/vendedores'
+      preLoaderRoute: typeof AuthenticatedVendedoresRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/minha-rotina': {
       id: '/_authenticated/minha-rotina'
@@ -451,6 +470,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
+  AuthenticatedVendedoresRoute: typeof AuthenticatedVendedoresRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedClientesClienteIdRoute: typeof AuthenticatedClientesClienteIdRoute
   AuthenticatedDesempenhoClienteIdRoute: typeof AuthenticatedDesempenhoClienteIdRoute
@@ -468,6 +488,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,
+  AuthenticatedVendedoresRoute: AuthenticatedVendedoresRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedClientesClienteIdRoute: AuthenticatedClientesClienteIdRoute,
   AuthenticatedDesempenhoClienteIdRoute: AuthenticatedDesempenhoClienteIdRoute,

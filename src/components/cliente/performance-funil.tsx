@@ -20,6 +20,9 @@ import {
   Calendar,
   Trash2,
 } from "lucide-react";
+import { VendedoresFunilSelector, type SelectionMode, type VendedorAgregado } from "./vendedores-funil-selector";
+
+
 
 
 type Cenario = "pessimista" | "mediano" | "otimista";
@@ -108,6 +111,9 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
   const [params, setParams] = useState<Record<Cenario, ParamsCenario>>(DEFAULTS);
 
   const [realizadoFiltro, setRealizadoFiltro] = useState<"15d" | "30d" | "mes" | "trimestre">("30d");
+  const [vendedorMode, setVendedorMode] = useState<SelectionMode>("macro");
+  const [vendedoresCount, setVendedoresCount] = useState(0);
+
 
   const [realizado, setRealizado] = useState<Realizado>({
     investimento: 0,
@@ -440,9 +446,33 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
           </Select>
         </CardHeader>
         <CardContent className="space-y-6">
+          <VendedoresFunilSelector
+            clienteId={clienteId}
+            ano={ano}
+            mes={mes}
+            mode={vendedorMode}
+            onChange={(mode, agg, count) => {
+              setVendedorMode(mode);
+              setVendedoresCount(count);
+              if (mode !== "manual" && agg) {
+                const margem = params.mediano.margem_liquida_pct / 100;
+                setRealizado({
+                  ...realizado,
+                  leads: agg.leads,
+                  qualificados: realizado.qualificados || agg.leads,
+                  cotacoes: agg.cotacoes,
+                  vendas: agg.vendas,
+                  faturamentoBruto: agg.faturamentoBruto,
+                  faturamentoLiquido: agg.faturamentoBruto * margem,
+                });
+              }
+            }}
+          />
+
           <FunilRealizadoVisual
             realizado={realizado}
             setRealizado={setRealizado}
+            readOnly={vendedoresCount > 0 && vendedorMode !== "manual"}
             metricas={{
               cpl: realCPL,
               cplq: realCPLQ,
@@ -451,6 +481,7 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
               ticket: realTicket,
             }}
           />
+
 
           {/* Diagnóstico */}
           <div className="rounded-lg border bg-muted/20 p-4">
@@ -779,11 +810,14 @@ function FunilRealizadoVisual({
   realizado,
   setRealizado,
   metricas,
+  readOnly = false,
 }: {
   realizado: Realizado;
   setRealizado: (r: Realizado) => void;
   metricas: { cpl: number; cplq: number; taxaQual: number; taxaConv: number; ticket: number };
+  readOnly?: boolean;
 }) {
+
   const update = (k: RealizadoStageKey, v: number) => setRealizado({ ...realizado, [k]: v });
 
   const stages: Array<{
@@ -877,9 +911,11 @@ function FunilRealizadoVisual({
                       type="number"
                       value={s.value || ""}
                       onChange={(e) => update(s.key, Number(e.target.value) || 0)}
-                      className={`h-10 w-36 border-0 bg-white text-right text-lg font-bold text-foreground shadow-lg ring-2 ring-white/40 focus-visible:ring-white ${s.money ? "pl-9" : ""}`}
+                      readOnly={readOnly && s.key !== "investimento" && s.key !== "qualificados"}
+                      className={`h-10 w-36 border-0 bg-white text-right text-lg font-bold text-foreground shadow-lg ring-2 ring-white/40 focus-visible:ring-white ${s.money ? "pl-9" : ""} ${readOnly && s.key !== "investimento" && s.key !== "qualificados" ? "cursor-not-allowed opacity-90" : ""}`}
                       placeholder="0"
                     />
+
                   </div>
                 </div>
 

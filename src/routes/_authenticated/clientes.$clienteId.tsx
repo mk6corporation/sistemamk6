@@ -12,11 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare, Search, Smile } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare, Search, Smile, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { TimelineTab } from "@/components/cliente/timeline-tab";
 import { CheckinsTab } from "@/components/cliente/checkins-tab";
 import { SatisfacaoTab } from "@/components/cliente/satisfacao-tab";
+import { VendedoresClienteTab } from "@/components/cliente/vendedores-cliente-tab";
+
 import { consultarCnpj } from "@/lib/cnpj.functions";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clienteId")({
@@ -100,6 +102,7 @@ function ClienteDetailPage() {
           <TabsTrigger value="timeline"><CalendarDays className="mr-2 h-4 w-4" />Linha do Tempo</TabsTrigger>
           <TabsTrigger value="checkins"><MessageSquare className="mr-2 h-4 w-4" />Check-ins</TabsTrigger>
           <TabsTrigger value="satisfacao"><Smile className="mr-2 h-4 w-4" />Desempenho</TabsTrigger>
+          <TabsTrigger value="vendedores"><Briefcase className="mr-2 h-4 w-4" />Vendedores</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados"><DadosCorporativosTab clienteId={clienteId} /></TabsContent>
@@ -108,6 +111,8 @@ function ClienteDetailPage() {
         <TabsContent value="timeline"><TimelineTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="checkins"><CheckinsTab clienteId={clienteId} /></TabsContent>
         <TabsContent value="satisfacao"><SatisfacaoTab clienteId={clienteId} /></TabsContent>
+        <TabsContent value="vendedores"><VendedoresClienteTab clienteId={clienteId} clienteNome={cliente.nome} /></TabsContent>
+
       </Tabs>
     </div>
   );
