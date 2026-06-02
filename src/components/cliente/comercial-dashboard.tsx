@@ -92,6 +92,21 @@ export function ComercialDashboard({
         {loading && <Badge variant="outline" className="ml-auto text-[10px]">carregando…</Badge>}
       </div>
 
+      {semVendedores && (
+        <Card className="border-dashed border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20">
+          <CardContent className="flex flex-wrap items-center gap-3 p-4">
+            <UsersIcon className="h-5 w-5 text-amber-600" />
+            <div className="text-xs">
+              <p className="font-semibold">Nenhum vendedor cadastrado ainda.</p>
+              <p className="text-muted-foreground">
+                Gere o link de cadastro na aba "Vendedores" dentro do cliente para começar a alimentar este painel automaticamente.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiHero titulo="Faturamento" valor={fmtBRL(totais.faturamento_bruto)} sub={`Ticket ${fmtBRL(totais.ticket_medio)}`} />
