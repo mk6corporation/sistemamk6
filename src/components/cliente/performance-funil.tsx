@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Target,
   Megaphone,
@@ -13,7 +16,11 @@ import {
   CheckCircle2,
   Calculator,
   TrendingUp,
+  Save,
+  Calendar,
+  Trash2,
 } from "lucide-react";
+
 
 type Cenario = "pessimista" | "mediano" | "otimista";
 
