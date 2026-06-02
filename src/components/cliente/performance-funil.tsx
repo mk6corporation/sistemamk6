@@ -4,41 +4,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Target, Megaphone, Handshake, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  Target,
+  Megaphone,
+  Handshake,
+  AlertTriangle,
+  CheckCircle2,
+  Calculator,
+  TrendingUp,
+} from "lucide-react";
 
 type Cenario = "pessimista" | "mediano" | "otimista";
 
 type ParamsCenario = {
   cpl: number;
-  qualificacao_pct: number; // % leads que viram qualificados
-  cot_para_orc_pct: number; // % cotações que viram orçamento
-  orc_para_venda_pct: number; // % orçamentos que viram venda
+  qualificacao_pct: number; // % leads → qualificados
+  cot_para_venda_pct: number; // % cotações → vendas
   ticket_medio: number;
-};
-
-type Metas = {
-  semana: number;
-  mes: number;
-  longo: number;
+  margem_liquida_pct: number; // % faturamento bruto que vira líquido
 };
 
 type Realizado = {
   investimento: number;
   leads: number;
+  cpl: number;
   qualificados: number;
   cotacoes: number;
-  orcamentos: number;
   vendas: number;
-  faturamento: number;
+  faturamentoBruto: number;
+  faturamentoLiquido: number;
 };
 
 const DEFAULTS: Record<Cenario, ParamsCenario> = {
-  pessimista: { cpl: 50, qualificacao_pct: 5, cot_para_orc_pct: 60, orc_para_venda_pct: 10, ticket_medio: 1500 },
-  mediano:    { cpl: 35, qualificacao_pct: 15, cot_para_orc_pct: 70, orc_para_venda_pct: 25, ticket_medio: 2500 },
-  otimista:   { cpl: 25, qualificacao_pct: 30, cot_para_orc_pct: 80, orc_para_venda_pct: 40, ticket_medio: 3500 },
+  pessimista: { cpl: 50, qualificacao_pct: 20, cot_para_venda_pct: 8, ticket_medio: 1500, margem_liquida_pct: 60 },
+  mediano: { cpl: 35, qualificacao_pct: 35, cot_para_venda_pct: 18, ticket_medio: 2500, margem_liquida_pct: 70 },
+  otimista: { cpl: 25, qualificacao_pct: 50, cot_para_venda_pct: 30, ticket_medio: 3500, margem_liquida_pct: 80 },
 };
+
+const MK_COLOR = "#f59e0b"; // amber - marketing
+const CO_COLOR = "#3b82f6"; // blue - commercial
 
 function fmtMoney(v: number) {
   if (!isFinite(v)) return "—";
@@ -48,297 +53,346 @@ function fmtNum(v: number) {
   if (!isFinite(v)) return "—";
   return v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
+function fmtPct(v: number) {
+  if (!isFinite(v)) return "—";
+  return `${v.toFixed(1)}%`;
+}
 function pct(realizado: number, meta: number) {
   if (!meta) return 0;
   return Math.max(0, Math.min(100, Math.round((realizado / meta) * 100)));
 }
 
+function calcCenario(investimento: number, p: ParamsCenario) {
+  const leads = p.cpl > 0 ? investimento / p.cpl : 0;
+  const qualificados = leads * (p.qualificacao_pct / 100);
+  const cotacoes = qualificados;
+  const vendas = cotacoes * (p.cot_para_venda_pct / 100);
+  const faturamentoBruto = vendas * p.ticket_medio;
+  const faturamentoLiquido = faturamentoBruto * (p.margem_liquida_pct / 100);
+  const cplq = qualificados > 0 ? investimento / qualificados : 0;
+  const taxaConv = cotacoes > 0 ? (vendas / cotacoes) * 100 : 0;
+  const ticket = vendas > 0 ? faturamentoLiquido / vendas : 0;
+  return {
+    leads,
+    cpl: p.cpl,
+    qualificados,
+    cplq,
+    taxaQualificacao: p.qualificacao_pct,
+    cotacoes,
+    vendas,
+    taxaConv,
+    faturamentoBruto,
+    faturamentoLiquido,
+    ticket,
+  };
+}
+
 export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string }) {
   void _clienteId;
-  const [periodo, setPeriodo] = useState<"15d" | "30d" | "mes">("30d");
-  const [periodoLongoTipo, setPeriodoLongoTipo] = useState<"trimestre" | "semestre" | "ano">("trimestre");
 
   const [investimento, setInvestimento] = useState<number>(2000);
   const [params, setParams] = useState<Record<Cenario, ParamsCenario>>(DEFAULTS);
 
+  const [realizadoFiltro, setRealizadoFiltro] = useState<"15d" | "30d" | "mes" | "trimestre">("30d");
+
   const [realizado, setRealizado] = useState<Realizado>({
-    investimento: 0, leads: 0, qualificados: 0, cotacoes: 0, orcamentos: 0, vendas: 0, faturamento: 0,
+    investimento: 0,
+    leads: 0,
+    cpl: 0,
+    qualificados: 0,
+    cotacoes: 0,
+    vendas: 0,
+    faturamentoBruto: 0,
+    faturamentoLiquido: 0,
   });
 
-  const [metas, setMetas] = useState<Record<keyof Realizado, Metas>>({
-    investimento: { semana: 0, mes: 0, longo: 0 },
-    leads:        { semana: 0, mes: 0, longo: 0 },
-    qualificados: { semana: 0, mes: 0, longo: 0 },
-    cotacoes:     { semana: 0, mes: 0, longo: 0 },
-    orcamentos:   { semana: 0, mes: 0, longo: 0 },
-    vendas:       { semana: 0, mes: 0, longo: 0 },
-    faturamento:  { semana: 2500, mes: 10000, longo: 30000 },
+  const [metaPeriodo, setMetaPeriodo] = useState<"mes" | "trimestre">("mes");
+  const [metas, setMetas] = useState<Record<"faturamento" | "leads" | "qualificados", { mes: number; trimestre: number }>>({
+    faturamento: { mes: 30000, trimestre: 90000 },
+    leads: { mes: 200, trimestre: 600 },
+    qualificados: { mes: 60, trimestre: 180 },
   });
 
-  // Calcular funil por cenário
-  const funis = useMemo(() => {
-    return (Object.keys(params) as Cenario[]).reduce((acc, k) => {
-      const p = params[k];
-      const leads = p.cpl > 0 ? investimento / p.cpl : 0;
-      const qualificados = leads * (p.qualificacao_pct / 100);
-      const cotacoes = qualificados; // cada qualificado vira uma cotação
-      const orcamentos = cotacoes * (p.cot_para_orc_pct / 100);
-      const vendas = orcamentos * (p.orc_para_venda_pct / 100);
-      const faturamento = vendas * p.ticket_medio;
-      const taxaConversao = leads > 0 ? (vendas / leads) * 100 : 0;
-      acc[k] = { investimento, leads, qualificados, cotacoes, orcamentos, vendas, faturamento, taxaConversao, ticketMedio: p.ticket_medio };
-      return acc;
-    }, {} as Record<Cenario, Realizado & { taxaConversao: number; ticketMedio: number }>);
-  }, [investimento, params]);
+  const cenarios = useMemo(() => ({
+    pessimista: calcCenario(investimento, params.pessimista),
+    mediano: calcCenario(investimento, params.mediano),
+    otimista: calcCenario(investimento, params.otimista),
+  }), [investimento, params]);
 
-  const realizadoTaxaConversao = realizado.leads > 0 ? (realizado.vendas / realizado.leads) * 100 : 0;
-  const realizadoTicket = realizado.vendas > 0 ? realizado.faturamento / realizado.vendas : 0;
+  // Realizado calculados
+  const realCPL = realizado.leads > 0 ? realizado.investimento / realizado.leads : 0;
+  const realCPLQ = realizado.qualificados > 0 ? realizado.investimento / realizado.qualificados : 0;
+  const realTaxaQual = realizado.leads > 0 ? (realizado.qualificados / realizado.leads) * 100 : 0;
+  const realTaxaConv = realizado.cotacoes > 0 ? (realizado.vendas / realizado.cotacoes) * 100 : 0;
+  const realTicket = realizado.vendas > 0 ? realizado.faturamentoLiquido / realizado.vendas : 0;
 
-  // Diagnóstico: comparar realizado com mediano para identificar onde está o gargalo
   const diagnostico = useMemo(() => {
-    const med = funis.mediano;
-    const etapas: { nome: string; real: number; esperado: number; tipo: "ok" | "alerta" }[] = [
-      { nome: "Leads", real: realizado.leads, esperado: med.leads, tipo: "ok" },
-      { nome: "Qualificados", real: realizado.qualificados, esperado: med.qualificados, tipo: "ok" },
-      { nome: "Cotações", real: realizado.cotacoes, esperado: med.cotacoes, tipo: "ok" },
-      { nome: "Orçamentos", real: realizado.orcamentos, esperado: med.orcamentos, tipo: "ok" },
-      { nome: "Vendas", real: realizado.vendas, esperado: med.vendas, tipo: "ok" },
+    const med = cenarios.mediano;
+    const etapas = [
+      { nome: "Leads", real: realizado.leads, esperado: med.leads, area: "mk" as const },
+      { nome: "Qualificados", real: realizado.qualificados, esperado: med.qualificados, area: "mk" as const },
+      { nome: "Cotações", real: realizado.cotacoes, esperado: med.cotacoes, area: "co" as const },
+      { nome: "Vendas", real: realizado.vendas, esperado: med.vendas, area: "co" as const },
+      { nome: "Faturamento líquido", real: realizado.faturamentoLiquido, esperado: med.faturamentoLiquido, area: "co" as const },
     ];
-    return etapas.map((e) => ({ ...e, tipo: e.esperado > 0 && e.real < e.esperado * 0.8 ? "alerta" : "ok" as "ok" | "alerta" }));
-  }, [funis, realizado]);
+    return etapas.map((e) => ({
+      ...e,
+      tipo: e.esperado > 0 && e.real < e.esperado * 0.8 ? ("alerta" as const) : ("ok" as const),
+    }));
+  }, [cenarios, realizado]);
 
   const updateParam = (cen: Cenario, key: keyof ParamsCenario, value: number) => {
     setParams((prev) => ({ ...prev, [cen]: { ...prev[cen], [key]: value } }));
   };
 
-  const updateMeta = (kpi: keyof Realizado, periodoMeta: keyof Metas, value: number) => {
-    setMetas((prev) => ({ ...prev, [kpi]: { ...prev[kpi], [periodoMeta]: value } }));
-  };
-
-  const longoLabel = periodoLongoTipo === "trimestre" ? "Trimestre" : periodoLongoTipo === "semestre" ? "Semestre" : "Ano";
-
   return (
     <div className="space-y-6">
-      {/* Filtros topo */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Período de análise</Label>
-          <Tabs value={periodo} onValueChange={(v) => setPeriodo(v as typeof periodo)}>
-            <TabsList>
-              <TabsTrigger value="15d">15 dias</TabsTrigger>
-              <TabsTrigger value="30d">30 dias</TabsTrigger>
-              <TabsTrigger value="mes">Mês atual</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Meta de longo prazo</Label>
-          <Select value={periodoLongoTipo} onValueChange={(v) => setPeriodoLongoTipo(v as typeof periodoLongoTipo)}>
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="trimestre">Trimestral</SelectItem>
-              <SelectItem value="semestre">Semestral</SelectItem>
-              <SelectItem value="ano">Anual</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Parâmetros da simulação */}
-      <Card>
-        <CardHeader>
+      {/* ============ CALCULADORA ============ */}
+      <Card className="overflow-hidden border-2">
+        <CardHeader className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-5 w-5" /> Parâmetros da simulação
+            <Calculator className="h-5 w-5" /> Calculadora de Cenários
           </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Informe o investimento em marketing e os parâmetros de cada cenário para calcular o possível retorno.
+          </p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-xs">Investimento em ADS no período (R$)</Label>
+        <CardContent className="space-y-5 pt-5">
+          {/* Investimento */}
+          <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-primary">
+              Investimento em ADS (R$)
+            </Label>
             <Input
               type="number"
-              className="max-w-[240px]"
+              className="mt-1 max-w-[280px] text-lg font-semibold"
               value={investimento}
               onChange={(e) => setInvestimento(Number(e.target.value) || 0)}
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-2">Parâmetro</th>
-                  <th className="py-2 px-2 text-red-600">Pessimista</th>
-                  <th className="py-2 px-2 text-amber-600">Mediano</th>
-                  <th className="py-2 px-2 text-emerald-600">Otimista</th>
-                </tr>
-              </thead>
-              <tbody>
-                {([
-                  { key: "cpl", label: "CPL (R$ por lead)" },
-                  { key: "qualificacao_pct", label: "% Qualificação dos leads" },
-                  { key: "cot_para_orc_pct", label: "% Cotação → Orçamento" },
-                  { key: "orc_para_venda_pct", label: "% Orçamento → Venda" },
-                  { key: "ticket_medio", label: "Ticket médio (R$)" },
-                ] as { key: keyof ParamsCenario; label: string }[]).map((row) => (
-                  <tr key={row.key} className="border-b">
-                    <td className="py-2 pr-2 text-muted-foreground">{row.label}</td>
-                    {(["pessimista", "mediano", "otimista"] as Cenario[]).map((cen) => (
-                      <td key={cen} className="py-1 px-2">
-                        <Input
-                          type="number"
-                          className="h-8"
-                          value={params[cen][row.key]}
-                          onChange={(e) => updateParam(cen, row.key, Number(e.target.value) || 0)}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Parâmetros: Marketing (amber) + Comercial (blue) */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* MARKETING */}
+            <div className="rounded-lg border-2 p-3" style={{ borderColor: `${MK_COLOR}50`, background: `${MK_COLOR}08` }}>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="rounded-md p-1.5" style={{ background: `${MK_COLOR}20` }}>
+                  <Megaphone className="h-4 w-4" style={{ color: MK_COLOR }} />
+                </div>
+                <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing</h4>
+              </div>
+              <ParamRow label="CPL (R$ por lead)" k="cpl" params={params} onChange={updateParam} />
+              <ParamRow label="% Qualificação dos leads" k="qualificacao_pct" params={params} onChange={updateParam} suffix="%" />
+            </div>
+
+            {/* COMERCIAL */}
+            <div className="rounded-lg border-2 p-3" style={{ borderColor: `${CO_COLOR}50`, background: `${CO_COLOR}08` }}>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="rounded-md p-1.5" style={{ background: `${CO_COLOR}20` }}>
+                  <Handshake className="h-4 w-4" style={{ color: CO_COLOR }} />
+                </div>
+                <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial</h4>
+              </div>
+              <ParamRow label="% Cotação → Venda" k="cot_para_venda_pct" params={params} onChange={updateParam} suffix="%" />
+              <ParamRow label="Ticket médio (R$)" k="ticket_medio" params={params} onChange={updateParam} />
+              <ParamRow label="% Margem líquida" k="margem_liquida_pct" params={params} onChange={updateParam} suffix="%" />
+            </div>
+          </div>
+
+          {/* Resultado: 3 cards de cenário com faturamento previsto */}
+          <div className="grid gap-3 md:grid-cols-3">
+            <CenarioCard nome="Pessimista" cor="rgb(239 68 68)" data={cenarios.pessimista} />
+            <CenarioCard nome="Mediano" cor="rgb(245 158 11)" data={cenarios.mediano} destaque />
+            <CenarioCard nome="Otimista" cor="rgb(16 185 129)" data={cenarios.otimista} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Funil principal */}
+      {/* ============ FUNIS VISUAIS (CENÁRIOS) ============ */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-5 w-5" /> Funil — Simulação vs Realizado
+            <TrendingUp className="h-5 w-5" /> Funis projetados — Cenário Mediano
           </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Visualização do funil baseado nos parâmetros do cenário mediano.
+          </p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Marketing */}
-          <div className="rounded-lg border">
-            <div className="flex items-center gap-2 border-b bg-muted/30 px-4 py-2">
-              <Megaphone className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold">Funil de Marketing</h3>
-            </div>
-            <FunilLinhas
-              linhas={[
-                { label: "Investimento ADS", isMoney: true,
-                  vals: { pessimista: funis.pessimista.investimento, mediano: funis.mediano.investimento, otimista: funis.otimista.investimento, realizado: realizado.investimento },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, investimento: v }) },
-                { label: "Leads gerados",
-                  vals: { pessimista: funis.pessimista.leads, mediano: funis.mediano.leads, otimista: funis.otimista.leads, realizado: realizado.leads },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, leads: v }) },
-                { label: "Leads qualificados",
-                  vals: { pessimista: funis.pessimista.qualificados, mediano: funis.mediano.qualificados, otimista: funis.otimista.qualificados, realizado: realizado.qualificados },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, qualificados: v }) },
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <FunilVisual
+              titulo="Funil de Marketing"
+              icon={<Megaphone className="h-4 w-4" />}
+              cor={MK_COLOR}
+              etapas={[
+                { label: "Investimento", value: fmtMoney(investimento) },
+                { label: "Leads", value: fmtNum(cenarios.mediano.leads) },
+                { label: "Qualificados", value: fmtNum(cenarios.mediano.qualificados) },
+              ]}
+              metricas={[
+                { label: "CPL", value: fmtMoney(cenarios.mediano.cpl) },
+                { label: "CPLQ", value: fmtMoney(cenarios.mediano.cplq) },
+                { label: "Taxa Qualif.", value: fmtPct(cenarios.mediano.taxaQualificacao) },
+              ]}
+            />
+            <FunilVisual
+              titulo="Funil Comercial"
+              icon={<Handshake className="h-4 w-4" />}
+              cor={CO_COLOR}
+              etapas={[
+                { label: "Cotações", value: fmtNum(cenarios.mediano.cotacoes) },
+                { label: "Vendas", value: fmtNum(cenarios.mediano.vendas) },
+                { label: "Faturamento", value: fmtMoney(cenarios.mediano.faturamentoLiquido) },
+              ]}
+              metricas={[
+                { label: "Conv. Cot→Venda", value: fmtPct(cenarios.mediano.taxaConv) },
+                { label: "Fat. Bruto", value: fmtMoney(cenarios.mediano.faturamentoBruto) },
+                { label: "Ticket Médio", value: fmtMoney(cenarios.mediano.ticket) },
               ]}
             />
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Comercial */}
-          <div className="rounded-lg border">
-            <div className="flex items-center gap-2 border-b bg-muted/30 px-4 py-2">
-              <Handshake className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold">Funil Comercial</h3>
+      {/* ============ REALIZADO ============ */}
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-5 w-5" /> Realizado
+            </CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">Dados reais do período selecionado.</p>
+          </div>
+          <Select value={realizadoFiltro} onValueChange={(v) => setRealizadoFiltro(v as typeof realizadoFiltro)}>
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15d">Últimos 15 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="mes">Mês atual</SelectItem>
+              <SelectItem value="trimestre">Trimestre</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Marketing realizado */}
+            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${MK_COLOR}40` }}>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="rounded-md p-1.5" style={{ background: `${MK_COLOR}20` }}>
+                  <Megaphone className="h-4 w-4" style={{ color: MK_COLOR }} />
+                </div>
+                <h4 className="text-sm font-bold" style={{ color: MK_COLOR }}>Marketing — Realizado</h4>
+              </div>
+              <div className="space-y-2">
+                <RealInput label="Investimento (R$)" value={realizado.investimento} onChange={(v) => setRealizado({ ...realizado, investimento: v })} money />
+                <RealInput label="Leads gerados" value={realizado.leads} onChange={(v) => setRealizado({ ...realizado, leads: v })} />
+                <RealInput label="Leads qualificados" value={realizado.qualificados} onChange={(v) => setRealizado({ ...realizado, qualificados: v })} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-xs">
+                <Computed label="CPL" value={fmtMoney(realCPL)} />
+                <Computed label="CPLQ" value={fmtMoney(realCPLQ)} />
+                <Computed label="Tx. Qualif." value={fmtPct(realTaxaQual)} />
+              </div>
             </div>
-            <FunilLinhas
-              linhas={[
-                { label: "Cotações enviadas",
-                  vals: { pessimista: funis.pessimista.cotacoes, mediano: funis.mediano.cotacoes, otimista: funis.otimista.cotacoes, realizado: realizado.cotacoes },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, cotacoes: v }) },
-                { label: "Orçamentos enviados",
-                  vals: { pessimista: funis.pessimista.orcamentos, mediano: funis.mediano.orcamentos, otimista: funis.otimista.orcamentos, realizado: realizado.orcamentos },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, orcamentos: v }) },
-                { label: "Vendas fechadas",
-                  vals: { pessimista: funis.pessimista.vendas, mediano: funis.mediano.vendas, otimista: funis.otimista.vendas, realizado: realizado.vendas },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, vendas: v }) },
-                { label: "Faturamento", isMoney: true,
-                  vals: { pessimista: funis.pessimista.faturamento, mediano: funis.mediano.faturamento, otimista: funis.otimista.faturamento, realizado: realizado.faturamento },
-                  onChangeRealizado: (v) => setRealizado({ ...realizado, faturamento: v }) },
-              ]}
-            />
-            <div className="grid grid-cols-2 gap-3 border-t bg-muted/20 px-4 py-3 text-xs md:grid-cols-4">
-              <Metric label="Conv. Pessimista" value={`${funis.pessimista.taxaConversao.toFixed(1)}%`} />
-              <Metric label="Conv. Mediano" value={`${funis.mediano.taxaConversao.toFixed(1)}%`} />
-              <Metric label="Conv. Otimista" value={`${funis.otimista.taxaConversao.toFixed(1)}%`} />
-              <Metric label="Conv. Realizado" value={`${realizadoTaxaConversao.toFixed(1)}%`} highlight />
-            </div>
-            <div className="grid grid-cols-2 gap-3 border-t bg-muted/20 px-4 py-3 text-xs md:grid-cols-4">
-              <Metric label="Ticket Pessimista" value={fmtMoney(funis.pessimista.ticketMedio)} />
-              <Metric label="Ticket Mediano" value={fmtMoney(funis.mediano.ticketMedio)} />
-              <Metric label="Ticket Otimista" value={fmtMoney(funis.otimista.ticketMedio)} />
-              <Metric label="Ticket Realizado" value={fmtMoney(realizadoTicket)} highlight />
+
+            {/* Comercial realizado */}
+            <div className="rounded-lg border-2 p-4" style={{ borderColor: `${CO_COLOR}40` }}>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="rounded-md p-1.5" style={{ background: `${CO_COLOR}20` }}>
+                  <Handshake className="h-4 w-4" style={{ color: CO_COLOR }} />
+                </div>
+                <h4 className="text-sm font-bold" style={{ color: CO_COLOR }}>Comercial — Realizado</h4>
+              </div>
+              <div className="space-y-2">
+                <RealInput label="Cotações enviadas" value={realizado.cotacoes} onChange={(v) => setRealizado({ ...realizado, cotacoes: v })} />
+                <RealInput label="Vendas fechadas" value={realizado.vendas} onChange={(v) => setRealizado({ ...realizado, vendas: v })} />
+                <RealInput label="Faturamento Bruto (R$)" value={realizado.faturamentoBruto} onChange={(v) => setRealizado({ ...realizado, faturamentoBruto: v })} money />
+                <RealInput label="Faturamento Líquido (R$)" value={realizado.faturamentoLiquido} onChange={(v) => setRealizado({ ...realizado, faturamentoLiquido: v })} money />
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                <Computed label="Tx. Conversão" value={fmtPct(realTaxaConv)} />
+                <Computed label="Ticket Médio" value={fmtMoney(realTicket)} />
+              </div>
             </div>
           </div>
 
           {/* Diagnóstico */}
           <div className="rounded-lg border bg-muted/20 p-4">
-            <p className="mb-2 text-sm font-medium">Diagnóstico do funil (vs cenário mediano)</p>
+            <p className="mb-2 text-sm font-medium">Diagnóstico (Realizado vs Cenário Mediano)</p>
             <div className="flex flex-wrap gap-2">
-              {diagnostico.map((d) => (
-                <Badge
-                  key={d.nome}
-                  variant="secondary"
-                  className={d.tipo === "alerta"
-                    ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
-                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"}
-                >
-                  {d.tipo === "alerta" ? <AlertTriangle className="mr-1 h-3 w-3" /> : <CheckCircle2 className="mr-1 h-3 w-3" />}
-                  {d.nome}: {fmtNum(d.real)} / esperado {fmtNum(d.esperado)}
-                </Badge>
-              ))}
+              {diagnostico.map((d) => {
+                const cor = d.area === "mk" ? MK_COLOR : CO_COLOR;
+                return (
+                  <Badge
+                    key={d.nome}
+                    variant="secondary"
+                    className={
+                      d.tipo === "alerta"
+                        ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                        : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    }
+                  >
+                    {d.tipo === "alerta" ? (
+                      <AlertTriangle className="mr-1 h-3 w-3" />
+                    ) : (
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                    )}
+                    <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: cor }} />
+                    {d.nome}: {d.area === "co" && d.nome.includes("Faturamento") ? fmtMoney(d.real) : fmtNum(d.real)} / esperado{" "}
+                    {d.area === "co" && d.nome.includes("Faturamento") ? fmtMoney(d.esperado) : fmtNum(d.esperado)}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Metas */}
+      {/* ============ METAS ============ */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-5 w-5" /> Metas e progresso
+            <Target className="h-5 w-5" /> Meta e progresso
           </CardTitle>
+          <Select value={metaPeriodo} onValueChange={(v) => setMetaPeriodo(v as typeof metaPeriodo)}>
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mes">Meta Mensal</SelectItem>
+              <SelectItem value="trimestre">Meta Trimestral</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {([
-            { key: "faturamento" as const, label: "Faturamento", money: true },
-            { key: "vendas" as const, label: "Vendas fechadas" },
-            { key: "leads" as const, label: "Leads gerados" },
-            { key: "qualificados" as const, label: "Leads qualificados" },
-          ]).map((kpi) => {
-            const m = metas[kpi.key];
-            const r = realizado[kpi.key];
-            const fmt = kpi.money ? fmtMoney : fmtNum;
-            return (
-              <div key={kpi.key} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">{kpi.label}</h4>
-                  <span className="text-xs text-muted-foreground">Realizado: <strong className="text-foreground">{fmt(r)}</strong></span>
-                </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <MetaBarra
-                    label="Semana"
-                    realizado={r}
-                    meta={m.semana}
-                    onChangeMeta={(v) => updateMeta(kpi.key, "semana", v)}
-                    fmt={fmt}
-                  />
-                  <MetaBarra
-                    label="Mês"
-                    realizado={r}
-                    meta={m.mes}
-                    onChangeMeta={(v) => updateMeta(kpi.key, "mes", v)}
-                    fmt={fmt}
-                  />
-                  <MetaBarra
-                    label={longoLabel}
-                    realizado={r}
-                    meta={m.longo}
-                    onChangeMeta={(v) => updateMeta(kpi.key, "longo", v)}
-                    fmt={fmt}
-                  />
-                </div>
-              </div>
-            );
-          })}
+        <CardContent className="space-y-5">
+          <MetaBarraGrande
+            label="Faturamento"
+            cor="rgb(16 185 129)"
+            realizado={realizado.faturamentoLiquido}
+            meta={metas.faturamento[metaPeriodo]}
+            onChangeMeta={(v) => setMetas({ ...metas, faturamento: { ...metas.faturamento, [metaPeriodo]: v } })}
+            fmt={fmtMoney}
+          />
+          <MetaBarraGrande
+            label="Leads gerados"
+            cor={MK_COLOR}
+            realizado={realizado.leads}
+            meta={metas.leads[metaPeriodo]}
+            onChangeMeta={(v) => setMetas({ ...metas, leads: { ...metas.leads, [metaPeriodo]: v } })}
+            fmt={fmtNum}
+          />
+          <MetaBarraGrande
+            label="Leads qualificados"
+            cor="rgb(168 85 247)"
+            realizado={realizado.qualificados}
+            meta={metas.qualificados[metaPeriodo]}
+            onChangeMeta={(v) => setMetas({ ...metas, qualificados: { ...metas.qualificados, [metaPeriodo]: v } })}
+            fmt={fmtNum}
+          />
           <p className="text-xs text-muted-foreground">
-            * Layout em modo de visualização. Os valores ainda não são salvos — me confirme se o desenho está bom que eu já conecto ao banco.
+            * Layout em modo de visualização. Os valores ainda não são salvos no banco.
           </p>
         </CardContent>
       </Card>
@@ -346,71 +400,183 @@ export function PerformanceFunil({ clienteId: _clienteId }: { clienteId: string 
   );
 }
 
-function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={highlight ? "font-semibold text-primary" : "font-medium"}>{value}</p>
-    </div>
-  );
-}
+// =================== Subcomponentes ===================
 
-function FunilLinhas({
-  linhas,
+function ParamRow({
+  label,
+  k,
+  params,
+  onChange,
+  suffix,
 }: {
-  linhas: {
-    label: string;
-    isMoney?: boolean;
-    vals: { pessimista: number; mediano: number; otimista: number; realizado: number };
-    onChangeRealizado: (v: number) => void;
-  }[];
+  label: string;
+  k: keyof ParamsCenario;
+  params: Record<Cenario, ParamsCenario>;
+  onChange: (cen: Cenario, key: keyof ParamsCenario, v: number) => void;
+  suffix?: string;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-xs text-muted-foreground">
-            <th className="px-4 py-2">Etapa</th>
-            <th className="px-2 py-2 text-red-600">Pessimista</th>
-            <th className="px-2 py-2 text-amber-600">Mediano</th>
-            <th className="px-2 py-2 text-emerald-600">Otimista</th>
-            <th className="px-2 py-2">Realizado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {linhas.map((l) => {
-            const fmt = l.isMoney ? fmtMoney : fmtNum;
-            return (
-              <tr key={l.label} className="border-b">
-                <td className="px-4 py-2 font-medium">{l.label}</td>
-                <td className="px-2 py-2 text-muted-foreground">{fmt(l.vals.pessimista)}</td>
-                <td className="px-2 py-2 text-muted-foreground">{fmt(l.vals.mediano)}</td>
-                <td className="px-2 py-2 text-muted-foreground">{fmt(l.vals.otimista)}</td>
-                <td className="px-2 py-1">
-                  <Input
-                    type="number"
-                    className="h-8 w-32"
-                    value={l.vals.realizado}
-                    onChange={(e) => l.onChangeRealizado(Number(e.target.value) || 0)}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="mb-2">
+      <Label className="text-[11px] text-muted-foreground">{label}{suffix ? ` (${suffix})` : ""}</Label>
+      <div className="mt-1 grid grid-cols-3 gap-1.5">
+        {(["pessimista", "mediano", "otimista"] as Cenario[]).map((cen) => {
+          const cor = cen === "pessimista" ? "rgb(239 68 68)" : cen === "mediano" ? "rgb(245 158 11)" : "rgb(16 185 129)";
+          return (
+            <div key={cen} className="relative">
+              <span className="absolute left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full" style={{ background: cor }} />
+              <Input
+                type="number"
+                className="h-8 pl-4 text-xs"
+                value={params[cen][k]}
+                onChange={(e) => onChange(cen, k, Number(e.target.value) || 0)}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function MetaBarra({
+function CenarioCard({
+  nome,
+  cor,
+  data,
+  destaque,
+}: {
+  nome: string;
+  cor: string;
+  data: ReturnType<typeof calcCenario>;
+  destaque?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg border-2 p-4 ${destaque ? "ring-2 ring-offset-2" : ""}`}
+      style={{ borderColor: cor, background: `${cor}10`, ...(destaque ? { boxShadow: `0 0 0 2px ${cor}30` } : {}) }}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cor }}>{nome}</span>
+        {destaque && <Badge variant="secondary" className="text-[10px]">Esperado</Badge>}
+      </div>
+      <p className="text-xs text-muted-foreground">Faturamento líquido previsto</p>
+      <p className="mt-1 text-2xl font-bold" style={{ color: cor }}>{fmtMoney(data.faturamentoLiquido)}</p>
+      <div className="mt-3 space-y-1 text-xs">
+        <Linha label="Leads" value={fmtNum(data.leads)} />
+        <Linha label="Qualificados" value={fmtNum(data.qualificados)} />
+        <Linha label="Vendas" value={fmtNum(data.vendas)} />
+        <Linha label="Ticket" value={fmtMoney(data.ticket)} />
+      </div>
+    </div>
+  );
+}
+
+function Linha({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function FunilVisual({
+  titulo,
+  icon,
+  cor,
+  etapas,
+  metricas,
+}: {
+  titulo: string;
+  icon: React.ReactNode;
+  cor: string;
+  etapas: { label: string; value: string }[];
+  metricas: { label: string; value: string }[];
+}) {
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="rounded-md p-1.5" style={{ background: `${cor}20`, color: cor }}>
+          {icon}
+        </div>
+        <h4 className="text-sm font-bold" style={{ color: cor }}>{titulo}</h4>
+      </div>
+
+      {/* Funil em forma de trapézio */}
+      <div className="space-y-1.5">
+        {etapas.map((e, i) => {
+          const total = etapas.length;
+          // Top width 100%, narrowing as we descend
+          const topW = 100 - i * (60 / Math.max(1, total - 1));
+          const botW = 100 - (i + 1) * (60 / Math.max(1, total - 1));
+          // Color shading - top darker
+          const opacity = 1 - i * 0.18;
+          return (
+            <div key={e.label} className="relative flex items-center justify-center" style={{ height: 64 }}>
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+                <polygon
+                  points={`${(100 - topW) / 2},0 ${(100 + topW) / 2},0 ${(100 + botW) / 2},100 ${(100 - botW) / 2},100`}
+                  fill={cor}
+                  fillOpacity={opacity}
+                />
+              </svg>
+              <div className="relative z-10 flex w-full items-center justify-between px-6 text-white">
+                <span className="text-[11px] font-semibold uppercase tracking-wider drop-shadow">{e.label}</span>
+                <span className="text-base font-bold drop-shadow">{e.value}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Métricas embaixo */}
+      <div className="mt-4 grid grid-cols-3 gap-2 border-t pt-3">
+        {metricas.map((m) => (
+          <div key={m.label} className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</p>
+            <p className="text-sm font-semibold" style={{ color: cor }}>{m.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RealInput({ label, value, onChange, money }: { label: string; value: number; onChange: (v: number) => void; money?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          className="h-8 w-32 text-right text-sm"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value) || 0)}
+        />
+        {money && <span className="text-[10px] text-muted-foreground">R$</span>}
+      </div>
+    </div>
+  );
+}
+
+function Computed({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function MetaBarraGrande({
   label,
+  cor,
   realizado,
   meta,
   onChangeMeta,
   fmt,
 }: {
   label: string;
+  cor: string;
   realizado: number;
   meta: number;
   onChangeMeta: (v: number) => void;
@@ -418,20 +584,31 @@ function MetaBarra({
 }) {
   const p = pct(realizado, meta);
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{p}%</span>
+    <div className="rounded-lg border p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full" style={{ background: cor }} />
+          <h4 className="text-sm font-semibold">{label}</h4>
+        </div>
+        <span className="text-lg font-bold" style={{ color: cor }}>{p}%</span>
       </div>
-      <Progress value={p} />
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{fmt(realizado)} /</span>
-        <Input
-          type="number"
-          className="h-7 w-24"
-          value={meta}
-          onChange={(e) => onChangeMeta(Number(e.target.value) || 0)}
+      <div className="relative h-6 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${p}%`, background: `linear-gradient(90deg, ${cor}cc, ${cor})` }}
         />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <span>Realizado: <strong className="text-foreground">{fmt(realizado)}</strong></span>
+        <div className="flex items-center gap-2">
+          <span>Meta:</span>
+          <Input
+            type="number"
+            className="h-7 w-28"
+            value={meta}
+            onChange={(e) => onChangeMeta(Number(e.target.value) || 0)}
+          />
+        </div>
       </div>
     </div>
   );
