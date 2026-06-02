@@ -408,12 +408,8 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
             </div>
           </div>
 
-          {/* Resultado: 3 cards de cenário com faturamento previsto */}
-          <div className="grid gap-3 md:grid-cols-3">
-            <CenarioCard nome="Pessimista" cor="rgb(239 68 68)" data={cenarios.pessimista} />
-            <CenarioCard nome="Mediano" cor="rgb(245 158 11)" data={cenarios.mediano} destaque />
-            <CenarioCard nome="Otimista" cor="rgb(16 185 129)" data={cenarios.otimista} />
-          </div>
+          {/* Funil de cenários (Pessimista / Mediano / Otimista lado a lado em cada etapa) */}
+          <FunilCenariosVisual investimento={investimento} cenarios={cenarios} />
         </CardContent>
       </Card>
 
@@ -941,6 +937,217 @@ function MetaBarraGrande({
             onChange={(e) => onChangeMeta(Number(e.target.value) || 0)}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============= FUNIL VISUAL DOS CENÁRIOS =============
+function FunilCenariosVisual({
+  investimento,
+  cenarios,
+}: {
+  investimento: number;
+  cenarios: { pessimista: ReturnType<typeof calcCenario>; mediano: ReturnType<typeof calcCenario>; otimista: ReturnType<typeof calcCenario> };
+}) {
+  type CenCfg = { key: Cenario; nome: string; cor: string };
+  const cens: CenCfg[] = [
+    { key: "pessimista", nome: "Pessimista", cor: "#ef4444" },
+    { key: "mediano", nome: "Mediano", cor: "#f59e0b" },
+    { key: "otimista", nome: "Otimista", cor: "#10b981" },
+  ];
+
+  const stages: Array<{
+    label: string;
+    money?: boolean;
+    color: string;
+    area: "mk" | "co";
+    get: (c: ReturnType<typeof calcCenario>) => number;
+    badge?: { label: string; get: (c: ReturnType<typeof calcCenario>) => string };
+  }> = [
+    {
+      label: "Investimento em ADS",
+      money: true,
+      color: "#ea580c",
+      area: "mk",
+      get: () => investimento,
+      badge: { label: "CPL", get: (c) => fmtBRL(c.cpl) },
+    },
+    {
+      label: "Leads gerados",
+      color: "#f97316",
+      area: "mk",
+      get: (c) => c.leads,
+      badge: { label: "Taxa qualificação", get: (c) => fmtPctShared(c.taxaQualificacao, 1) },
+    },
+    {
+      label: "Leads qualificados",
+      color: "#f59e0b",
+      area: "mk",
+      get: (c) => c.qualificados,
+      badge: { label: "CPL qualificado", get: (c) => fmtBRL(c.cplq) },
+    },
+    {
+      label: "Cotações enviadas",
+      color: "#2563eb",
+      area: "co",
+      get: (c) => c.cotacoes,
+      badge: { label: "Conversão", get: (c) => fmtPctShared(c.taxaConv, 1) },
+    },
+    {
+      label: "Vendas fechadas",
+      color: "#3b82f6",
+      area: "co",
+      get: (c) => c.vendas,
+      badge: { label: "Ticket médio", get: (c) => fmtBRL(c.ticket) },
+    },
+    {
+      label: "Faturamento bruto",
+      money: true,
+      color: "#10b981",
+      area: "co",
+      get: (c) => c.faturamentoBruto,
+    },
+    {
+      label: "Faturamento líquido",
+      money: true,
+      color: "#059669",
+      area: "co",
+      get: (c) => c.faturamentoLiquido,
+    },
+  ];
+
+  const N = stages.length;
+  const widthAt = (i: number) => 100 - i * (62 / N);
+
+  const fmtVal = (v: number, money?: boolean) => (money ? fmtBRL(v) : fmtInt(v));
+
+  return (
+    <div className="space-y-5">
+      {/* Cabeçalho legenda */}
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold" style={{ background: `${MK_COLOR}15`, color: MK_COLOR }}>
+          <Megaphone className="h-3.5 w-3.5" /> MARKETING
+        </span>
+        <span className="text-muted-foreground">→</span>
+        <span className="flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold" style={{ background: `${CO_COLOR}15`, color: CO_COLOR }}>
+          <Handshake className="h-3.5 w-3.5" /> COMERCIAL
+        </span>
+        <span className="mx-2 h-4 w-px bg-border" />
+        {cens.map((c) => (
+          <span key={c.key} className="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium" style={{ borderColor: `${c.cor}60`, color: c.cor }}>
+            <span className="h-2 w-2 rounded-full" style={{ background: c.cor }} />
+            {c.nome}
+          </span>
+        ))}
+      </div>
+
+      <div className="relative mx-auto max-w-4xl">
+        {stages.map((s, i) => {
+          const topW = widthAt(i);
+          const botW = widthAt(i + 1);
+          const topInset = (100 - topW) / 2;
+          const botInset = (100 - botW) / 2;
+          const clip = `polygon(${topInset}% 0%, ${100 - topInset}% 0%, ${100 - botInset}% 100%, ${botInset}% 100%)`;
+          const isAreaSwitch = i > 0 && stages[i - 1].area !== s.area;
+
+          return (
+            <div key={s.label} className="relative">
+              {isAreaSwitch && (
+                <div className="my-2 flex items-center justify-center gap-2">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <span className="rounded-full border bg-background px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    funil comercial
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                </div>
+              )}
+
+              <div className="relative flex items-center" style={{ height: 96 }}>
+                {/* trapézio de fundo */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    clipPath: clip,
+                    background: `linear-gradient(135deg, ${s.color} 0%, ${s.color}dd 60%, ${s.color}aa 100%)`,
+                    boxShadow: `inset 0 -2px 0 ${s.color}99, inset 0 2px 0 #ffffff30`,
+                  }}
+                />
+                {/* conteúdo: label + 3 colunas de cenário */}
+                <div className="relative z-10 flex w-full items-center justify-center gap-3 px-6">
+                  <div className="hidden flex-col items-end text-right text-white sm:flex">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] opacity-95 drop-shadow">
+                      {s.label}
+                    </span>
+                    <span className="text-[10px] opacity-80 drop-shadow">
+                      {s.money ? "R$" : "qtd"}
+                    </span>
+                  </div>
+                  <div className="grid flex-1 max-w-[460px] grid-cols-3 gap-1.5">
+                    {cens.map((c) => {
+                      const v = s.get(cenarios[c.key]);
+                      const isMed = c.key === "mediano";
+                      return (
+                        <div
+                          key={c.key}
+                          className={`rounded-md bg-white/95 px-2 py-1.5 text-center shadow-md backdrop-blur ${isMed ? "ring-2 ring-white" : "ring-1 ring-white/40"}`}
+                        >
+                          <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: c.cor }}>
+                            {c.nome.slice(0, 4)}
+                          </p>
+                          <p className="text-sm font-bold tabular-nums leading-tight text-foreground">
+                            {fmtVal(v, s.money)}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* badge lateral com métricas por cenário */}
+                {s.badge && (
+                  <div className="absolute right-0 top-full z-20 hidden -translate-y-1/2 translate-x-[calc(100%+8px)] items-stretch gap-0 lg:flex">
+                    <div className="my-auto h-px w-4" style={{ background: CO_COLOR }} />
+                    <div className="rounded-md shadow-md overflow-hidden">
+                      <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white" style={{ background: CO_COLOR }}>
+                        {s.badge.label}
+                      </div>
+                      <div className="flex divide-x bg-white">
+                        {cens.map((c) => (
+                          <div key={c.key} className="px-2 py-0.5 text-center">
+                            <p className="text-[8px] font-semibold uppercase" style={{ color: c.cor }}>{c.nome.slice(0, 3)}</p>
+                            <p className="text-[11px] font-bold tabular-nums">{s.badge!.get(cenarios[c.key])}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Resumo do faturamento líquido previsto por cenário */}
+      <div className="grid grid-cols-3 gap-2">
+        {cens.map((c) => {
+          const data = cenarios[c.key];
+          return (
+            <div
+              key={c.key}
+              className="rounded-lg border-2 p-3 text-center"
+              style={{ borderColor: c.cor, background: `${c.cor}10` }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.cor }}>
+                {c.nome} · Faturamento líquido
+              </p>
+              <p className="mt-1 text-xl font-bold tabular-nums" style={{ color: c.cor }}>
+                {fmtBRL(data.faturamentoLiquido)}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
