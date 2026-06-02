@@ -214,6 +214,27 @@ function ClientesBase() {
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Plano:</span>
+            {([
+              { key: "TODOS", label: "Todos planos" },
+              { key: "ACELERACAO", label: `Aceleração (${aceleracaoCount})` },
+              { key: "DEMAIS", label: "Demais planos" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setTipoPlano(opt.key)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  tipoPlano === opt.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background hover:bg-muted"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+
           <div className="text-xs text-muted-foreground">
             {isLoading
               ? "Carregando..."
