@@ -408,8 +408,12 @@ export function PerformanceFunil({ clienteId }: { clienteId: string }) {
             </div>
           </div>
 
-          {/* Funil de cenários (Pessimista / Mediano / Otimista lado a lado em cada etapa) */}
-          <FunilCenariosVisual investimento={investimento} cenarios={cenarios} />
+          {/* Resultado: 3 cards comparando cenários */}
+          <div className="grid gap-3 md:grid-cols-3">
+            <CenarioCard nome="Pessimista" cor="#ef4444" data={cenarios.pessimista} />
+            <CenarioCard nome="Mediano" cor="#f59e0b" data={cenarios.mediano} destaque />
+            <CenarioCard nome="Otimista" cor="#10b981" data={cenarios.otimista} />
+          </div>
         </CardContent>
       </Card>
 
