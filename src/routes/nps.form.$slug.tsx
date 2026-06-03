@@ -133,9 +133,14 @@ function NpsFormPage() {
     responsavel.trim().length > 0 &&
     empresa.trim().length > 0 &&
     qualidade != null &&
+    expectativas.trim().length > 0 &&
     comunicacao != null &&
-    renovacao != null &&
-    indicaria != null;
+    processos.trim().length > 0 &&
+    interesses.length > 0 &&
+    indicaria != null &&
+    valoriza.trim().length > 0 &&
+    melhoria.trim().length > 0 &&
+    renovacao != null;
 
   const submitMut = useMutation({
     mutationFn: async () => {
