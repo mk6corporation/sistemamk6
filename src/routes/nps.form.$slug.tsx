@@ -276,7 +276,7 @@ function NpsFormPage() {
           {/* 3 */}
           <div className="space-y-1.5">
             <Label>
-              Os resultados entregues até agora estão alinhados com suas expectativas?
+              Os resultados entregues até agora estão alinhados com suas expectativas? *
               <span className="ml-1 text-muted-foreground">[comente o motivo]</span>
             </Label>
             <Textarea
@@ -286,6 +286,7 @@ function NpsFormPage() {
               placeholder="Conte um pouco sobre os resultados..."
             />
           </div>
+
 
           {/* 4 */}
           <div className="space-y-2">
