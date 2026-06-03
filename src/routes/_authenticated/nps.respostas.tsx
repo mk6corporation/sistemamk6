@@ -32,6 +32,7 @@ import {
   scoreBadgeClasses,
   type NpsResposta,
 } from "@/lib/nps-utils";
+import { RespostasCompletasDialog } from "@/components/nps/respostas-completas-dialog";
 
 export const Route = createFileRoute("/_authenticated/nps/respostas")({
   component: NpsRespostasPage,
