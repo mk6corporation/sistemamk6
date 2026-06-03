@@ -184,13 +184,9 @@ const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
 // ===== Page =====
 function Dashboard() {
   const qc = useQueryClient();
-  const syncFn = useServerFn(triggerNotionSync);
-  const financeiroFn = useServerFn(triggerFinanceiroSync);
-  const enriquecerFn = useServerFn(enriquecerTodosCnpjs);
+  const syncTudoFn = useServerFn(syncTudo);
   const migrarFn = useServerFn(migrarJourney);
-  const [lastResult, setLastResult] = useState<any>(null);
-  const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
-  const [lastCnpj, setLastCnpj] = useState<any>(null);
+  const [lastSync, setLastSync] = useState<any>(null);
 
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
@@ -199,26 +195,10 @@ function Dashboard() {
   );
 
 
-  const mutation = useMutation({
-    mutationFn: () => syncFn(),
+  const syncMutation = useMutation({
+    mutationFn: () => syncTudoFn(),
     onSuccess: (data) => {
-      setLastResult(data);
-      qc.invalidateQueries();
-    },
-  });
-
-  const financeiroMutation = useMutation({
-    mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
-    onSuccess: (data) => {
-      setLastFinanceiro(data);
-      qc.invalidateQueries();
-    },
-  });
-
-  const cnpjMutation = useMutation({
-    mutationFn: () => enriquecerFn(),
-    onSuccess: (data) => {
-      setLastCnpj(data);
+      setLastSync(data);
       qc.invalidateQueries();
     },
   });
@@ -230,6 +210,32 @@ function Dashboard() {
     migrouRef.current = true;
     migrarFn().then(() => qc.invalidateQueries({ queryKey: ["gargalos"] })).catch(() => {});
   }, [migrarFn, qc]);
+
+  // Atualização em tempo real: revalida queries quando clientes/mudanças mudam no banco
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "clientes" }, () => {
+        qc.invalidateQueries();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "mudancas_estagio" }, () => {
+        qc.invalidateQueries();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "contratos" }, () => {
+        qc.invalidateQueries();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  // Auto-refresh leve a cada 60s (caso realtime não esteja habilitado para alguma tabela)
+  useEffect(() => {
+    const id = setInterval(() => qc.invalidateQueries(), 60_000);
+    return () => clearInterval(id);
+  }, [qc]);
+
 
   const gargalosQuery = useQuery({
     queryKey: ["gargalos"],
