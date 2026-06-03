@@ -4,8 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
-import { enriquecerTodosCnpjs } from "@/lib/cnpj.functions";
+import { syncTudo } from "@/lib/sync.functions";
 import { migrarJourney } from "@/lib/journey.functions";
 
 import { Button } from "@/components/ui/button";
