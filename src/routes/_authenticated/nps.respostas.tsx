@@ -32,6 +32,7 @@ import {
   scoreBadgeClasses,
   type NpsResposta,
 } from "@/lib/nps-utils";
+import { RespostasCompletasDialog } from "@/components/nps/respostas-completas-dialog";
 
 export const Route = createFileRoute("/_authenticated/nps/respostas")({
   component: NpsRespostasPage,
@@ -167,6 +168,7 @@ function NpsRespostasPage() {
                     <TableHead>Serviço</TableHead>
                     <TableHead>Comentário</TableHead>
                     <TableHead className="text-right">Data</TableHead>
+                    <TableHead className="w-32 text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -200,6 +202,12 @@ function NpsRespostasPage() {
                         </TableCell>
                         <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
                           {new Date(r.respondido_em).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <RespostasCompletasDialog
+                            resposta={r}
+                            clienteNome={c?.nome ?? null}
+                          />
                         </TableCell>
                       </TableRow>
                     );

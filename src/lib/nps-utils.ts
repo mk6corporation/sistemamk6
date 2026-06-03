@@ -6,6 +6,8 @@ export type NpsResposta = {
   respondido_em: string;
   source: string | null;
   source_id: string | null;
+  responsavel?: string | null;
+  respostas?: Record<string, unknown> | null;
 };
 
 export type NpsLink = {
