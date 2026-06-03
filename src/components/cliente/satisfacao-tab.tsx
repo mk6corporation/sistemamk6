@@ -22,6 +22,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { RespostasCompletasDialog } from "@/components/nps/respostas-completas-dialog";
 
 type NPS = {
   id: string;
@@ -29,6 +30,8 @@ type NPS = {
   comentario: string | null;
   respondido_em: string;
   source: string | null;
+  responsavel?: string | null;
+  respostas?: Record<string, unknown> | null;
 };
 
 type Perf = {
