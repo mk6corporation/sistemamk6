@@ -133,9 +133,14 @@ function NpsFormPage() {
     responsavel.trim().length > 0 &&
     empresa.trim().length > 0 &&
     qualidade != null &&
+    expectativas.trim().length > 0 &&
     comunicacao != null &&
-    renovacao != null &&
-    indicaria != null;
+    processos.trim().length > 0 &&
+    interesses.length > 0 &&
+    indicaria != null &&
+    valoriza.trim().length > 0 &&
+    melhoria.trim().length > 0 &&
+    renovacao != null;
 
   const submitMut = useMutation({
     mutationFn: async () => {
@@ -271,7 +276,7 @@ function NpsFormPage() {
           {/* 3 */}
           <div className="space-y-1.5">
             <Label>
-              Os resultados entregues até agora estão alinhados com suas expectativas?
+              Os resultados entregues até agora estão alinhados com suas expectativas? *
               <span className="ml-1 text-muted-foreground">[comente o motivo]</span>
             </Label>
             <Textarea
@@ -281,6 +286,7 @@ function NpsFormPage() {
               placeholder="Conte um pouco sobre os resultados..."
             />
           </div>
+
 
           {/* 4 */}
           <div className="space-y-2">
@@ -298,7 +304,7 @@ function NpsFormPage() {
           {/* 5 */}
           <div className="space-y-1.5">
             <Label>
-              As entregas e os processos estão sendo claros e bem organizados?
+              As entregas e os processos estão sendo claros e bem organizados? *
             </Label>
             <Textarea
               value={processos}
@@ -312,7 +318,7 @@ function NpsFormPage() {
           <div className="space-y-2">
             <Label>
               Temos outros serviços que podem ajudar seu negócio a crescer. Quais
-              despertam seu interesse?
+              despertam seu interesse? *
             </Label>
             <div className="grid gap-2 sm:grid-cols-2">
               {SERVICOS_INTERESSE.map((s) => {
@@ -362,7 +368,7 @@ function NpsFormPage() {
 
           {/* 8 */}
           <div className="space-y-1.5">
-            <Label>O que você mais valoriza no nosso trabalho até aqui?</Label>
+            <Label>O que você mais valoriza no nosso trabalho até aqui? *</Label>
             <Textarea
               value={valoriza}
               onChange={(e) => setValoriza(e.target.value)}
@@ -372,7 +378,7 @@ function NpsFormPage() {
 
           {/* 9 */}
           <div className="space-y-1.5">
-            <Label>Se pudéssemos melhorar uma coisa, o que seria?</Label>
+            <Label>Se pudéssemos melhorar uma coisa, o que seria? *</Label>
             <Textarea
               value={melhoria}
               onChange={(e) => setMelhoria(e.target.value)}
