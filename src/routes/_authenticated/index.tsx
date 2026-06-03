@@ -4,8 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { triggerNotionSync, triggerFinanceiroSync } from "@/lib/sync.functions";
-import { enriquecerTodosCnpjs } from "@/lib/cnpj.functions";
+import { syncTudo } from "@/lib/sync.functions";
 import { migrarJourney } from "@/lib/journey.functions";
 
 import { Button } from "@/components/ui/button";
@@ -185,13 +184,9 @@ const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
 // ===== Page =====
 function Dashboard() {
   const qc = useQueryClient();
-  const syncFn = useServerFn(triggerNotionSync);
-  const financeiroFn = useServerFn(triggerFinanceiroSync);
-  const enriquecerFn = useServerFn(enriquecerTodosCnpjs);
+  const syncTudoFn = useServerFn(syncTudo);
   const migrarFn = useServerFn(migrarJourney);
-  const [lastResult, setLastResult] = useState<any>(null);
-  const [lastFinanceiro, setLastFinanceiro] = useState<any>(null);
-  const [lastCnpj, setLastCnpj] = useState<any>(null);
+  const [lastSync, setLastSync] = useState<any>(null);
 
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
@@ -200,26 +195,10 @@ function Dashboard() {
   );
 
 
-  const mutation = useMutation({
-    mutationFn: () => syncFn(),
+  const syncMutation = useMutation({
+    mutationFn: () => syncTudoFn(),
     onSuccess: (data) => {
-      setLastResult(data);
-      qc.invalidateQueries();
-    },
-  });
-
-  const financeiroMutation = useMutation({
-    mutationFn: (force: boolean) => financeiroFn({ data: { force } }),
-    onSuccess: (data) => {
-      setLastFinanceiro(data);
-      qc.invalidateQueries();
-    },
-  });
-
-  const cnpjMutation = useMutation({
-    mutationFn: () => enriquecerFn(),
-    onSuccess: (data) => {
-      setLastCnpj(data);
+      setLastSync(data);
       qc.invalidateQueries();
     },
   });
@@ -231,6 +210,32 @@ function Dashboard() {
     migrouRef.current = true;
     migrarFn().then(() => qc.invalidateQueries({ queryKey: ["gargalos"] })).catch(() => {});
   }, [migrarFn, qc]);
+
+  // Atualização em tempo real: revalida queries quando clientes/mudanças mudam no banco
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "clientes" }, () => {
+        qc.invalidateQueries();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "mudancas_estagio" }, () => {
+        qc.invalidateQueries();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "contratos" }, () => {
+        qc.invalidateQueries();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  // Auto-refresh leve a cada 60s (caso realtime não esteja habilitado para alguma tabela)
+  useEffect(() => {
+    const id = setInterval(() => qc.invalidateQueries(), 60_000);
+    return () => clearInterval(id);
+  }, [qc]);
+
 
   const gargalosQuery = useQuery({
     queryKey: ["gargalos"],
@@ -674,96 +679,50 @@ function Dashboard() {
               MK6 — Painel de Clientes
             </h1>
             <p className="text-sm text-muted-foreground">
-              Sincronizado com o Notion · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
+              Atualização automática · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} size="lg">
-              {mutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sincronizando...</>
+            <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} size="lg">
+              {syncMutation.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sincronizando tudo...</>
               ) : (
-                <><RefreshCw className="mr-2 h-4 w-4" />Sincronizar agora</>
-              )}
-            </Button>
-            <Button
-              onClick={() => financeiroMutation.mutate(true)}
-              disabled={financeiroMutation.isPending}
-              size="lg"
-              variant="outline"
-            >
-              {financeiroMutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Importando...</>
-              ) : (
-                <><RefreshCw className="mr-2 h-4 w-4" />Importar formulários (CNPJ, contratos)</>
-              )}
-            </Button>
-            <Button
-              onClick={() => cnpjMutation.mutate()}
-              disabled={cnpjMutation.isPending}
-              size="lg"
-              variant="outline"
-            >
-              {cnpjMutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Consultando BrasilAPI...</>
-              ) : (
-                <><RefreshCw className="mr-2 h-4 w-4" />Enriquecer CNPJs (BrasilAPI)</>
+                <><RefreshCw className="mr-2 h-4 w-4" />Sincronizar tudo agora</>
               )}
             </Button>
           </div>
         </header>
 
-        {lastResult && (
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-            {lastResult.status === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-red-600" />
-            )}
-            <span className="font-medium">Última execução:</span>
-            <span>{lastResult.clientes_processados} processados</span>
-            <span>· +{lastResult.clientes_novos} novos</span>
-            <span>· −{lastResult.clientes_removidos ?? 0} removidos</span>
-            <span>· {lastResult.mudancas_detectadas} mudanças</span>
-            {lastResult.erro && (
-              <span className="text-red-600">· {lastResult.erro}</span>
-            )}
-          </div>
-        )}
-
-        {lastFinanceiro && (
+        {lastSync && (
           <div className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span className="font-medium">Formulários do financeiro:</span>
-              <span>{lastFinanceiro.clientes_com_formulario} importados</span>
-              <span>· {lastFinanceiro.clientes_sem_formulario} sem formulário</span>
-              {lastFinanceiro.erros > 0 && (
-                <span className="text-red-600">· {lastFinanceiro.erros} erros</span>
+              <span className="font-medium">Sincronização concluída:</span>
+              {lastSync.notion && (
+                <span>
+                  Notion: {lastSync.notion.clientes_processados ?? 0} processados · +
+                  {lastSync.notion.clientes_novos ?? 0} novos · {lastSync.notion.mudancas_detectadas ?? 0} mudanças
+                </span>
+              )}
+              {lastSync.financeiro && (
+                <span>
+                  · Formulários: {lastSync.financeiro.clientes_com_formulario ?? 0} importados
+                  {lastSync.financeiro.erros ? ` · ${lastSync.financeiro.erros} erros` : ""}
+                </span>
+              )}
+              {lastSync.cnpj && (
+                <span>
+                  · CNPJ: {lastSync.cnpj.processados} consultados · {lastSync.cnpj.preenchidos} enriquecidos
+                </span>
               )}
             </div>
-            {lastFinanceiro.erros_detalhe && lastFinanceiro.erros_detalhe.length > 0 && (
-              <ul className="ml-7 list-disc space-y-1 text-xs text-red-700">
-                {lastFinanceiro.erros_detalhe.map((e: { cliente: string; mensagem: string }, i: number) => (
-                  <li key={i}>
-                    <span className="font-medium">{e.cliente}:</span> {e.mensagem}
-                  </li>
-                ))}
-              </ul>
+            {lastSync.notion?.erro && (
+              <p className="text-xs text-red-600">Notion: {lastSync.notion.erro}</p>
             )}
           </div>
         )}
 
-        {lastCnpj && (
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <span className="font-medium">BrasilAPI:</span>
-            <span>{lastCnpj.processados} CNPJs consultados</span>
-            <span>· {lastCnpj.preenchidos} clientes enriquecidos</span>
-            <span className="text-muted-foreground">· {lastCnpj.semCnpj} sem CNPJ</span>
-            {lastCnpj.invalidos > 0 && <span className="text-amber-600">· {lastCnpj.invalidos} inválidos</span>}
-            {lastCnpj.erros > 0 && <span className="text-red-600">· {lastCnpj.erros} erros</span>}
-          </div>
-        )}
+
 
         {/* Gargalos da Jornada */}
         {gargalosQuery.data && (
