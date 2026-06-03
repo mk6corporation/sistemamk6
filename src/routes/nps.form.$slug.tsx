@@ -368,7 +368,7 @@ function NpsFormPage() {
 
           {/* 8 */}
           <div className="space-y-1.5">
-            <Label>O que você mais valoriza no nosso trabalho até aqui?</Label>
+            <Label>O que você mais valoriza no nosso trabalho até aqui? *</Label>
             <Textarea
               value={valoriza}
               onChange={(e) => setValoriza(e.target.value)}
@@ -378,7 +378,7 @@ function NpsFormPage() {
 
           {/* 9 */}
           <div className="space-y-1.5">
-            <Label>Se pudéssemos melhorar uma coisa, o que seria?</Label>
+            <Label>Se pudéssemos melhorar uma coisa, o que seria? *</Label>
             <Textarea
               value={melhoria}
               onChange={(e) => setMelhoria(e.target.value)}
