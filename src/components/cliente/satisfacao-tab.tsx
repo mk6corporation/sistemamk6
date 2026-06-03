@@ -337,6 +337,12 @@ export function SatisfacaoTab({ clienteId }: { clienteId: string }) {
                               {n.source && (
                                 <span className="text-xs text-muted-foreground">via {n.source}</span>
                               )}
+                              {n.responsavel && (
+                                <span className="text-xs text-muted-foreground">· {n.responsavel}</span>
+                              )}
+                              <div className="ml-auto">
+                                <RespostasCompletasDialog resposta={n} />
+                              </div>
                             </div>
                             {n.comentario && (
                               <p className="mt-1 text-sm">{n.comentario}</p>
