@@ -304,7 +304,7 @@ function NpsFormPage() {
           {/* 5 */}
           <div className="space-y-1.5">
             <Label>
-              As entregas e os processos estão sendo claros e bem organizados?
+              As entregas e os processos estão sendo claros e bem organizados? *
             </Label>
             <Textarea
               value={processos}
@@ -318,7 +318,7 @@ function NpsFormPage() {
           <div className="space-y-2">
             <Label>
               Temos outros serviços que podem ajudar seu negócio a crescer. Quais
-              despertam seu interesse?
+              despertam seu interesse? *
             </Label>
             <div className="grid gap-2 sm:grid-cols-2">
               {SERVICOS_INTERESSE.map((s) => {
