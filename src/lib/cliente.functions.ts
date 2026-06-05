@@ -1,7 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { classificarCategoria } from "./notion-sync.server";
+
+const ESTAGIOS_ATIVO = new Set(["Contrato Assinado","Financeiro","Formulário de Cliente","Onboarding","Planejamento","1° REUNIÃO CS","Cliente","UPSELL","Aviso de Churn"]);
+const ESTAGIOS_PAUSADO = new Set(["Pausado"]);
+const ESTAGIOS_CHURN = new Set(["Churn"]);
+const ESTAGIOS_FINALIZADO = new Set(["Projeto Finalizado (Não Churn)"]);
+function classificarCategoria(estagio: string | null): string {
+  if (!estagio) return "OUTRO";
+  if (ESTAGIOS_ATIVO.has(estagio)) return "ATIVO";
+  if (ESTAGIOS_PAUSADO.has(estagio)) return "PAUSADO";
+  if (ESTAGIOS_CHURN.has(estagio)) return "CHURN";
+  if (ESTAGIOS_FINALIZADO.has(estagio)) return "FINALIZADO";
+  return "OUTRO";
+}
 
 const ClientePayload = z.object({
   id: z.string().uuid().nullable().optional(),
