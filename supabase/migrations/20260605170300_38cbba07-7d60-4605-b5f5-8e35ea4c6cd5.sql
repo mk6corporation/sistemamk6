@@ -1,0 +1,1 @@
+SELECT cron.unschedule('sync-all-every-15min');
