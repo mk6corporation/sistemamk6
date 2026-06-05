@@ -32,6 +32,7 @@ import { Route as AuthenticatedDesempenhoClienteIdRouteImport } from './routes/_
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
 import { Route as ApiPublicNpsSubmitRouteImport } from './routes/api/public/nps/submit'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
+import { Route as ApiPublicHooksBackupAutoRouteImport } from './routes/api/public/hooks/backup-auto'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -157,6 +158,12 @@ const ApiPublicHooksNpsRoute = ApiPublicHooksNpsRouteImport.update({
   path: '/api/public/hooks/nps',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBackupAutoRoute =
+  ApiPublicHooksBackupAutoRouteImport.update({
+    id: '/api/public/hooks/backup-auto',
+    path: '/api/public/hooks/backup-auto',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
+  '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/desempenho': typeof AuthenticatedDesempenhoIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
+  '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
@@ -229,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
+  '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/clientes/'
     | '/desempenho/'
     | '/nps/'
+    | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
   fileRoutesByTo: FileRoutesByTo
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/desempenho'
     | '/nps'
+    | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
   id:
@@ -304,6 +316,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes/'
     | '/_authenticated/desempenho/'
     | '/_authenticated/nps/'
+    | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
   fileRoutesById: FileRoutesById
@@ -314,6 +327,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   VPainelRoute: typeof VPainelRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
+  ApiPublicHooksBackupAutoRoute: typeof ApiPublicHooksBackupAutoRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
   ApiPublicNpsSubmitRoute: typeof ApiPublicNpsSubmitRoute
 }
@@ -481,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksNpsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup-auto': {
+      id: '/api/public/hooks/backup-auto'
+      path: '/api/public/hooks/backup-auto'
+      fullPath: '/api/public/hooks/backup-auto'
+      preLoaderRoute: typeof ApiPublicHooksBackupAutoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -532,19 +553,10 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   VPainelRoute: VPainelRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
+  ApiPublicHooksBackupAutoRoute: ApiPublicHooksBackupAutoRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
   ApiPublicNpsSubmitRoute: ApiPublicNpsSubmitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

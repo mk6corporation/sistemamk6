@@ -89,7 +89,6 @@ type Cliente = {
   fim_contrato: string | null;
   valor_mensal: number | null;
   removido_em: string | null;
-  notion_last_edited_time: string | null;
 };
 
 type Mudanca = {
@@ -299,18 +298,6 @@ function Dashboard() {
 
 
 
-  const runsQuery = useQuery({
-    queryKey: ["sync_runs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sync_runs")
-        .select("*")
-        .order("iniciado_em", { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
 
   const clientes = clientesQuery.data ?? [];
   const ativos = clientes.filter((c) => !c.removido_em);
@@ -654,7 +641,7 @@ function Dashboard() {
   }, [renovacoesQuery.data, clientesFiltrados, comparacaoMes]);
 
 
-  const ultimaSync = runsQuery.data?.[0] as any;
+
 
 
 
