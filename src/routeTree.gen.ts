@@ -18,6 +18,7 @@ import { Route as AuthenticatedVendedoresRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenticated/minha-rotina'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authenticated/admin-renovacao'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
@@ -30,7 +31,6 @@ import { Route as AuthenticatedNpsDetratoresRouteImport } from './routes/_authen
 import { Route as AuthenticatedDesempenhoClienteIdRouteImport } from './routes/_authenticated/desempenho.$clienteId'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
 import { Route as ApiPublicNpsSubmitRouteImport } from './routes/api/public/nps/submit'
-import { Route as ApiPublicHooksSyncAllRouteImport } from './routes/api/public/hooks/sync-all'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
 
 const LoginRoute = LoginRouteImport.update({
@@ -78,6 +78,12 @@ const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminRenovacaoRoute =
   AuthenticatedAdminRenovacaoRouteImport.update({
     id: '/admin-renovacao',
@@ -146,11 +152,6 @@ const ApiPublicNpsSubmitRoute = ApiPublicNpsSubmitRouteImport.update({
   path: '/api/public/nps/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksSyncAllRoute = ApiPublicHooksSyncAllRouteImport.update({
-  id: '/api/public/hooks/sync-all',
-  path: '/api/public/hooks/sync-all',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksNpsRoute = ApiPublicHooksNpsRouteImport.update({
   id: '/api/public/hooks/nps',
   path: '/api/public/hooks/nps',
@@ -162,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -178,13 +180,13 @@ export interface FileRoutesByFullPath {
   '/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
-  '/api/public/hooks/sync-all': typeof ApiPublicHooksSyncAllRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -202,7 +204,6 @@ export interface FileRoutesByTo {
   '/desempenho': typeof AuthenticatedDesempenhoIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
-  '/api/public/hooks/sync-all': typeof ApiPublicHooksSyncAllRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRoutesById {
@@ -211,6 +212,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/_authenticated/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -228,7 +230,6 @@ export interface FileRoutesById {
   '/_authenticated/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
-  '/api/public/hooks/sync-all': typeof ApiPublicHooksSyncAllRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
 }
 export interface FileRouteTypes {
@@ -238,6 +239,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin-metricas'
     | '/admin-renovacao'
+    | '/configuracoes'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -254,13 +256,13 @@ export interface FileRouteTypes {
     | '/desempenho/'
     | '/nps/'
     | '/api/public/hooks/nps'
-    | '/api/public/hooks/sync-all'
     | '/api/public/nps/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/admin-metricas'
     | '/admin-renovacao'
+    | '/configuracoes'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -278,7 +280,6 @@ export interface FileRouteTypes {
     | '/desempenho'
     | '/nps'
     | '/api/public/hooks/nps'
-    | '/api/public/hooks/sync-all'
     | '/api/public/nps/submit'
   id:
     | '__root__'
@@ -286,6 +287,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/admin-metricas'
     | '/_authenticated/admin-renovacao'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/feed'
     | '/_authenticated/kanban'
     | '/_authenticated/minha-rotina'
@@ -303,7 +305,6 @@ export interface FileRouteTypes {
     | '/_authenticated/desempenho/'
     | '/_authenticated/nps/'
     | '/api/public/hooks/nps'
-    | '/api/public/hooks/sync-all'
     | '/api/public/nps/submit'
   fileRoutesById: FileRoutesById
 }
@@ -314,7 +315,6 @@ export interface RootRouteChildren {
   VPainelRoute: typeof VPainelRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
-  ApiPublicHooksSyncAllRoute: typeof ApiPublicHooksSyncAllRoute
   ApiPublicNpsSubmitRoute: typeof ApiPublicNpsSubmitRoute
 }
 
@@ -381,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/feed'
       fullPath: '/feed'
       preLoaderRoute: typeof AuthenticatedFeedRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin-renovacao': {
@@ -467,13 +474,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNpsSubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/sync-all': {
-      id: '/api/public/hooks/sync-all'
-      path: '/api/public/hooks/sync-all'
-      fullPath: '/api/public/hooks/sync-all'
-      preLoaderRoute: typeof ApiPublicHooksSyncAllRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/nps': {
       id: '/api/public/hooks/nps'
       path: '/api/public/hooks/nps'
@@ -487,6 +487,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminMetricasRoute: typeof AuthenticatedAdminMetricasRoute
   AuthenticatedAdminRenovacaoRoute: typeof AuthenticatedAdminRenovacaoRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
@@ -505,6 +506,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMetricasRoute: AuthenticatedAdminMetricasRoute,
   AuthenticatedAdminRenovacaoRoute: AuthenticatedAdminRenovacaoRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,
@@ -531,7 +533,6 @@ const rootRouteChildren: RootRouteChildren = {
   VPainelRoute: VPainelRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
-  ApiPublicHooksSyncAllRoute: ApiPublicHooksSyncAllRoute,
   ApiPublicNpsSubmitRoute: ApiPublicNpsSubmitRoute,
 }
 export const routeTree = rootRouteImport

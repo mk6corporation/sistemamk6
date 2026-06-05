@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { syncTudo } from "@/lib/sync.functions";
+
 import { migrarJourney } from "@/lib/journey.functions";
 
 import { Button } from "@/components/ui/button";
@@ -184,24 +184,13 @@ const TIPOS_QUE_MUDAM_ESTAGIO = new Set([
 // ===== Page =====
 function Dashboard() {
   const qc = useQueryClient();
-  const syncTudoFn = useServerFn(syncTudo);
   const migrarFn = useServerFn(migrarJourney);
-  const [lastSync, setLastSync] = useState<any>(null);
 
   const [filtroOperacional, setFiltroOperacional] = useState<string>("todos");
   const hojeRef = new Date();
   const [mesSelecionado, setMesSelecionado] = useState<string>(
     `${hojeRef.getFullYear()}-${String(hojeRef.getMonth()).padStart(2, "0")}`,
   );
-
-
-  const syncMutation = useMutation({
-    mutationFn: () => syncTudoFn(),
-    onSuccess: (data) => {
-      setLastSync(data);
-      qc.invalidateQueries();
-    },
-  });
 
   // Auto-migração do Journey (1x por sessão)
   const migrouRef = useRef(false);
@@ -679,48 +668,10 @@ function Dashboard() {
               MK6 — Painel de Clientes
             </h1>
             <p className="text-sm text-muted-foreground">
-              Atualização automática · {ultimaSync ? `Última sync ${formatData(ultimaSync.iniciado_em)}` : "Nunca sincronizado"}
+              Dados gerenciados manualmente no sistema
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} size="lg">
-              {syncMutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sincronizando tudo...</>
-              ) : (
-                <><RefreshCw className="mr-2 h-4 w-4" />Sincronizar tudo agora</>
-              )}
-            </Button>
-          </div>
         </header>
-
-        {lastSync && (
-          <div className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span className="font-medium">Sincronização concluída:</span>
-              {lastSync.notion && (
-                <span>
-                  Notion: {lastSync.notion.clientes_processados ?? 0} processados · +
-                  {lastSync.notion.clientes_novos ?? 0} novos · {lastSync.notion.mudancas_detectadas ?? 0} mudanças
-                </span>
-              )}
-              {lastSync.financeiro && (
-                <span>
-                  · Formulários: {lastSync.financeiro.clientes_com_formulario ?? 0} importados
-                  {lastSync.financeiro.erros ? ` · ${lastSync.financeiro.erros} erros` : ""}
-                </span>
-              )}
-              {lastSync.cnpj && (
-                <span>
-                  · CNPJ: {lastSync.cnpj.processados} consultados · {lastSync.cnpj.preenchidos} enriquecidos
-                </span>
-              )}
-            </div>
-            {lastSync.notion?.erro && (
-              <p className="text-xs text-red-600">Notion: {lastSync.notion.erro}</p>
-            )}
-          </div>
-        )}
 
 
 
