@@ -14,7 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Search, Users } from "lucide-react";
+import { Loader2, Plus, Search, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClienteEditDialog } from "@/components/cliente/cliente-edit-dialog";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({
   component: ClientesBase,
@@ -60,6 +62,7 @@ function ClientesBase() {
   const [categoria, setCategoria] = useState<string>("TODOS");
   const [tipoPlano, setTipoPlano] = useState<"TODOS" | "ACELERACAO" | "DEMAIS">("TODOS");
   const [scope, setScope] = useState<"meus" | "todos">("meus");
+  const [novoOpen, setNovoOpen] = useState(false);
 
   const { data: viewer } = useQuery({
     enabled: !!user,
@@ -152,33 +155,40 @@ function ClientesBase() {
             Pesquise e acesse a ficha 360º de qualquer cliente.
           </p>
         </div>
-        {viewer?.isAdmin && (
-          <div className="inline-flex rounded-md border bg-background p-0.5 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setScope("meus")}
-              className={`rounded px-3 py-1.5 transition-colors ${
-                effectiveScope === "meus"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              Meus clientes
-            </button>
-            <button
-              type="button"
-              onClick={() => setScope("todos")}
-              className={`rounded px-3 py-1.5 transition-colors ${
-                effectiveScope === "todos"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              Todos (admin)
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {viewer?.isAdmin && (
+            <div className="inline-flex rounded-md border bg-background p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setScope("meus")}
+                className={`rounded px-3 py-1.5 transition-colors ${
+                  effectiveScope === "meus"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Meus clientes
+              </button>
+              <button
+                type="button"
+                onClick={() => setScope("todos")}
+                className={`rounded px-3 py-1.5 transition-colors ${
+                  effectiveScope === "todos"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Todos (admin)
+              </button>
+            </div>
+          )}
+          <Button size="sm" onClick={() => setNovoOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Novo cliente
+          </Button>
+        </div>
       </div>
+
+      <ClienteEditDialog open={novoOpen} onOpenChange={setNovoOpen} />
 
 
       <Card>
