@@ -18,6 +18,7 @@ import { Route as AuthenticatedVendedoresRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMinhaRotinaRouteImport } from './routes/_authenticated/minha-rotina'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authenticated/admin-renovacao'
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
@@ -77,6 +78,12 @@ const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminRenovacaoRoute =
   AuthenticatedAdminRenovacaoRouteImport.update({
     id: '/admin-renovacao',
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -178,6 +186,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -203,6 +212,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/admin-metricas': typeof AuthenticatedAdminMetricasRoute
   '/_authenticated/admin-renovacao': typeof AuthenticatedAdminRenovacaoRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/minha-rotina': typeof AuthenticatedMinhaRotinaRoute
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin-metricas'
     | '/admin-renovacao'
+    | '/configuracoes'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin-metricas'
     | '/admin-renovacao'
+    | '/configuracoes'
     | '/feed'
     | '/kanban'
     | '/minha-rotina'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/admin-metricas'
     | '/_authenticated/admin-renovacao'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/feed'
     | '/_authenticated/kanban'
     | '/_authenticated/minha-rotina'
@@ -368,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/feed'
       fullPath: '/feed'
       preLoaderRoute: typeof AuthenticatedFeedRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin-renovacao': {
@@ -467,6 +487,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminMetricasRoute: typeof AuthenticatedAdminMetricasRoute
   AuthenticatedAdminRenovacaoRoute: typeof AuthenticatedAdminRenovacaoRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedMinhaRotinaRoute: typeof AuthenticatedMinhaRotinaRoute
@@ -485,6 +506,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMetricasRoute: AuthenticatedAdminMetricasRoute,
   AuthenticatedAdminRenovacaoRoute: AuthenticatedAdminRenovacaoRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedMinhaRotinaRoute: AuthenticatedMinhaRotinaRoute,
@@ -516,3 +538,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
