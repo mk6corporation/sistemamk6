@@ -172,9 +172,6 @@ export const executarBackupAgora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureAdmin(context.userId);
-    // Reaproveita o endpoint público (mesma lógica do cron)
-    const url = `${process.env.SUPABASE_URL?.replace(/\.supabase\.co.*$/, "") ? "" : ""}`;
-    // Chama diretamente o server: replica lógica para evitar dependência de URL
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const arquivo: any = {
       versao: 1,
@@ -204,5 +201,3 @@ export const executarBackupAgora = createServerFn({ method: "POST" })
     if (upErr) throw new Error(upErr.message);
     return { path, total: Object.values(arquivo.contagem).reduce((a: number, b: any) => a + b, 0) };
   });
-// Ignora aviso: url helper acima é placeholder não usado
-void 0;
