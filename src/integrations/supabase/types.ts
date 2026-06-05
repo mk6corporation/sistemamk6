@@ -644,7 +644,7 @@ export type Database = {
           id: string
           nome_cliente: string
           notion_edited_at: string | null
-          notion_page_id: string
+          notion_page_id: string | null
           tipo_mudanca: string
         }
         Insert: {
@@ -657,7 +657,7 @@ export type Database = {
           id?: string
           nome_cliente: string
           notion_edited_at?: string | null
-          notion_page_id: string
+          notion_page_id?: string | null
           tipo_mudanca: string
         }
         Update: {
@@ -670,7 +670,7 @@ export type Database = {
           id?: string
           nome_cliente?: string
           notion_edited_at?: string | null
-          notion_page_id?: string
+          notion_page_id?: string | null
           tipo_mudanca?: string
         }
         Relationships: [
