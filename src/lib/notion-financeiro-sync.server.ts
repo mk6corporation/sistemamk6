@@ -155,6 +155,12 @@ export async function syncFinanceiroFormAll(opts?: { force?: boolean }): Promise
   for (const cliente of clientes ?? []) {
     stats.clientes_tentados += 1;
 
+    // Clientes criados manualmente (sem notion_page_id) não têm formulário no Notion
+    if (!cliente.notion_page_id) {
+      stats.clientes_sem_formulario += 1;
+      continue;
+    }
+
     // Se já sincronizou e não é forçado, pula
     if (!opts?.force && cliente.financeiro_form_synced_at) {
       stats.clientes_com_formulario += 1;

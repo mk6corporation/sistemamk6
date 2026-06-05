@@ -263,10 +263,11 @@ export type Database = {
           last_synced_at: string
           nome: string
           notion_last_edited_time: string | null
-          notion_page_id: string
+          notion_page_id: string | null
           observacao: string | null
           operacional: Json | null
           orcamento_ads: number | null
+          origem: string
           plano: string | null
           produtos_upsell: string[] | null
           proxima_otimizacao_formula: string | null
@@ -283,6 +284,7 @@ export type Database = {
           ultima_otimizacao: string | null
           ultima_reuniao_gestor: string | null
           updated_at: string
+          updated_by: string | null
           valor_mensal: number | null
         }
         Insert: {
@@ -301,10 +303,11 @@ export type Database = {
           last_synced_at?: string
           nome: string
           notion_last_edited_time?: string | null
-          notion_page_id: string
+          notion_page_id?: string | null
           observacao?: string | null
           operacional?: Json | null
           orcamento_ads?: number | null
+          origem?: string
           plano?: string | null
           produtos_upsell?: string[] | null
           proxima_otimizacao_formula?: string | null
@@ -321,6 +324,7 @@ export type Database = {
           ultima_otimizacao?: string | null
           ultima_reuniao_gestor?: string | null
           updated_at?: string
+          updated_by?: string | null
           valor_mensal?: number | null
         }
         Update: {
@@ -339,10 +343,11 @@ export type Database = {
           last_synced_at?: string
           nome?: string
           notion_last_edited_time?: string | null
-          notion_page_id?: string
+          notion_page_id?: string | null
           observacao?: string | null
           operacional?: Json | null
           orcamento_ads?: number | null
+          origem?: string
           plano?: string | null
           produtos_upsell?: string[] | null
           proxima_otimizacao_formula?: string | null
@@ -359,6 +364,7 @@ export type Database = {
           ultima_otimizacao?: string | null
           ultima_reuniao_gestor?: string | null
           updated_at?: string
+          updated_by?: string | null
           valor_mensal?: number | null
         }
         Relationships: []
@@ -638,7 +644,7 @@ export type Database = {
           id: string
           nome_cliente: string
           notion_edited_at: string | null
-          notion_page_id: string
+          notion_page_id: string | null
           tipo_mudanca: string
         }
         Insert: {
@@ -651,7 +657,7 @@ export type Database = {
           id?: string
           nome_cliente: string
           notion_edited_at?: string | null
-          notion_page_id: string
+          notion_page_id?: string | null
           tipo_mudanca: string
         }
         Update: {
@@ -664,7 +670,7 @@ export type Database = {
           id?: string
           nome_cliente?: string
           notion_edited_at?: string | null
-          notion_page_id?: string
+          notion_page_id?: string | null
           tipo_mudanca?: string
         }
         Relationships: [

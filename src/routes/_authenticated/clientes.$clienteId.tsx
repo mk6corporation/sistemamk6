@@ -12,14 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare, Search, Smile, Briefcase } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, FileText, Users, Save, Plus, Trash2, Star, CalendarDays, MessageSquare, Search, Smile, Briefcase, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { TimelineTab } from "@/components/cliente/timeline-tab";
 import { CheckinsTab } from "@/components/cliente/checkins-tab";
 import { SatisfacaoTab } from "@/components/cliente/satisfacao-tab";
 import { VendedoresClienteTab } from "@/components/cliente/vendedores-cliente-tab";
+import { ClienteEditDialog } from "@/components/cliente/cliente-edit-dialog";
 
 import { consultarCnpj } from "@/lib/cnpj.functions";
+import { deleteClienteManual } from "@/lib/cliente.functions";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clienteId")({
   component: ClienteDetailPage,
@@ -77,6 +79,17 @@ function ClienteDetailPage() {
   }
 
   const cliente = clienteQuery.data;
+  const [editOpen, setEditOpen] = useState(false);
+  const delFn = useServerFn(deleteClienteManual);
+  const del = useMutation({
+    mutationFn: async () => delFn({ data: { id: clienteId } }),
+    onSuccess: () => {
+      toast.success("Cliente excluído");
+      qc.invalidateQueries({ queryKey: ["clientes-base"] });
+      navigate({ to: "/clientes" });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao excluir"),
+  });
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
@@ -84,7 +97,7 @@ function ClienteDetailPage() {
         <Button variant="ghost" size="sm" asChild>
           <Link to="/"><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Link>
         </Button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold">{cliente.nome}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {cliente.estagio && <Badge variant="outline">{cliente.estagio}</Badge>}
@@ -92,7 +105,28 @@ function ClienteDetailPage() {
             {cliente.plano && <span>· {cliente.plano}</span>}
           </div>
         </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1 h-4 w-4" /> Editar
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={() => { if (confirm(`Excluir cliente "${cliente.nome}"? Esta ação não pode ser desfeita.`)) del.mutate(); }}
+            disabled={del.isPending}
+          >
+            <Trash2 className="mr-1 h-4 w-4" /> Excluir
+          </Button>
+        </div>
       </div>
+
+      <ClienteEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        cliente={cliente as any}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["cliente", clienteId] })}
+      />
 
       <Tabs defaultValue="dados" className="space-y-4">
         <TabsList>

@@ -1,0 +1,1 @@
+ALTER TABLE public.mudancas_estagio ALTER COLUMN notion_page_id DROP NOT NULL;

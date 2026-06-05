@@ -155,24 +155,28 @@ export async function runNotionSync(): Promise<SyncResult> {
   try {
     const pages = await fetchAllNotionPages();
 
-    // Snapshot do estado atual no banco (para detectar diffs)
+    // Snapshot do estado atual no banco (para detectar diffs).
+    // Ignoramos clientes criados manualmente (sem notion_page_id) — eles não fazem parte do sync.
     const { data: snapshot, error: snapErr } = await supabaseAdmin
       .from("clientes")
-      .select("id, notion_page_id, nome, estagio, categoria, removido_em");
+      .select("id, notion_page_id, nome, estagio, categoria, removido_em")
+      .not("notion_page_id", "is", null);
     if (snapErr) throw new Error(`Erro lendo snapshot: ${snapErr.message}`);
 
-    const snapshotMap = new Map(
-      (snapshot ?? []).map((c) => [
-        c.notion_page_id,
-        {
-          id: c.id as string,
-          nome: c.nome as string,
-          estagio: c.estagio as string | null,
-          categoria: c.categoria as string | null,
-          removido_em: c.removido_em as string | null,
-        },
-      ]),
-    );
+    const snapshotMap = new Map<string, {
+      id: string; nome: string; estagio: string | null; categoria: string | null; removido_em: string | null;
+    }>();
+    for (const c of snapshot ?? []) {
+      if (!c.notion_page_id) continue;
+      snapshotMap.set(c.notion_page_id, {
+        id: c.id as string,
+        nome: c.nome as string,
+        estagio: c.estagio as string | null,
+        categoria: c.categoria as string | null,
+        removido_em: c.removido_em as string | null,
+      });
+    }
+
 
     const pageIdsNoNotion = new Set<string>();
     const mudancasParaInserir: any[] = [];
