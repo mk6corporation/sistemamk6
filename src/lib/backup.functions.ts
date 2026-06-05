@@ -133,3 +133,76 @@ export const restaurarBackup = createServerFn({ method: "POST" })
 
     return { restaurado_em: new Date().toISOString(), resultado };
   });
+
+// ============ BACKUPS AUTOMÁTICOS (Storage) ============
+
+export const listarBackupsAutomaticos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.storage
+      .from("backups")
+      .list("auto", { limit: 50, sortBy: { column: "name", order: "desc" } });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((a) => ({
+      name: a.name,
+      created_at: a.created_at,
+      size: (a.metadata as any)?.size ?? 0,
+    }));
+  });
+
+export const baixarBackupAutomatico = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { name: string }) =>
+    z.object({ name: z.string().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blob, error } = await supabaseAdmin.storage
+      .from("backups")
+      .download(`auto/${data.name}`);
+    if (error || !blob) throw new Error(error?.message ?? "Backup não encontrado");
+    const texto = await blob.text();
+    return JSON.parse(texto);
+  });
+
+export const executarBackupAgora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context.userId);
+    // Reaproveita o endpoint público (mesma lógica do cron)
+    const url = `${process.env.SUPABASE_URL?.replace(/\.supabase\.co.*$/, "") ? "" : ""}`;
+    // Chama diretamente o server: replica lógica para evitar dependência de URL
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const arquivo: any = {
+      versao: 1,
+      gerado_em: new Date().toISOString(),
+      contagem: {} as Record<string, number>,
+      tabelas: {} as Record<string, any[]>,
+    };
+    for (const t of TABELAS) {
+      const linhas: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabaseAdmin
+          .from(t as any).select("*").range(from, from + 999);
+        if (error) throw new Error(`${t}: ${error.message}`);
+        if (!data || data.length === 0) break;
+        linhas.push(...data);
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+      arquivo.tabelas[t] = linhas;
+      arquivo.contagem[t] = linhas.length;
+    }
+    const dataStr = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    const path = `auto/backup-${dataStr}.json`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("backups").upload(path, new Blob([JSON.stringify(arquivo)], { type: "application/json" }), { contentType: "application/json", upsert: true });
+    if (upErr) throw new Error(upErr.message);
+    return { path, total: Object.values(arquivo.contagem).reduce((a: number, b: any) => a + b, 0) };
+  });
+// Ignora aviso: url helper acima é placeholder não usado
+void 0;
