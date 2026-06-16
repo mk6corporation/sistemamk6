@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import logoAsset from "@/assets/logo-mk6.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -65,6 +66,11 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <img
+            src={logoAsset.url}
+            alt="MK6 Corporation"
+            className="mx-auto mb-4 h-24 w-auto object-contain"
+          />
           <CardTitle className="text-2xl">Painel de Clientes</CardTitle>
           <CardDescription>Acesse sua conta para continuar</CardDescription>
         </CardHeader>
