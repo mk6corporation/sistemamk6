@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import logoAsset from "@/assets/logo-mk6.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
