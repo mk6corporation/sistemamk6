@@ -66,11 +66,13 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img
-            src={logoAsset.url}
-            alt="MK6 Corporation"
-            className="mx-auto mb-4 h-24 w-auto object-contain"
-          />
+          <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center rounded-2xl bg-primary/10">
+            <img
+              src={logoAsset.url}
+              alt="MK6 Corporation"
+              className="h-20 w-auto object-contain"
+            />
+          </div>
           <CardTitle className="text-2xl">Painel de Clientes</CardTitle>
           <CardDescription>Acesse sua conta para continuar</CardDescription>
         </CardHeader>
