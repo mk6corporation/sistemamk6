@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   Link,
@@ -11,6 +12,8 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+
+const CHUNK_RELOAD_KEY = "__mk6_chunk_reload";
 
 function NotFoundComponent() {
   return (
@@ -47,9 +50,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   // Stale-chunk recovery: if a hashed JS chunk 404s after a redeploy,
   // a soft retry can never succeed — force a full reload to pull the new HTML.
   if (typeof window !== "undefined" && isChunkLoadError) {
-    const key = "__mk6_chunk_reload";
-    if (!sessionStorage.getItem(key)) {
-      sessionStorage.setItem(key, "1");
+    if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
       window.location.reload();
     }
   }
@@ -67,7 +69,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           <button
             onClick={() => {
               if (typeof window !== "undefined") {
-                sessionStorage.removeItem("__mk6_chunk_reload");
+                sessionStorage.removeItem(CHUNK_RELOAD_KEY);
                 window.location.reload();
               } else {
                 router.invalidate();
@@ -137,6 +139,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
