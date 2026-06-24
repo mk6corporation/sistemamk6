@@ -420,6 +420,42 @@ export type Database = {
           },
         ]
       }
+      contrato_modelos: {
+        Row: {
+          ativo: boolean
+          corpo: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+          variaveis: Json
+        }
+        Insert: {
+          ativo?: boolean
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          variaveis?: Json
+        }
+        Update: {
+          ativo?: boolean
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          variaveis?: Json
+        }
+        Relationships: []
+      }
       contratos: {
         Row: {
           banco_recebimento: string | null
@@ -484,6 +520,143 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos_assinaturas: {
+        Row: {
+          aceite_termos: boolean
+          assinatura_imagem: string | null
+          assinatura_texto: string | null
+          contrato_id: string
+          created_at: string
+          documento: string | null
+          documento_hash: string | null
+          email: string | null
+          id: string
+          ip: string | null
+          nome_completo: string
+          user_agent: string | null
+        }
+        Insert: {
+          aceite_termos?: boolean
+          assinatura_imagem?: string | null
+          assinatura_texto?: string | null
+          contrato_id: string
+          created_at?: string
+          documento?: string | null
+          documento_hash?: string | null
+          email?: string | null
+          id?: string
+          ip?: string | null
+          nome_completo: string
+          user_agent?: string | null
+        }
+        Update: {
+          aceite_termos?: boolean
+          assinatura_imagem?: string | null
+          assinatura_texto?: string | null
+          contrato_id?: string
+          created_at?: string
+          documento?: string | null
+          documento_hash?: string | null
+          email?: string | null
+          id?: string
+          ip?: string | null
+          nome_completo?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_assinaturas_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos_documentos: {
+        Row: {
+          assinado_em: string | null
+          cancelado_em: string | null
+          cliente_id: string | null
+          corpo: string
+          created_at: string
+          created_by: string | null
+          documento_hash: string | null
+          enviado_em: string | null
+          id: string
+          modelo_id: string | null
+          observacoes: string | null
+          pdf_path: string | null
+          signatario_documento: string | null
+          signatario_email: string | null
+          signatario_nome: string | null
+          status: string
+          titulo: string
+          token_publico: string | null
+          updated_at: string
+          variaveis_valores: Json
+        }
+        Insert: {
+          assinado_em?: string | null
+          cancelado_em?: string | null
+          cliente_id?: string | null
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          documento_hash?: string | null
+          enviado_em?: string | null
+          id?: string
+          modelo_id?: string | null
+          observacoes?: string | null
+          pdf_path?: string | null
+          signatario_documento?: string | null
+          signatario_email?: string | null
+          signatario_nome?: string | null
+          status?: string
+          titulo: string
+          token_publico?: string | null
+          updated_at?: string
+          variaveis_valores?: Json
+        }
+        Update: {
+          assinado_em?: string | null
+          cancelado_em?: string | null
+          cliente_id?: string | null
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          documento_hash?: string | null
+          enviado_em?: string | null
+          id?: string
+          modelo_id?: string | null
+          observacoes?: string | null
+          pdf_path?: string | null
+          signatario_documento?: string | null
+          signatario_email?: string | null
+          signatario_nome?: string | null
+          status?: string
+          titulo?: string
+          token_publico?: string | null
+          updated_at?: string
+          variaveis_valores?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_documentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_documentos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "contrato_modelos"
             referencedColumns: ["id"]
           },
         ]

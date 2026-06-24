@@ -23,16 +23,21 @@ import { Route as AuthenticatedAdminRenovacaoRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminMetricasRouteImport } from './routes/_authenticated/admin-metricas'
 import { Route as AuthenticatedNpsIndexRouteImport } from './routes/_authenticated/nps.index'
 import { Route as AuthenticatedDesempenhoIndexRouteImport } from './routes/_authenticated/desempenho.index'
+import { Route as AuthenticatedContratosIndexRouteImport } from './routes/_authenticated/contratos.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as NpsFormSlugRouteImport } from './routes/nps.form.$slug'
+import { Route as ContratoAssinarTokenRouteImport } from './routes/contrato.assinar.$token'
 import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authenticated/nps.respostas'
 import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
 import { Route as AuthenticatedNpsDetratoresRouteImport } from './routes/_authenticated/nps.detratores'
 import { Route as AuthenticatedDesempenhoClienteIdRouteImport } from './routes/_authenticated/desempenho.$clienteId'
+import { Route as AuthenticatedContratosModelosRouteImport } from './routes/_authenticated/contratos.modelos'
+import { Route as AuthenticatedContratosIdRouteImport } from './routes/_authenticated/contratos.$id'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes.$clienteId'
 import { Route as ApiPublicNpsSubmitRouteImport } from './routes/api/public/nps/submit'
 import { Route as ApiPublicHooksNpsRouteImport } from './routes/api/public/hooks/nps'
 import { Route as ApiPublicHooksBackupAutoRouteImport } from './routes/api/public/hooks/backup-auto'
+import { Route as ApiPublicContratosAssinarRouteImport } from './routes/api/public/contratos/assinar'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -108,6 +113,12 @@ const AuthenticatedDesempenhoIndexRoute =
     path: '/desempenho/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContratosIndexRoute =
+  AuthenticatedContratosIndexRouteImport.update({
+    id: '/contratos/',
+    path: '/contratos/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClientesIndexRoute =
   AuthenticatedClientesIndexRouteImport.update({
     id: '/clientes/',
@@ -117,6 +128,11 @@ const AuthenticatedClientesIndexRoute =
 const NpsFormSlugRoute = NpsFormSlugRouteImport.update({
   id: '/nps/form/$slug',
   path: '/nps/form/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContratoAssinarTokenRoute = ContratoAssinarTokenRouteImport.update({
+  id: '/contrato/assinar/$token',
+  path: '/contrato/assinar/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedNpsRespostasRoute =
@@ -142,6 +158,18 @@ const AuthenticatedDesempenhoClienteIdRoute =
     path: '/desempenho/$clienteId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContratosModelosRoute =
+  AuthenticatedContratosModelosRouteImport.update({
+    id: '/contratos/modelos',
+    path: '/contratos/modelos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContratosIdRoute =
+  AuthenticatedContratosIdRouteImport.update({
+    id: '/contratos/$id',
+    path: '/contratos/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClientesClienteIdRoute =
   AuthenticatedClientesClienteIdRouteImport.update({
     id: '/clientes/$clienteId',
@@ -164,6 +192,12 @@ const ApiPublicHooksBackupAutoRoute =
     path: '/api/public/hooks/backup-auto',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicContratosAssinarRoute =
+  ApiPublicContratosAssinarRouteImport.update({
+    id: '/api/public/contratos/assinar',
+    path: '/api/public/contratos/assinar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -178,14 +212,19 @@ export interface FileRoutesByFullPath {
   '/v/$slug': typeof VSlugRoute
   '/v/painel': typeof VPainelRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/contratos/$id': typeof AuthenticatedContratosIdRoute
+  '/contratos/modelos': typeof AuthenticatedContratosModelosRoute
   '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/contratos/': typeof AuthenticatedContratosIndexRoute
   '/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/nps/': typeof AuthenticatedNpsIndexRoute
+  '/api/public/contratos/assinar': typeof ApiPublicContratosAssinarRoute
   '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -203,14 +242,19 @@ export interface FileRoutesByTo {
   '/v/painel': typeof VPainelRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/contratos/$id': typeof AuthenticatedContratosIdRoute
+  '/contratos/modelos': typeof AuthenticatedContratosModelosRoute
   '/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/contratos': typeof AuthenticatedContratosIndexRoute
   '/desempenho': typeof AuthenticatedDesempenhoIndexRoute
   '/nps': typeof AuthenticatedNpsIndexRoute
+  '/api/public/contratos/assinar': typeof ApiPublicContratosAssinarRoute
   '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -230,14 +274,19 @@ export interface FileRoutesById {
   '/v/painel': typeof VPainelRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
+  '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRoute
+  '/_authenticated/contratos/modelos': typeof AuthenticatedContratosModelosRoute
   '/_authenticated/desempenho/$clienteId': typeof AuthenticatedDesempenhoClienteIdRoute
   '/_authenticated/nps/detratores': typeof AuthenticatedNpsDetratoresRoute
   '/_authenticated/nps/links': typeof AuthenticatedNpsLinksRoute
   '/_authenticated/nps/respostas': typeof AuthenticatedNpsRespostasRoute
+  '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
   '/_authenticated/desempenho/': typeof AuthenticatedDesempenhoIndexRoute
   '/_authenticated/nps/': typeof AuthenticatedNpsIndexRoute
+  '/api/public/contratos/assinar': typeof ApiPublicContratosAssinarRoute
   '/api/public/hooks/backup-auto': typeof ApiPublicHooksBackupAutoRoute
   '/api/public/hooks/nps': typeof ApiPublicHooksNpsRoute
   '/api/public/nps/submit': typeof ApiPublicNpsSubmitRoute
@@ -257,14 +306,19 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/painel'
     | '/clientes/$clienteId'
+    | '/contratos/$id'
+    | '/contratos/modelos'
     | '/desempenho/$clienteId'
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
+    | '/contrato/assinar/$token'
     | '/nps/form/$slug'
     | '/clientes/'
+    | '/contratos/'
     | '/desempenho/'
     | '/nps/'
+    | '/api/public/contratos/assinar'
     | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -282,14 +336,19 @@ export interface FileRouteTypes {
     | '/v/painel'
     | '/'
     | '/clientes/$clienteId'
+    | '/contratos/$id'
+    | '/contratos/modelos'
     | '/desempenho/$clienteId'
     | '/nps/detratores'
     | '/nps/links'
     | '/nps/respostas'
+    | '/contrato/assinar/$token'
     | '/nps/form/$slug'
     | '/clientes'
+    | '/contratos'
     | '/desempenho'
     | '/nps'
+    | '/api/public/contratos/assinar'
     | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -308,14 +367,19 @@ export interface FileRouteTypes {
     | '/v/painel'
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
+    | '/_authenticated/contratos/$id'
+    | '/_authenticated/contratos/modelos'
     | '/_authenticated/desempenho/$clienteId'
     | '/_authenticated/nps/detratores'
     | '/_authenticated/nps/links'
     | '/_authenticated/nps/respostas'
+    | '/contrato/assinar/$token'
     | '/nps/form/$slug'
     | '/_authenticated/clientes/'
+    | '/_authenticated/contratos/'
     | '/_authenticated/desempenho/'
     | '/_authenticated/nps/'
+    | '/api/public/contratos/assinar'
     | '/api/public/hooks/backup-auto'
     | '/api/public/hooks/nps'
     | '/api/public/nps/submit'
@@ -326,7 +390,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   VSlugRoute: typeof VSlugRoute
   VPainelRoute: typeof VPainelRoute
+  ContratoAssinarTokenRoute: typeof ContratoAssinarTokenRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
+  ApiPublicContratosAssinarRoute: typeof ApiPublicContratosAssinarRoute
   ApiPublicHooksBackupAutoRoute: typeof ApiPublicHooksBackupAutoRoute
   ApiPublicHooksNpsRoute: typeof ApiPublicHooksNpsRoute
   ApiPublicNpsSubmitRoute: typeof ApiPublicNpsSubmitRoute
@@ -432,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDesempenhoIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contratos/': {
+      id: '/_authenticated/contratos/'
+      path: '/contratos'
+      fullPath: '/contratos/'
+      preLoaderRoute: typeof AuthenticatedContratosIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
@@ -444,6 +517,13 @@ declare module '@tanstack/react-router' {
       path: '/nps/form/$slug'
       fullPath: '/nps/form/$slug'
       preLoaderRoute: typeof NpsFormSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contrato/assinar/$token': {
+      id: '/contrato/assinar/$token'
+      path: '/contrato/assinar/$token'
+      fullPath: '/contrato/assinar/$token'
+      preLoaderRoute: typeof ContratoAssinarTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/nps/respostas': {
@@ -474,6 +554,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDesempenhoClienteIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contratos/modelos': {
+      id: '/_authenticated/contratos/modelos'
+      path: '/contratos/modelos'
+      fullPath: '/contratos/modelos'
+      preLoaderRoute: typeof AuthenticatedContratosModelosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contratos/$id': {
+      id: '/_authenticated/contratos/$id'
+      path: '/contratos/$id'
+      fullPath: '/contratos/$id'
+      preLoaderRoute: typeof AuthenticatedContratosIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/clientes/$clienteId': {
       id: '/_authenticated/clientes/$clienteId'
       path: '/clientes/$clienteId'
@@ -502,6 +596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackupAutoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/contratos/assinar': {
+      id: '/api/public/contratos/assinar'
+      path: '/api/public/contratos/assinar'
+      fullPath: '/api/public/contratos/assinar'
+      preLoaderRoute: typeof ApiPublicContratosAssinarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -515,11 +616,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedVendedoresRoute: typeof AuthenticatedVendedoresRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedClientesClienteIdRoute: typeof AuthenticatedClientesClienteIdRoute
+  AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRoute
+  AuthenticatedContratosModelosRoute: typeof AuthenticatedContratosModelosRoute
   AuthenticatedDesempenhoClienteIdRoute: typeof AuthenticatedDesempenhoClienteIdRoute
   AuthenticatedNpsDetratoresRoute: typeof AuthenticatedNpsDetratoresRoute
   AuthenticatedNpsLinksRoute: typeof AuthenticatedNpsLinksRoute
   AuthenticatedNpsRespostasRoute: typeof AuthenticatedNpsRespostasRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
   AuthenticatedDesempenhoIndexRoute: typeof AuthenticatedDesempenhoIndexRoute
   AuthenticatedNpsIndexRoute: typeof AuthenticatedNpsIndexRoute
 }
@@ -534,11 +638,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedVendedoresRoute: AuthenticatedVendedoresRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedClientesClienteIdRoute: AuthenticatedClientesClienteIdRoute,
+  AuthenticatedContratosIdRoute: AuthenticatedContratosIdRoute,
+  AuthenticatedContratosModelosRoute: AuthenticatedContratosModelosRoute,
   AuthenticatedDesempenhoClienteIdRoute: AuthenticatedDesempenhoClienteIdRoute,
   AuthenticatedNpsDetratoresRoute: AuthenticatedNpsDetratoresRoute,
   AuthenticatedNpsLinksRoute: AuthenticatedNpsLinksRoute,
   AuthenticatedNpsRespostasRoute: AuthenticatedNpsRespostasRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
   AuthenticatedDesempenhoIndexRoute: AuthenticatedDesempenhoIndexRoute,
   AuthenticatedNpsIndexRoute: AuthenticatedNpsIndexRoute,
 }
@@ -552,7 +659,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   VSlugRoute: VSlugRoute,
   VPainelRoute: VPainelRoute,
+  ContratoAssinarTokenRoute: ContratoAssinarTokenRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
+  ApiPublicContratosAssinarRoute: ApiPublicContratosAssinarRoute,
   ApiPublicHooksBackupAutoRoute: ApiPublicHooksBackupAutoRoute,
   ApiPublicHooksNpsRoute: ApiPublicHooksNpsRoute,
   ApiPublicNpsSubmitRoute: ApiPublicNpsSubmitRoute,
@@ -560,13 +669,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -15,6 +15,7 @@ import {
   Repeat,
   TrendingUp,
   Settings,
+  FileSignature,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ const operacionalItems = [
   { title: "Desempenho do cliente", url: "/desempenho", icon: TrendingUp, exact: false },
   { title: "Métricas (admin)", url: "/admin-metricas", icon: BarChart3, exact: false },
   { title: "Funil de Renovação", url: "/admin-renovacao", icon: Repeat, exact: false },
+  { title: "Contratos", url: "/contratos", icon: FileSignature, exact: false },
   { title: "Configurações", url: "/configuracoes", icon: Settings, exact: false },
 ];
 
