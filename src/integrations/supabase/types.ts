@@ -598,6 +598,7 @@ export type Database = {
           titulo: string
           token_publico: string | null
           updated_at: string
+          variaveis: Json
           variaveis_valores: Json
         }
         Insert: {
@@ -620,6 +621,7 @@ export type Database = {
           titulo: string
           token_publico?: string | null
           updated_at?: string
+          variaveis?: Json
           variaveis_valores?: Json
         }
         Update: {
@@ -642,6 +644,7 @@ export type Database = {
           titulo?: string
           token_publico?: string | null
           updated_at?: string
+          variaveis?: Json
           variaveis_valores?: Json
         }
         Relationships: [

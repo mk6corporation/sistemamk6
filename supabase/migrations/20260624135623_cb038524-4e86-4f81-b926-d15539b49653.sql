@@ -1,0 +1,1 @@
+ALTER TABLE public.contratos_documentos ADD COLUMN IF NOT EXISTS variaveis jsonb NOT NULL DEFAULT '{}'::jsonb;
