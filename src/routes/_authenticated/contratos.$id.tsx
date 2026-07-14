@@ -231,6 +231,20 @@ function ContratoEditor() {
           {q.data && <Badge className={STATUS_COLORS[q.data.status]}>{q.data.status}</Badge>}
         </div>
         <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {viewLink && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={viewLink} target="_blank" rel="noopener"><Eye className="mr-1 h-4 w-4" />Ver contrato</a>
+            </Button>
+          )}
+          {q.data && q.data.status !== "cancelado" && !adminAssinado && (
+            <Button variant="secondary" size="sm" onClick={() => setAdminOpen(true)}>
+              <PenLine className="mr-1 h-4 w-4" />Assinar como CONTRATADA
+            </Button>
+          )}
+          {adminAssinado && (
+            <Badge className="bg-emerald-100 text-emerald-800">CONTRATADA assinou</Badge>
+          )}
           {!readonly && (
             <>
               <Button variant="outline" onClick={() => save.mutate()} disabled={save.isPending}>
@@ -255,12 +269,20 @@ function ContratoEditor() {
         <Card className="flex flex-wrap items-center gap-3 border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/30">
           <CheckCircle2 className="h-5 w-5 text-blue-600" />
           <div className="flex-1 min-w-[240px]">
-            <div className="text-sm font-medium">Link público de assinatura</div>
+            <div className="text-sm font-medium">Link público de assinatura (cliente)</div>
             <code className="text-xs text-muted-foreground break-all">{link}</code>
+            {viewLink && (
+              <div className="mt-1"><span className="text-xs font-medium">Link para visualização: </span><code className="text-xs text-muted-foreground break-all">{viewLink}</code></div>
+            )}
           </div>
           <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copiado"); }}>
-            <Copy className="mr-1 h-3 w-3" />Copiar
+            <Copy className="mr-1 h-3 w-3" />Copiar assinar
           </Button>
+          {viewLink && (
+            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(viewLink); toast.success("Link copiado"); }}>
+              <Copy className="mr-1 h-3 w-3" />Copiar ver
+            </Button>
+          )}
           {whatsappLink && (
             <Button size="sm" variant="outline" asChild>
               <a href={whatsappLink} target="_blank" rel="noopener"><MessageCircle className="mr-1 h-3 w-3" />WhatsApp</a>
