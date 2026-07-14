@@ -93,6 +93,7 @@ function ContratosIndex() {
         cliente_cnpj: dc?.cnpj ?? "",
         cliente_endereco: [dc?.endereco, dc?.bairro, dc?.cidade_uf, dc?.cep].filter(Boolean).join(", "),
         cliente_whatsapp: dc?.telefone ?? op.whatsapp ?? "",
+        ...qr,
       };
 
       return create({ data: {
@@ -108,6 +109,7 @@ function ContratosIndex() {
     },
     onSuccess: (r) => {
       setDialogOpen(false);
+      setQr(emptyQR);
       toast.success("Contrato criado — revise e envie");
       navigate({ to: "/contratos/$id", params: { id: r.id } });
     },
