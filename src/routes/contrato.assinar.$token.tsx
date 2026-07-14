@@ -16,7 +16,13 @@ export const Route = createFileRoute("/contrato/assinar/$token")({
 type Doc = {
   id: string; titulo: string; corpo: string; status: string;
   signatario_nome: string | null; signatario_email: string | null; signatario_documento: string | null;
+  variaveis: Record<string, string> | null;
 };
+
+function renderVars(body: string, vars: Record<string, string>): string {
+  const all = { ...vars, data_assinatura: new Date().toLocaleDateString("pt-BR") };
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => (all[k] ?? "").toString() || "__________");
+}
 
 function AssinarPage() {
   const { token } = Route.useParams();
@@ -36,7 +42,7 @@ function AssinarPage() {
     (async () => {
       const { data, error } = await supabase
         .from("contratos_documentos")
-        .select("id, titulo, corpo, status, signatario_nome, signatario_email, signatario_documento")
+        .select("id, titulo, corpo, status, signatario_nome, signatario_email, signatario_documento, variaveis")
         .eq("token_publico", token)
         .maybeSingle();
       if (error || !data) { setError("Link inválido ou expirado."); setLoading(false); return; }
@@ -49,6 +55,7 @@ function AssinarPage() {
       setLoading(false);
     })();
   }, [token]);
+
 
   async function assinar() {
     if (!nome.trim() || nome.trim().length < 2) return toast.error("Informe seu nome completo");
