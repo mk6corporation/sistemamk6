@@ -42,10 +42,28 @@ function ContratosIndex() {
   const [selCliente, setSelCliente] = useState<string>("");
   const [selModelo, setSelModelo] = useState<string>("");
   const [titulo, setTitulo] = useState("");
+  const emptyQR = {
+    qr_servico_incluso: "",
+    qr_preco_total: "",
+    qr_forma_pagamento: "",
+    qr_metodo_pagamento: "",
+    qr_primeiro_vencimento: "",
+    qr_obs_pagamento: "",
+    qr_inicio_servico: "",
+    qr_duracao_servico: "",
+  };
+  const [qr, setQr] = useState<Record<string, string>>(emptyQR);
 
   useEffect(() => {
     supabase.from("clientes").select("id, nome, plano").order("nome").then(({ data }) => setClientes(data ?? []));
   }, []);
+
+  // Pré-preenche qr_servico_incluso com o nome do modelo ao selecioná-lo
+  useEffect(() => {
+    const m = modelos.data?.find((x) => x.id === selModelo);
+    if (m && !qr.qr_servico_incluso) setQr((s) => ({ ...s, qr_servico_incluso: m.nome }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selModelo]);
 
   const novoRascunho = useMutation({
     mutationFn: () => create({ data: { titulo: "Novo contrato", corpo: "" } }),
@@ -75,6 +93,7 @@ function ContratosIndex() {
         cliente_cnpj: dc?.cnpj ?? "",
         cliente_endereco: [dc?.endereco, dc?.bairro, dc?.cidade_uf, dc?.cep].filter(Boolean).join(", "),
         cliente_whatsapp: dc?.telefone ?? op.whatsapp ?? "",
+        ...qr,
       };
 
       return create({ data: {
@@ -90,6 +109,7 @@ function ContratosIndex() {
     },
     onSuccess: (r) => {
       setDialogOpen(false);
+      setQr(emptyQR);
       toast.success("Contrato criado — revise e envie");
       navigate({ to: "/contratos/$id", params: { id: r.id } });
     },
@@ -120,7 +140,7 @@ function ContratosIndex() {
           <Button variant="outline" onClick={() => novoRascunho.mutate()} disabled={novoRascunho.isPending}>
             <Plus className="mr-2 h-4 w-4" />Rascunho em branco
           </Button>
-          <Button onClick={() => { setSelCliente(""); setSelModelo(""); setTitulo(""); setDialogOpen(true); }}>
+          <Button onClick={() => { setSelCliente(""); setSelModelo(""); setTitulo(""); setQr(emptyQR); setDialogOpen(true); }}>
             <UserPlus className="mr-2 h-4 w-4" />Novo a partir de cliente
           </Button>
         </div>
@@ -175,7 +195,7 @@ function ContratosIndex() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo contrato a partir de cliente da base</DialogTitle>
           </DialogHeader>
@@ -212,6 +232,32 @@ function ContratosIndex() {
               <Label>Título (opcional)</Label>
               <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Auto: [modelo] — [cliente]" />
             </div>
+
+            <div className="pt-2 border-t">
+              <div className="text-sm font-semibold mb-2">Quadro Resumo</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { k: "qr_servico_incluso", l: "(i) Serviço Incluso" },
+                  { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 12.500,00" },
+                  { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Parcelado 3x…" },
+                  { k: "qr_metodo_pagamento", l: "(iv) Método de Pagamento", ph: "PIX / Cartão / Boleto" },
+                  { k: "qr_primeiro_vencimento", l: "(v) Primeiro Vencimento", ph: "DD/MM/AAAA" },
+                  { k: "qr_obs_pagamento", l: "(vi) Obs. Pagamento" },
+                  { k: "qr_inicio_servico", l: "(vii) Início do Serviço", ph: "DD/MM/AAAA" },
+                  { k: "qr_duracao_servico", l: "(viii) Duração do Serviço", ph: "3 (três) meses" },
+                ].map((f) => (
+                  <div key={f.k}>
+                    <Label className="text-xs">{f.l}</Label>
+                    <Input
+                      value={qr[f.k] ?? ""}
+                      placeholder={f.ph}
+                      onChange={(e) => setQr((s) => ({ ...s, [f.k]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <p className="text-xs text-muted-foreground">
               Os dados do cliente (razão social, CNPJ, endereço, WhatsApp, e-mail) serão pré-preenchidos automaticamente a partir dos Dados Corporativos.
               Você poderá editar tudo na próxima tela antes de enviar para assinatura.
@@ -224,6 +270,7 @@ function ContratosIndex() {
             </Button>
           </DialogFooter>
         </DialogContent>
+
       </Dialog>
     </div>
   );
