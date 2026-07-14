@@ -284,6 +284,19 @@ function ContratosIndex() {
         </DialogContent>
 
       </Dialog>
+
+      <ClienteEditDialog
+        open={novoClienteOpen}
+        onOpenChange={setNovoClienteOpen}
+        onSaved={async (id) => {
+          await recarregarClientes();
+          qc.invalidateQueries({ queryKey: ["clientes-base"] });
+          setSelCliente(id);
+          setDialogOpen(true);
+          toast.success("Cliente criado — selecionado no novo contrato");
+        }}
+      />
     </div>
+
   );
 }
