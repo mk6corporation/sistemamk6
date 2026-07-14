@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, FileText, Trash2, ExternalLink, Library, UserPlus } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Library, UserPlus, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { listContratos, upsertContrato, deleteContrato, listModelos } from "@/lib/contratos.functions";
+import { ClienteEditDialog } from "@/components/cliente/cliente-edit-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/contratos/")({
   component: ContratosIndex,
