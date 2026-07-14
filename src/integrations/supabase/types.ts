@@ -537,6 +537,7 @@ export type Database = {
           id: string
           ip: string | null
           nome_completo: string
+          tipo: string
           user_agent: string | null
         }
         Insert: {
@@ -551,6 +552,7 @@ export type Database = {
           id?: string
           ip?: string | null
           nome_completo: string
+          tipo?: string
           user_agent?: string | null
         }
         Update: {
@@ -565,6 +567,7 @@ export type Database = {
           id?: string
           ip?: string | null
           nome_completo?: string
+          tipo?: string
           user_agent?: string | null
         }
         Relationships: [
@@ -579,6 +582,7 @@ export type Database = {
       }
       contratos_documentos: {
         Row: {
+          assinado_admin_em: string | null
           assinado_em: string | null
           cancelado_em: string | null
           cliente_id: string | null
@@ -602,6 +606,7 @@ export type Database = {
           variaveis_valores: Json
         }
         Insert: {
+          assinado_admin_em?: string | null
           assinado_em?: string | null
           cancelado_em?: string | null
           cliente_id?: string | null
@@ -625,6 +630,7 @@ export type Database = {
           variaveis_valores?: Json
         }
         Update: {
+          assinado_admin_em?: string | null
           assinado_em?: string | null
           cancelado_em?: string | null
           cliente_id?: string | null
