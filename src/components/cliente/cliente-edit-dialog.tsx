@@ -276,9 +276,47 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[
                 { k: "qr_servico_incluso", l: "(i) Serviço Incluso", ph: "MK6 Jorney" },
-                { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 12.500,00" },
-                { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Parcelado 3x…" },
-                { k: "qr_metodo_pagamento", l: "(iv) Método de Pagamento", ph: "PIX / Cartão / Boleto" },
+                { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 10.200,00" },
+                { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Entrada + 3x…" },
+              ].map((f) => (
+                <div key={f.k}>
+                  <Label className="text-xs">{f.l}</Label>
+                  <Input
+                    value={qr[f.k] ?? ""}
+                    placeholder={f.ph}
+                    onChange={(e) => setQr((s) => ({ ...s, [f.k]: e.target.value }))}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <Label className="text-xs">(iv) Método de Pagamento</Label>
+                <Select
+                  value={
+                    ["PIX", "Boleto", "Cartão de Crédito", "Cartão de Débito", "Transferência", "Dinheiro", "Misto"].includes(qr.qr_metodo_pagamento)
+                      ? qr.qr_metodo_pagamento
+                      : qr.qr_metodo_pagamento
+                        ? "Outro"
+                        : ""
+                  }
+                  onValueChange={(v) => setQr((s) => ({ ...s, qr_metodo_pagamento: v === "Outro" ? "" : v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {["PIX", "Boleto", "Cartão de Crédito", "Cartão de Débito", "Transferência", "Dinheiro", "Misto", "Outro"].map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  className="mt-1"
+                  value={qr.qr_metodo_pagamento ?? ""}
+                  placeholder="Detalhe: ex. Entrada R$ 100 PIX + 3x R$ 3.366 Boleto"
+                  onChange={(e) => setQr((s) => ({ ...s, qr_metodo_pagamento: e.target.value }))}
+                />
+              </div>
+
+              {[
                 { k: "qr_primeiro_vencimento", l: "(v) Primeiro Vencimento", ph: "DD/MM/AAAA" },
                 { k: "qr_inicio_servico", l: "(vii) Início do Serviço", ph: "DD/MM/AAAA" },
                 { k: "qr_duracao_servico", l: "(viii) Duração do Serviço", ph: "3 (três) meses" },
@@ -292,11 +330,13 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
                   />
                 </div>
               ))}
+
               <div className="md:col-span-2">
-                <Label className="text-xs">(vi) Obs. Pagamento</Label>
+                <Label className="text-xs">(vi) Obs. Pagamento — detalhe entrada, parcelas e meio</Label>
                 <Textarea
-                  rows={2}
+                  rows={3}
                   value={qr.qr_obs_pagamento ?? ""}
+                  placeholder="Ex.: Plano de R$ 10.200. Entrada de R$ 100 no PIX no ato. Saldo de R$ 10.100 parcelado em 3x de R$ 3.366,67 via Boleto, vencimento todo dia 10."
                   onChange={(e) => setQr((s) => ({ ...s, qr_obs_pagamento: e.target.value }))}
                 />
               </div>
