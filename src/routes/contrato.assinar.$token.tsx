@@ -20,9 +20,10 @@ type Doc = {
 };
 
 function renderVars(body: string, vars: Record<string, string>): string {
-  const all = { ...vars, data_assinatura: new Date().toLocaleDateString("pt-BR") };
-  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => (all[k] ?? "").toString() || "__________");
+  const all: Record<string, string> = { ...vars, data_assinatura: new Date().toLocaleDateString("pt-BR") };
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k: string) => (all[k] ?? "").toString() || "__________");
 }
+
 
 function AssinarPage() {
   const { token } = Route.useParams();
