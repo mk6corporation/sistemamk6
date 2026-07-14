@@ -42,10 +42,28 @@ function ContratosIndex() {
   const [selCliente, setSelCliente] = useState<string>("");
   const [selModelo, setSelModelo] = useState<string>("");
   const [titulo, setTitulo] = useState("");
+  const emptyQR = {
+    qr_servico_incluso: "",
+    qr_preco_total: "",
+    qr_forma_pagamento: "",
+    qr_metodo_pagamento: "",
+    qr_primeiro_vencimento: "",
+    qr_obs_pagamento: "",
+    qr_inicio_servico: "",
+    qr_duracao_servico: "",
+  };
+  const [qr, setQr] = useState<Record<string, string>>(emptyQR);
 
   useEffect(() => {
     supabase.from("clientes").select("id, nome, plano").order("nome").then(({ data }) => setClientes(data ?? []));
   }, []);
+
+  // Pré-preenche qr_servico_incluso com o nome do modelo ao selecioná-lo
+  useEffect(() => {
+    const m = modelos.data?.find((x) => x.id === selModelo);
+    if (m && !qr.qr_servico_incluso) setQr((s) => ({ ...s, qr_servico_incluso: m.nome }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selModelo]);
 
   const novoRascunho = useMutation({
     mutationFn: () => create({ data: { titulo: "Novo contrato", corpo: "" } }),
