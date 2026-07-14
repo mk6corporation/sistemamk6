@@ -291,9 +291,17 @@ function ContratosIndex() {
         onSaved={async (id) => {
           await recarregarClientes();
           qc.invalidateQueries({ queryKey: ["clientes-base"] });
+          setNovoClienteOpen(false);
+          // Pré-carrega o cliente e abre o diálogo completo de contrato
+          // (modelo + Quadro Resumo: valor, forma/método de pagamento, vencimento, início, duração…)
           setSelCliente(id);
-          setDialogOpen(true);
-          toast.success("Cliente criado — selecionado no novo contrato");
+          setSelModelo("");
+          setTitulo("");
+          setQr(emptyQR);
+          setTimeout(() => {
+            setDialogOpen(true);
+            toast.success("Cliente criado — agora escolha o modelo e preencha o Quadro Resumo");
+          }, 250);
         }}
       />
     </div>
