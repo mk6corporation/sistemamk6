@@ -131,7 +131,7 @@ export const upsertContrato = createServerFn({ method: "POST" })
       signatario_email: data.signatario_email || null,
       signatario_documento: data.signatario_documento ?? null,
       observacoes: data.observacoes ?? null,
-      variaveis: (data.variaveis ?? {}) as Record<string, unknown>,
+      variaveis: (data.variaveis ?? {}) as never,
       created_by: context.userId,
     };
     if (data.id) {
