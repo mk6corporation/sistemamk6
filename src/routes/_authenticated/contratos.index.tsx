@@ -39,7 +39,9 @@ function ContratosIndex() {
   const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos() });
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string; plano: string | null }[]>([]);
+
   const [filtroCli, setFiltroCli] = useState("");
   const [selCliente, setSelCliente] = useState<string>("");
   const [selModelo, setSelModelo] = useState<string>("");
