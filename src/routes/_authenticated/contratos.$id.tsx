@@ -65,9 +65,15 @@ function ContratoEditor() {
   const enviar = useServerFn(enviarContrato);
   const cancelar = useServerFn(cancelarContrato);
   const lModelos = useServerFn(listModelos);
+  const adminSign = useServerFn(assinarComoAdmin);
 
   const q = useQuery({ queryKey: ["contrato", id], queryFn: () => get({ data: { id } }) });
   const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos() });
+
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminNome, setAdminNome] = useState("");
+  const [adminDoc, setAdminDoc] = useState("");
+  const sigRef = useRef<SignatureCanvas | null>(null);
 
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   useEffect(() => {
