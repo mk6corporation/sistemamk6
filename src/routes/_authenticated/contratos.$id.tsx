@@ -185,6 +185,23 @@ function ContratoEditor() {
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const link = q.data?.token_publico ? `${baseUrl}/contrato/assinar/${q.data.token_publico}` : null;
+  const viewLink = q.data?.token_publico ? `${baseUrl}/contrato/ver/${q.data.token_publico}` : null;
+  const adminAssinado = !!q.data?.assinado_admin_em;
+
+  const doAdminSign = useMutation({
+    mutationFn: async () => {
+      if (!adminNome.trim()) throw new Error("Informe seu nome completo");
+      const img = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.toDataURL("image/png") : null;
+      if (!img) throw new Error("Desenhe sua assinatura");
+      return adminSign({ data: { id, nome_completo: adminNome.trim(), documento: adminDoc || null, assinatura_imagem: img, assinatura_texto: adminNome.trim() } });
+    },
+    onSuccess: () => {
+      toast.success("Contrato assinado pela CONTRATADA");
+      setAdminOpen(false);
+      qc.invalidateQueries({ queryKey: ["contrato", id] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
+  });
 
   const preview = useMemo(
     () => renderVars(form.corpo, form.variaveis, { data_assinatura: new Date().toLocaleDateString("pt-BR") }),
