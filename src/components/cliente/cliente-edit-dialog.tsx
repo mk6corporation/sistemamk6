@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -23,8 +24,11 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Save } from "lucide-react";
 import { upsertClienteManual, type ClienteInput } from "@/lib/cliente.functions";
+import { listModelos, upsertContrato } from "@/lib/contratos.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ESTAGIOS = [
+  "Venda Concluída",
   "Contrato Assinado",
   "Financeiro",
   "Formulário de Cliente",
@@ -39,8 +43,7 @@ export const ESTAGIOS = [
   "Projeto Finalizado (Não Churn)",
 ];
 
-export const PLANOS = ["Aceleração PRO", "Aceleração", "Performance", "Personalizado"];
-export const SATISFACOES = ["Muito Satisfeito", "Satisfeito", "Neutro", "Insatisfeito", "Muito Insatisfeito"];
+export const PLANOS = ["MK6 Jorney", "Aceleração PRO", "Aceleração", "Performance", "Personalizado"];
 
 type Props = {
   open: boolean;
@@ -49,9 +52,26 @@ type Props = {
   onSaved?: (id: string) => void;
 };
 
+const emptyQR = {
+  qr_servico_incluso: "",
+  qr_preco_total: "",
+  qr_forma_pagamento: "",
+  qr_metodo_pagamento: "",
+  qr_primeiro_vencimento: "",
+  qr_obs_pagamento: "",
+  qr_inicio_servico: "",
+  qr_duracao_servico: "",
+};
+
 export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Props) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const upsert = useServerFn(upsertClienteManual);
+  const lModelos = useServerFn(listModelos);
+  const createContrato = useServerFn(upsertContrato);
+
+  const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos(), enabled: open });
+
   const [form, setForm] = useState<ClienteInput>({
     id: cliente?.id ?? null,
     nome: cliente?.nome ?? "",
@@ -61,13 +81,16 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
     fim_contrato: cliente?.fim_contrato ?? null,
     valor_mensal: cliente?.valor_mensal ?? null,
     orcamento_ads: cliente?.orcamento_ads ?? null,
-    satisfacao: cliente?.satisfacao ?? null,
+    satisfacao: null,
     observacao: cliente?.observacao ?? null,
     ultima_reuniao_gestor: cliente?.ultima_reuniao_gestor ?? null,
     ultima_otimizacao: cliente?.ultima_otimizacao ?? null,
     feedback_data: cliente?.feedback_data ?? null,
     data_reuniao_cs: cliente?.data_reuniao_cs ?? null,
   });
+
+  const [selModelo, setSelModelo] = useState<string>("");
+  const [qr, setQr] = useState<Record<string, string>>(emptyQR);
 
   useEffect(() => {
     if (open) {
@@ -80,26 +103,80 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
         fim_contrato: cliente?.fim_contrato ?? null,
         valor_mensal: cliente?.valor_mensal ?? null,
         orcamento_ads: cliente?.orcamento_ads ?? null,
-        satisfacao: cliente?.satisfacao ?? null,
+        satisfacao: null,
         observacao: cliente?.observacao ?? null,
         ultima_reuniao_gestor: cliente?.ultima_reuniao_gestor ?? null,
         ultima_otimizacao: cliente?.ultima_otimizacao ?? null,
         feedback_data: cliente?.feedback_data ?? null,
         data_reuniao_cs: cliente?.data_reuniao_cs ?? null,
       });
+      setSelModelo("");
+      setQr(emptyQR);
     }
   }, [open, cliente]);
 
+  // Pré-preenche "Serviço Incluso" com o nome do modelo
+  useEffect(() => {
+    const m = modelos.data?.find((x) => x.id === selModelo);
+    if (m && !qr.qr_servico_incluso) setQr((s) => ({ ...s, qr_servico_incluso: m.nome }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selModelo]);
+
   const mut = useMutation({
-    mutationFn: async () => upsert({ data: form }),
-    onSuccess: (r) => {
+    mutationFn: async () => {
+      const res = await upsert({ data: form });
+
+      // Se há modelo selecionado, cria o contrato vinculado
+      if (selModelo) {
+        const modelo = modelos.data?.find((m) => m.id === selModelo);
+        if (modelo) {
+          const { data: dc } = await supabase
+            .from("dados_corporativos")
+            .select("*")
+            .eq("cliente_id", res.id)
+            .maybeSingle();
+          const defaultVars = (modelo as { variaveis?: Record<string, string> }).variaveis ?? {};
+          const variaveis = {
+            ...defaultVars,
+            cliente_razao_social: dc?.razao_social ?? form.nome ?? "",
+            cliente_nome_completo: dc?.representante_nome ?? "",
+            cliente_cpf: dc?.representante_cpf ?? "",
+            cliente_email: dc?.email_comercial ?? "",
+            cliente_cnpj: dc?.cnpj ?? "",
+            cliente_endereco: [dc?.endereco, dc?.bairro, dc?.cidade_uf, dc?.cep].filter(Boolean).join(", "),
+            cliente_whatsapp: dc?.telefone ?? "",
+            ...qr,
+          };
+          const contrato = await createContrato({
+            data: {
+              cliente_id: res.id,
+              modelo_id: selModelo,
+              titulo: `${modelo.nome} — ${form.nome}`,
+              corpo: modelo.corpo ?? "",
+              signatario_nome: variaveis.cliente_nome_completo || "",
+              signatario_email: variaveis.cliente_email || "",
+              signatario_documento: variaveis.cliente_cpf || variaveis.cliente_cnpj || "",
+              variaveis,
+            },
+          });
+          return { ...res, contratoId: contrato.id as string };
+        }
+      }
+      return res;
+    },
+    onSuccess: (r: { id: string; novo: boolean; contratoId?: string }) => {
       toast.success(r.novo ? "Cliente criado!" : "Cliente atualizado!");
       qc.invalidateQueries({ queryKey: ["clientes-base"] });
       qc.invalidateQueries({ queryKey: ["cliente", r.id] });
+      qc.invalidateQueries({ queryKey: ["contratos"] });
       onSaved?.(r.id);
       onOpenChange(false);
+      if (r.contratoId) {
+        toast.success("Contrato criado — revise e envie");
+        navigate({ to: "/contratos/$id", params: { id: r.contratoId } });
+      }
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
   });
 
   const set = <K extends keyof ClienteInput>(k: K, v: ClienteInput[K]) =>
@@ -130,13 +207,16 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
             </Select>
           </Fld>
 
-          <Fld label="Plano">
-            <Select value={form.plano ?? ""} onValueChange={(v) => set("plano", v || null)}>
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {PLANOS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <Fld label="Plano (editável)">
+            <Input
+              list="planos-sugestoes"
+              value={form.plano ?? ""}
+              onChange={(e) => set("plano", e.target.value || null)}
+              placeholder="MK6 Jorney"
+            />
+            <datalist id="planos-sugestoes">
+              {PLANOS.map((p) => <option key={p} value={p} />)}
+            </datalist>
           </Fld>
 
           <Fld label="Início do Contrato">
@@ -151,15 +231,6 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
           </Fld>
           <Fld label="Orçamento de Anúncios (R$)">
             <Input type="number" step="0.01" value={form.orcamento_ads ?? ""} onChange={(e) => set("orcamento_ads", num(e.target.value))} />
-          </Fld>
-
-          <Fld label="Satisfação">
-            <Select value={form.satisfacao ?? ""} onValueChange={(v) => set("satisfacao", v || null)}>
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {SATISFACOES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
           </Fld>
 
           <Fld label="Última Reunião Gestor">
@@ -180,11 +251,56 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
           </Fld>
         </div>
 
+        <div className="mt-4 border-t pt-4">
+          <div className="mb-2 text-sm font-semibold">Contrato (opcional)</div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Selecione um modelo para já gerar o contrato do cliente. Deixe em branco para pular esta etapa.
+          </p>
+          <div className="mb-3">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Modelo de contrato</Label>
+            <Select value={selModelo} onValueChange={setSelModelo}>
+              <SelectTrigger><SelectValue placeholder="Nenhum (não gerar contrato)" /></SelectTrigger>
+              <SelectContent>
+                {modelos.data?.filter((m) => m.ativo).map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selModelo && (
+            <div>
+              <div className="mb-2 text-sm font-semibold">Quadro Resumo</div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {[
+                  { k: "qr_servico_incluso", l: "(i) Serviço Incluso" },
+                  { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 12.500,00" },
+                  { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Parcelado 3x…" },
+                  { k: "qr_metodo_pagamento", l: "(iv) Método de Pagamento", ph: "PIX / Cartão / Boleto" },
+                  { k: "qr_primeiro_vencimento", l: "(v) Primeiro Vencimento", ph: "DD/MM/AAAA" },
+                  { k: "qr_obs_pagamento", l: "(vi) Obs. Pagamento" },
+                  { k: "qr_inicio_servico", l: "(vii) Início do Serviço", ph: "DD/MM/AAAA" },
+                  { k: "qr_duracao_servico", l: "(viii) Duração do Serviço", ph: "3 (três) meses" },
+                ].map((f) => (
+                  <div key={f.k}>
+                    <Label className="text-xs">{f.l}</Label>
+                    <Input
+                      value={qr[f.k] ?? ""}
+                      placeholder={f.ph}
+                      onChange={(e) => setQr((s) => ({ ...s, [f.k]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending || !form.nome.trim()}>
             {mut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
-            Salvar
+            {selModelo ? "Salvar e gerar contrato" : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
