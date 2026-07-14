@@ -58,9 +58,13 @@ function ContratosIndex() {
   };
   const [qr, setQr] = useState<Record<string, string>>(emptyQR);
 
-  useEffect(() => {
-    supabase.from("clientes").select("id, nome, plano").order("nome").then(({ data }) => setClientes(data ?? []));
-  }, []);
+  async function recarregarClientes() {
+    const { data } = await supabase.from("clientes").select("id, nome, plano").order("nome");
+    setClientes(data ?? []);
+  }
+
+  useEffect(() => { void recarregarClientes(); }, []);
+
 
   // Pré-preenche qr_servico_incluso com o nome do modelo ao selecioná-lo
   useEffect(() => {
