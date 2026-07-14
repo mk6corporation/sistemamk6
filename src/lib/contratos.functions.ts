@@ -162,8 +162,8 @@ export const enviarContrato = createServerFn({ method: "POST" })
     if (!doc) throw new Error("Contrato não encontrado");
 
     // Render vars for the version that will be signed
-    const vars = { ...((doc.variaveis ?? {}) as Record<string, string>), data_assinatura: new Date().toLocaleDateString("pt-BR") };
-    const rendered = (doc.corpo ?? "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => (vars[k] ?? "").toString() || "__________");
+    const vars: Record<string, string> = { ...((doc.variaveis ?? {}) as Record<string, string>), data_assinatura: new Date().toLocaleDateString("pt-BR") };
+    const rendered = (doc.corpo ?? "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k: string) => (vars[k] ?? "").toString() || "__________");
 
     const hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rendered));
     const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
