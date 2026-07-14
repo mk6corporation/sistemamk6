@@ -13,7 +13,10 @@ export const Route = createFileRoute("/contrato/assinar/$token")({
   component: AssinarPage,
 });
 
-type Doc = { id: string; titulo: string; corpo: string; status: string };
+type Doc = {
+  id: string; titulo: string; corpo: string; status: string;
+  signatario_nome: string | null; signatario_email: string | null; signatario_documento: string | null;
+};
 
 function AssinarPage() {
   const { token } = Route.useParams();
@@ -33,13 +36,16 @@ function AssinarPage() {
     (async () => {
       const { data, error } = await supabase
         .from("contratos_documentos")
-        .select("id, titulo, corpo, status")
+        .select("id, titulo, corpo, status, signatario_nome, signatario_email, signatario_documento")
         .eq("token_publico", token)
         .maybeSingle();
       if (error || !data) { setError("Link inválido ou expirado."); setLoading(false); return; }
-      if (data.status === "assinado") { setDone(true); setDoc(data as any); setLoading(false); return; }
+      if (data.status === "assinado") { setDone(true); setDoc(data as Doc); setLoading(false); return; }
       if (data.status !== "enviado") { setError("Este contrato não está disponível para assinatura."); setLoading(false); return; }
-      setDoc(data as any);
+      setDoc(data as Doc);
+      setNome(data.signatario_nome ?? "");
+      setEmail(data.signatario_email ?? "");
+      setDocumento(data.signatario_documento ?? "");
       setLoading(false);
     })();
   }, [token]);
