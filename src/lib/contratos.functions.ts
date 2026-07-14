@@ -68,6 +68,7 @@ const ContratoInput = z.object({
   signatario_email: z.string().email().nullable().optional().or(z.literal("")),
   signatario_documento: z.string().nullable().optional(),
   observacoes: z.string().nullable().optional(),
+  variaveis: z.record(z.string(), z.any()).nullable().optional(),
 });
 export type ContratoInput = z.infer<typeof ContratoInput>;
 
@@ -130,6 +131,7 @@ export const upsertContrato = createServerFn({ method: "POST" })
       signatario_email: data.signatario_email || null,
       signatario_documento: data.signatario_documento ?? null,
       observacoes: data.observacoes ?? null,
+      variaveis: (data.variaveis ?? {}) as Record<string, unknown>,
       created_by: context.userId,
     };
     if (data.id) {
