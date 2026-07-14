@@ -141,7 +141,10 @@ function ContratosIndex() {
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground">Gere, envie e acompanhe assinaturas eletrônicas.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setNovoClienteOpen(true)}>
+            <UserRoundPlus className="mr-2 h-4 w-4" />Novo cliente
+          </Button>
           <Button asChild variant="outline">
             <Link to="/contratos/modelos"><Library className="mr-2 h-4 w-4" />Modelos</Link>
           </Button>
@@ -152,6 +155,7 @@ function ContratosIndex() {
             <UserPlus className="mr-2 h-4 w-4" />Novo a partir de cliente
           </Button>
         </div>
+
       </div>
 
       <Card className="overflow-hidden">
