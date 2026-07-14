@@ -115,7 +115,7 @@ function AssinarPage() {
       <Card className="p-6">
         <div className="mb-2 text-sm font-semibold">Leia o contrato com atenção</div>
         <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap rounded border bg-muted/30 p-4 text-sm leading-relaxed">
-          {doc!.corpo}
+          {renderVars(doc!.corpo, (doc!.variaveis ?? {}) as Record<string, string>)}
         </div>
       </Card>
 
