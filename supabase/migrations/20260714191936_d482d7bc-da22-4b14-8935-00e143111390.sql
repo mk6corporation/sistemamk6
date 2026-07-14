@@ -1,0 +1,1 @@
+CREATE POLICY "staff insert assinatura admin" ON public.contratos_assinaturas FOR INSERT TO authenticated WITH CHECK (is_staff_user());
