@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, FileText, Trash2, ExternalLink, Library, UserPlus } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Library, UserPlus, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { listContratos, upsertContrato, deleteContrato, listModelos } from "@/lib/contratos.functions";
+import { ClienteEditDialog } from "@/components/cliente/cliente-edit-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/contratos/")({
   component: ContratosIndex,
@@ -37,7 +39,9 @@ function ContratosIndex() {
   const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos() });
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string; plano: string | null }[]>([]);
+
   const [filtroCli, setFiltroCli] = useState("");
   const [selCliente, setSelCliente] = useState<string>("");
   const [selModelo, setSelModelo] = useState<string>("");
@@ -54,9 +58,13 @@ function ContratosIndex() {
   };
   const [qr, setQr] = useState<Record<string, string>>(emptyQR);
 
-  useEffect(() => {
-    supabase.from("clientes").select("id, nome, plano").order("nome").then(({ data }) => setClientes(data ?? []));
-  }, []);
+  async function recarregarClientes() {
+    const { data } = await supabase.from("clientes").select("id, nome, plano").order("nome");
+    setClientes(data ?? []);
+  }
+
+  useEffect(() => { void recarregarClientes(); }, []);
+
 
   // Pré-preenche qr_servico_incluso com o nome do modelo ao selecioná-lo
   useEffect(() => {
@@ -133,7 +141,10 @@ function ContratosIndex() {
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground">Gere, envie e acompanhe assinaturas eletrônicas.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setNovoClienteOpen(true)}>
+            <UserRoundPlus className="mr-2 h-4 w-4" />Novo cliente
+          </Button>
           <Button asChild variant="outline">
             <Link to="/contratos/modelos"><Library className="mr-2 h-4 w-4" />Modelos</Link>
           </Button>
@@ -144,6 +155,7 @@ function ContratosIndex() {
             <UserPlus className="mr-2 h-4 w-4" />Novo a partir de cliente
           </Button>
         </div>
+
       </div>
 
       <Card className="overflow-hidden">
@@ -272,6 +284,19 @@ function ContratosIndex() {
         </DialogContent>
 
       </Dialog>
+
+      <ClienteEditDialog
+        open={novoClienteOpen}
+        onOpenChange={setNovoClienteOpen}
+        onSaved={async (id) => {
+          await recarregarClientes();
+          qc.invalidateQueries({ queryKey: ["clientes-base"] });
+          setSelCliente(id);
+          setDialogOpen(true);
+          toast.success("Cliente criado — selecionado no novo contrato");
+        }}
+      />
     </div>
+
   );
 }
