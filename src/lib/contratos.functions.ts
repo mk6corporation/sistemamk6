@@ -170,9 +170,10 @@ export const enviarContrato = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("contratos_documentos")
-      .update({ status: "enviado", token_publico: token, enviado_em: new Date().toISOString(), documento_hash: hash, corpo: rendered })
+      .update({ status: "enviado", token_publico: token, enviado_em: new Date().toISOString(), documento_hash: hash })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
     return { token };
   });
 
