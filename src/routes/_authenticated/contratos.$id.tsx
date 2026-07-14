@@ -436,6 +436,37 @@ function ContratoEditor() {
           )}
         </div>
       </div>
+
+      <Dialog open={adminOpen} onOpenChange={setAdminOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Assinar como CONTRATADA (MK6)</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome completo do responsável *</Label>
+              <Input value={adminNome} onChange={(e) => setAdminNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>CPF / Documento (opcional)</Label>
+              <Input value={adminDoc} onChange={(e) => setAdminDoc(e.target.value)} />
+            </div>
+            <div>
+              <Label>Assinatura *</Label>
+              <div className="rounded border bg-white">
+                <SignatureCanvas ref={(r) => { sigRef.current = r; }} penColor="black" canvasProps={{ className: "w-full h-40" }} />
+              </div>
+              <div className="mt-1 flex justify-end">
+                <Button size="sm" variant="ghost" onClick={() => sigRef.current?.clear()}>Limpar</Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdminOpen(false)}>Cancelar</Button>
+            <Button onClick={() => doAdminSign.mutate()} disabled={doAdminSign.isPending}>
+              <PenLine className="mr-2 h-4 w-4" />Assinar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
