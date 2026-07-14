@@ -1,12 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, FileText, Trash2, ExternalLink, Library } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Library, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { listContratos, upsertContrato, deleteContrato } from "@/lib/contratos.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { listContratos, upsertContrato, deleteContrato, listModelos } from "@/lib/contratos.functions";
 
 export const Route = createFileRoute("/_authenticated/contratos/")({
   component: ContratosIndex,
@@ -25,13 +31,69 @@ function ContratosIndex() {
   const list = useServerFn(listContratos);
   const create = useServerFn(upsertContrato);
   const del = useServerFn(deleteContrato);
+  const lModelos = useServerFn(listModelos);
 
   const q = useQuery({ queryKey: ["contratos"], queryFn: () => list() });
+  const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos() });
 
-  const novo = useMutation({
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [clientes, setClientes] = useState<{ id: string; nome: string; plano: string | null }[]>([]);
+  const [filtroCli, setFiltroCli] = useState("");
+  const [selCliente, setSelCliente] = useState<string>("");
+  const [selModelo, setSelModelo] = useState<string>("");
+  const [titulo, setTitulo] = useState("");
+
+  useEffect(() => {
+    supabase.from("clientes").select("id, nome, plano").order("nome").then(({ data }) => setClientes(data ?? []));
+  }, []);
+
+  const novoRascunho = useMutation({
     mutationFn: () => create({ data: { titulo: "Novo contrato", corpo: "" } }),
     onSuccess: (r) => navigate({ to: "/contratos/$id", params: { id: r.id } }),
-    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
+  });
+
+  const criarDeCliente = useMutation({
+    mutationFn: async () => {
+      if (!selCliente || !selModelo) throw new Error("Selecione cliente e modelo");
+      const modelo = modelos.data?.find((m) => m.id === selModelo);
+      const cli = clientes.find((c) => c.id === selCliente);
+      if (!modelo || !cli) throw new Error("Cliente ou modelo inválido");
+
+      // Buscar dados_corporativos
+      const { data: dc } = await supabase.from("dados_corporativos").select("*").eq("cliente_id", selCliente).maybeSingle();
+      const { data: cliOp } = await supabase.from("clientes").select("operacional").eq("id", selCliente).maybeSingle();
+      const op = (cliOp?.operacional ?? {}) as Record<string, string | undefined>;
+
+      const defaultVars = (modelo as { variaveis?: Record<string, string> }).variaveis ?? {};
+      const variaveis = {
+        ...defaultVars,
+        cliente_razao_social: dc?.razao_social ?? cli.nome ?? "",
+        cliente_nome_completo: dc?.representante_nome ?? op.responsavel ?? "",
+        cliente_cpf: dc?.representante_cpf ?? "",
+        cliente_email: dc?.email_comercial ?? op.email ?? "",
+        cliente_cnpj: dc?.cnpj ?? "",
+        cliente_endereco: [dc?.endereco, dc?.bairro, dc?.cidade_uf, dc?.cep].filter(Boolean).join(", "),
+        cliente_whatsapp: dc?.telefone ?? op.whatsapp ?? "",
+      };
+
+      return create({ data: {
+        cliente_id: selCliente,
+        modelo_id: selModelo,
+        titulo: titulo || `${modelo.nome} — ${cli.nome}`,
+        corpo: modelo.corpo ?? "",
+        signatario_nome: variaveis.cliente_nome_completo || "",
+        signatario_email: variaveis.cliente_email || "",
+        signatario_documento: variaveis.cliente_cpf || variaveis.cliente_cnpj || "",
+        variaveis,
+      } });
+    },
+    onSuccess: (r) => {
+      setDialogOpen(false);
+      toast.success("Contrato criado — revise e envie");
+      navigate({ to: "/contratos/$id", params: { id: r.id } });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
   const remover = useMutation({
@@ -42,19 +104,24 @@ function ContratosIndex() {
     },
   });
 
+  const clientesFiltrados = clientes.filter((c) => c.nome.toLowerCase().includes(filtroCli.toLowerCase())).slice(0, 200);
+
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Contratos</h1>
-          <p className="text-sm text-muted-foreground">Gerencie contratos, modelos e assinaturas.</p>
+          <p className="text-sm text-muted-foreground">Gere, envie e acompanhe assinaturas eletrônicas.</p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
             <Link to="/contratos/modelos"><Library className="mr-2 h-4 w-4" />Modelos</Link>
           </Button>
-          <Button onClick={() => novo.mutate()} disabled={novo.isPending}>
-            <Plus className="mr-2 h-4 w-4" />Novo contrato
+          <Button variant="outline" onClick={() => novoRascunho.mutate()} disabled={novoRascunho.isPending}>
+            <Plus className="mr-2 h-4 w-4" />Rascunho em branco
+          </Button>
+          <Button onClick={() => { setSelCliente(""); setSelModelo(""); setTitulo(""); setDialogOpen(true); }}>
+            <UserPlus className="mr-2 h-4 w-4" />Novo a partir de cliente
           </Button>
         </div>
       </div>
@@ -76,7 +143,7 @@ function ContratosIndex() {
               <tr><td className="p-4 text-muted-foreground" colSpan={6}>Carregando…</td></tr>
             )}
             {q.data?.length === 0 && (
-              <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum contrato. Clique em "Novo contrato".</td></tr>
+              <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum contrato ainda.</td></tr>
             )}
             {q.data?.map((c) => (
               <tr key={c.id} className="border-t hover:bg-muted/30">
@@ -106,6 +173,58 @@ function ContratosIndex() {
           </tbody>
         </table>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Novo contrato a partir de cliente da base</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Modelo *</Label>
+              <Select value={selModelo} onValueChange={setSelModelo}>
+                <SelectTrigger><SelectValue placeholder="Escolher modelo..." /></SelectTrigger>
+                <SelectContent>
+                  {modelos.data?.filter((m) => m.ativo).map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Buscar cliente</Label>
+              <Input value={filtroCli} onChange={(e) => setFiltroCli(e.target.value)} placeholder="Digite parte do nome…" />
+            </div>
+            <div>
+              <Label>Cliente *</Label>
+              <Select value={selCliente} onValueChange={setSelCliente}>
+                <SelectTrigger><SelectValue placeholder={`${clientesFiltrados.length} cliente(s)`} /></SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {clientesFiltrados.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nome} {c.plano && <span className="ml-1 text-xs text-muted-foreground">· {c.plano}</span>}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Título (opcional)</Label>
+              <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Auto: [modelo] — [cliente]" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Os dados do cliente (razão social, CNPJ, endereço, WhatsApp, e-mail) serão pré-preenchidos automaticamente a partir dos Dados Corporativos.
+              Você poderá editar tudo na próxima tela antes de enviar para assinatura.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => criarDeCliente.mutate()} disabled={criarDeCliente.isPending || !selCliente || !selModelo}>
+              Criar e abrir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
