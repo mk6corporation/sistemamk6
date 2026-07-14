@@ -152,23 +152,25 @@ export const enviarContrato = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    // gera token e hash
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const { data: doc, error: e1 } = await context.supabase
       .from("contratos_documentos")
-      .select("corpo")
+      .select("corpo, variaveis")
       .eq("id", data.id)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
     if (!doc) throw new Error("Contrato não encontrado");
 
-    const enc = new TextEncoder().encode(doc.corpo ?? "");
-    const hashBuf = await crypto.subtle.digest("SHA-256", enc);
+    // Render vars for the version that will be signed
+    const vars = { ...((doc.variaveis ?? {}) as Record<string, string>), data_assinatura: new Date().toLocaleDateString("pt-BR") };
+    const rendered = (doc.corpo ?? "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => (vars[k] ?? "").toString() || "__________");
+
+    const hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rendered));
     const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
     const { error } = await context.supabase
       .from("contratos_documentos")
-      .update({ status: "enviado", token_publico: token, enviado_em: new Date().toISOString(), documento_hash: hash })
+      .update({ status: "enviado", token_publico: token, enviado_em: new Date().toISOString(), documento_hash: hash, corpo: rendered })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { token };
