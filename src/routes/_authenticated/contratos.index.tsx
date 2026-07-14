@@ -140,7 +140,7 @@ function ContratosIndex() {
           <Button variant="outline" onClick={() => novoRascunho.mutate()} disabled={novoRascunho.isPending}>
             <Plus className="mr-2 h-4 w-4" />Rascunho em branco
           </Button>
-          <Button onClick={() => { setSelCliente(""); setSelModelo(""); setTitulo(""); setDialogOpen(true); }}>
+          <Button onClick={() => { setSelCliente(""); setSelModelo(""); setTitulo(""); setQr(emptyQR); setDialogOpen(true); }}>
             <UserPlus className="mr-2 h-4 w-4" />Novo a partir de cliente
           </Button>
         </div>
