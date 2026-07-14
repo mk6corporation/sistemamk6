@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2, Wand2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,34 @@ const STATUS_COLORS: Record<string, string> = {
   cancelado: "bg-red-100 text-red-800",
 };
 
+type Vars = Record<string, string>;
+
+const CLIENTE_FIELDS: { key: string; label: string }[] = [
+  { key: "cliente_nome_completo", label: "Nome completo do responsável" },
+  { key: "cliente_cpf", label: "CPF" },
+  { key: "cliente_email", label: "E-mail" },
+  { key: "cliente_razao_social", label: "Razão social" },
+  { key: "cliente_cnpj", label: "CNPJ" },
+  { key: "cliente_endereco", label: "Endereço comercial (com CEP)" },
+  { key: "cliente_whatsapp", label: "WhatsApp (envio de cobranças)" },
+];
+
+const QR_FIELDS: { key: string; label: string; placeholder?: string }[] = [
+  { key: "qr_servico_incluso", label: "(i) Serviço Incluso" },
+  { key: "qr_preco_total", label: "(ii) Preço Total", placeholder: "R$ 12.500,00" },
+  { key: "qr_forma_pagamento", label: "(iii) Forma de Pagamento", placeholder: "À vista / Parcelado 3x…" },
+  { key: "qr_metodo_pagamento", label: "(iv) Método de Pagamento", placeholder: "Cartão de crédito / PIX / Boleto" },
+  { key: "qr_primeiro_vencimento", label: "(v) Primeiro Vencimento", placeholder: "DD/MM/AAAA" },
+  { key: "qr_obs_pagamento", label: "(vi) Obs. Pagamento" },
+  { key: "qr_inicio_servico", label: "(vii) Início do Serviço", placeholder: "DD/MM/AAAA" },
+  { key: "qr_duracao_servico", label: "(viii) Duração do Serviço", placeholder: "3 (três) meses" },
+];
+
+function renderVars(body: string, vars: Vars, extra: Vars = {}): string {
+  const all = { ...vars, ...extra };
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => (all[k] ?? "").toString() || `__________`);
+}
+
 function ContratoEditor() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
@@ -45,14 +73,15 @@ function ContratoEditor() {
   }, []);
 
   const [form, setForm] = useState({
-    cliente_id: "" as string,
-    modelo_id: "" as string,
+    cliente_id: "",
+    modelo_id: "",
     titulo: "",
     corpo: "",
     signatario_nome: "",
     signatario_email: "",
     signatario_documento: "",
     observacoes: "",
+    variaveis: {} as Vars,
   });
 
   useEffect(() => {
@@ -66,6 +95,7 @@ function ContratoEditor() {
         signatario_email: q.data.signatario_email ?? "",
         signatario_documento: q.data.signatario_documento ?? "",
         observacoes: q.data.observacoes ?? "",
+        variaveis: ((q.data as { variaveis?: Vars }).variaveis ?? {}) as Vars,
       });
     }
   }, [q.data]);
@@ -73,13 +103,17 @@ function ContratoEditor() {
   const readonly = q.data?.status === "assinado" || q.data?.status === "cancelado";
 
   const save = useMutation({
-    mutationFn: () => up({ data: { id, ...form, cliente_id: form.cliente_id || null, modelo_id: form.modelo_id || null } }),
+    mutationFn: () => up({ data: {
+      id, ...form,
+      cliente_id: form.cliente_id || null,
+      modelo_id: form.modelo_id || null,
+    } }),
     onSuccess: () => {
       toast.success("Salvo");
       qc.invalidateQueries({ queryKey: ["contrato", id] });
       qc.invalidateQueries({ queryKey: ["contratos"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
   const send = useMutation({
@@ -88,7 +122,7 @@ function ContratoEditor() {
       toast.success("Contrato enviado para assinatura");
       qc.invalidateQueries({ queryKey: ["contrato", id] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
   const cancel = useMutation({
@@ -99,24 +133,64 @@ function ContratoEditor() {
     },
   });
 
+  // Aplica modelo: substitui corpo + mescla variáveis padrão
   const aplicarModelo = (mid: string) => {
     const m = modelos.data?.find((x) => x.id === mid);
     if (!m) return;
-    setForm((f) => ({ ...f, modelo_id: mid, corpo: m.corpo, titulo: f.titulo || m.nome }));
+    const defaultVars = ((m as { variaveis?: Vars }).variaveis ?? {}) as Vars;
+    setForm((f) => ({
+      ...f,
+      modelo_id: mid,
+      corpo: m.corpo ?? "",
+      titulo: f.titulo || m.nome,
+      variaveis: { ...defaultVars, ...f.variaveis },
+    }));
+    toast.success(`Modelo "${m.nome}" aplicado`);
+  };
+
+  // Pré-preencher dados do cliente
+  const preencherDadosCliente = async () => {
+    if (!form.cliente_id) return toast.error("Selecione um cliente primeiro");
+    const [{ data: cli }, { data: dc }] = await Promise.all([
+      supabase.from("clientes").select("nome, operacional").eq("id", form.cliente_id).maybeSingle(),
+      supabase.from("dados_corporativos").select("*").eq("cliente_id", form.cliente_id).maybeSingle(),
+    ]);
+    const op = (cli?.operacional ?? {}) as Record<string, string | undefined>;
+    const patch: Vars = {
+      cliente_razao_social: dc?.razao_social ?? cli?.nome ?? "",
+      cliente_nome_completo: dc?.representante_nome ?? op.responsavel ?? "",
+      cliente_cpf: dc?.representante_cpf ?? "",
+      cliente_email: dc?.email_comercial ?? op.email ?? "",
+      cliente_cnpj: dc?.cnpj ?? "",
+      cliente_endereco: [dc?.endereco, dc?.bairro, dc?.cidade_uf, dc?.cep].filter(Boolean).join(", "),
+      cliente_whatsapp: dc?.telefone ?? op.whatsapp ?? "",
+    };
+    setForm((f) => ({
+      ...f,
+      variaveis: { ...f.variaveis, ...patch },
+      signatario_nome: f.signatario_nome || patch.cliente_nome_completo,
+      signatario_email: f.signatario_email || patch.cliente_email,
+      signatario_documento: f.signatario_documento || patch.cliente_cpf || patch.cliente_cnpj,
+    }));
+    toast.success("Dados do cliente aplicados");
   };
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const link = q.data?.token_publico ? `${baseUrl}/contrato/assinar/${q.data.token_publico}` : null;
 
-  // Preview com variáveis substituídas
-  const preview = useMemo(() => {
-    const c = clientes.find((x) => x.id === form.cliente_id);
-    return form.corpo
-      .replaceAll("{{nome_cliente}}", c?.nome ?? "____________")
-      .replaceAll("{{signatario}}", form.signatario_nome || "____________")
-      .replaceAll("{{documento}}", form.signatario_documento || "____________")
-      .replaceAll("{{data}}", new Date().toLocaleDateString("pt-BR"));
-  }, [form, clientes]);
+  const preview = useMemo(
+    () => renderVars(form.corpo, form.variaveis, { data_assinatura: new Date().toLocaleDateString("pt-BR") }),
+    [form.corpo, form.variaveis],
+  );
+
+  const whatsappLink = useMemo(() => {
+    if (!link) return null;
+    const raw = (form.variaveis.cliente_whatsapp ?? "").replace(/\D/g, "");
+    if (!raw) return null;
+    const phone = raw.startsWith("55") ? raw : `55${raw}`;
+    const txt = encodeURIComponent(`Olá! Segue o link do seu contrato ${form.titulo}: ${link}`);
+    return `https://wa.me/${phone}?text=${txt}`;
+  }, [link, form.titulo, form.variaveis]);
 
   if (q.isLoading) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   if (q.isError) return <div className="p-6 text-destructive">Erro ao carregar</div>;
@@ -153,15 +227,20 @@ function ContratoEditor() {
       </div>
 
       {link && (
-        <Card className="flex items-center gap-3 border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/30">
+        <Card className="flex flex-wrap items-center gap-3 border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/30">
           <CheckCircle2 className="h-5 w-5 text-blue-600" />
-          <div className="flex-1">
+          <div className="flex-1 min-w-[240px]">
             <div className="text-sm font-medium">Link público de assinatura</div>
             <code className="text-xs text-muted-foreground break-all">{link}</code>
           </div>
           <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copiado"); }}>
             <Copy className="mr-1 h-3 w-3" />Copiar
           </Button>
+          {whatsappLink && (
+            <Button size="sm" variant="outline" asChild>
+              <a href={whatsappLink} target="_blank" rel="noopener"><MessageCircle className="mr-1 h-3 w-3" />WhatsApp</a>
+            </Button>
+          )}
           <Button size="sm" variant="outline" asChild>
             <a href={link} target="_blank" rel="noopener">Abrir</a>
           </Button>
@@ -169,74 +248,122 @@ function ContratoEditor() {
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="space-y-4 p-4 lg:col-span-2">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <Label>Título *</Label>
-              <Input value={form.titulo} onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))} disabled={readonly} />
+        <div className="space-y-4 lg:col-span-2">
+          {/* Cabeçalho */}
+          <Card className="space-y-4 p-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <Label>Título *</Label>
+                <Input value={form.titulo} onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))} disabled={readonly} />
+              </div>
+              <div>
+                <Label>Cliente</Label>
+                <Select value={form.cliente_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, cliente_id: v === "none" ? "" : v }))} disabled={readonly}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— sem cliente —</SelectItem>
+                    {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Aplicar modelo</Label>
+                <Select value={form.modelo_id || "none"} onValueChange={(v) => v !== "none" && aplicarModelo(v)} disabled={readonly}>
+                  <SelectTrigger><SelectValue placeholder="Escolher modelo..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— nenhum —</SelectItem>
+                    {modelos.data?.filter((m) => m.ativo).map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Cliente</Label>
-              <Select value={form.cliente_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, cliente_id: v === "none" ? "" : v }))} disabled={readonly}>
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— sem cliente —</SelectItem>
-                  {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Aplicar modelo</Label>
-              <Select value={form.modelo_id || "none"} onValueChange={(v) => v !== "none" && aplicarModelo(v)} disabled={readonly}>
-                <SelectTrigger><SelectValue placeholder="Escolher modelo..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— nenhum —</SelectItem>
-                  {modelos.data?.filter((m) => m.ativo).map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            {form.cliente_id && !readonly && (
+              <Button size="sm" variant="secondary" onClick={preencherDadosCliente}>
+                <Wand2 className="mr-2 h-4 w-4" />Preencher dados do cliente automaticamente
+              </Button>
+            )}
+          </Card>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div>
-              <Label>Signatário</Label>
-              <Input value={form.signatario_nome} onChange={(e) => setForm((f) => ({ ...f, signatario_nome: e.target.value }))} disabled={readonly} />
+          {/* Dados do CONTRATANTE (variáveis) */}
+          <Card className="space-y-3 p-4">
+            <div className="text-sm font-semibold">Dados do CONTRATANTE</div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {CLIENTE_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <Label className="text-xs">{f.label}</Label>
+                  <Input
+                    value={form.variaveis[f.key] ?? ""}
+                    onChange={(e) => setForm((s) => ({ ...s, variaveis: { ...s.variaveis, [f.key]: e.target.value } }))}
+                    disabled={readonly}
+                  />
+                </div>
+              ))}
             </div>
-            <div>
-              <Label>E-mail</Label>
-              <Input type="email" value={form.signatario_email} onChange={(e) => setForm((f) => ({ ...f, signatario_email: e.target.value }))} disabled={readonly} />
-            </div>
-            <div>
-              <Label>CPF/CNPJ</Label>
-              <Input value={form.signatario_documento} onChange={(e) => setForm((f) => ({ ...f, signatario_documento: e.target.value }))} disabled={readonly} />
-            </div>
-          </div>
+          </Card>
 
-          <div>
-            <Label>Corpo do contrato (cláusulas editáveis)</Label>
+          {/* Quadro Resumo */}
+          <Card className="space-y-3 p-4">
+            <div className="text-sm font-semibold">Quadro Resumo</div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {QR_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <Label className="text-xs">{f.label}</Label>
+                  <Input
+                    value={form.variaveis[f.key] ?? ""}
+                    placeholder={f.placeholder}
+                    onChange={(e) => setForm((s) => ({ ...s, variaveis: { ...s.variaveis, [f.key]: e.target.value } }))}
+                    disabled={readonly}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Signatário */}
+          <Card className="space-y-3 p-4">
+            <div className="text-sm font-semibold">Signatário (quem vai assinar)</div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div>
+                <Label>Nome</Label>
+                <Input value={form.signatario_nome} onChange={(e) => setForm((f) => ({ ...f, signatario_nome: e.target.value }))} disabled={readonly} />
+              </div>
+              <div>
+                <Label>E-mail</Label>
+                <Input type="email" value={form.signatario_email} onChange={(e) => setForm((f) => ({ ...f, signatario_email: e.target.value }))} disabled={readonly} />
+              </div>
+              <div>
+                <Label>CPF/CNPJ</Label>
+                <Input value={form.signatario_documento} onChange={(e) => setForm((f) => ({ ...f, signatario_documento: e.target.value }))} disabled={readonly} />
+              </div>
+            </div>
+          </Card>
+
+          {/* Corpo do contrato */}
+          <Card className="space-y-2 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold">Corpo do contrato (cláusulas editáveis)</div>
+              <span className="text-xs text-muted-foreground">Use <code>{"{{variavel}}"}</code> para valores dinâmicos</span>
+            </div>
             <Textarea
               value={form.corpo}
               onChange={(e) => setForm((f) => ({ ...f, corpo: e.target.value }))}
-              rows={24}
-              className="font-mono text-sm"
+              rows={22}
+              className="font-mono text-xs"
               disabled={readonly}
-              placeholder="Use variáveis: {{nome_cliente}}, {{signatario}}, {{documento}}, {{data}}"
+              placeholder="Aplique um modelo para começar."
             />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Variáveis disponíveis: <code>{"{{nome_cliente}}"}</code>, <code>{"{{signatario}}"}</code>, <code>{"{{documento}}"}</code>, <code>{"{{data}}"}</code>
-            </p>
-          </div>
+          </Card>
 
-          <div>
+          <Card className="p-4">
             <Label>Observações internas</Label>
             <Textarea value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} rows={2} disabled={readonly} />
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         <div className="space-y-4">
           <Card className="p-4">
-            <div className="mb-2 text-sm font-semibold">Pré-visualização</div>
-            <div className="max-h-[400px] overflow-y-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 text-xs">
+            <div className="mb-2 text-sm font-semibold">Pré-visualização (com variáveis)</div>
+            <div className="max-h-[600px] overflow-y-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 text-xs leading-relaxed">
               {preview || "(vazio)"}
             </div>
           </Card>
@@ -244,7 +371,11 @@ function ContratoEditor() {
           {q.data?.assinaturas && q.data.assinaturas.length > 0 && (
             <Card className="p-4">
               <div className="mb-2 text-sm font-semibold">Evidências de assinatura</div>
-              {q.data.assinaturas.map((a: any) => (
+              {q.data.assinaturas.map((a: {
+                id: string; nome_completo: string; documento?: string | null; email?: string | null;
+                ip?: string | null; created_at: string; documento_hash?: string | null;
+                assinatura_imagem?: string | null; assinatura_texto?: string | null;
+              }) => (
                 <div key={a.id} className="space-y-1 border-t pt-2 text-xs">
                   <div><b>{a.nome_completo}</b> {a.documento && `— ${a.documento}`}</div>
                   {a.email && <div className="text-muted-foreground">{a.email}</div>}
