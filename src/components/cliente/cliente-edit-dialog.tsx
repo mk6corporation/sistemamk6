@@ -268,39 +268,40 @@ export function ClienteEditDialog({ open, onOpenChange, cliente, onSaved }: Prop
             </Select>
           </div>
 
-          {selModelo && (
-            <div>
-              <div className="mb-2 text-sm font-semibold">Quadro Resumo</div>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {[
-                  { k: "qr_servico_incluso", l: "(i) Serviço Incluso" },
-                  { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 12.500,00" },
-                  { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Parcelado 3x…" },
-                  { k: "qr_metodo_pagamento", l: "(iv) Método de Pagamento", ph: "PIX / Cartão / Boleto" },
-                  { k: "qr_primeiro_vencimento", l: "(v) Primeiro Vencimento", ph: "DD/MM/AAAA" },
-                  { k: "qr_inicio_servico", l: "(vii) Início do Serviço", ph: "DD/MM/AAAA" },
-                  { k: "qr_duracao_servico", l: "(viii) Duração do Serviço", ph: "3 (três) meses" },
-                ].map((f) => (
-                  <div key={f.k}>
-                    <Label className="text-xs">{f.l}</Label>
-                    <Input
-                      value={qr[f.k] ?? ""}
-                      placeholder={f.ph}
-                      onChange={(e) => setQr((s) => ({ ...s, [f.k]: e.target.value }))}
-                    />
-                  </div>
-                ))}
-                <div className="md:col-span-2">
-                  <Label className="text-xs">(vi) Obs. Pagamento</Label>
-                  <Textarea
-                    rows={2}
-                    value={qr.qr_obs_pagamento ?? ""}
-                    onChange={(e) => setQr((s) => ({ ...s, qr_obs_pagamento: e.target.value }))}
+          <div>
+            <div className="mb-2 text-sm font-semibold">Quadro Resumo</div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Preencha os dados comerciais do plano. Serão usados no contrato caso um modelo seja selecionado acima.
+            </p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {[
+                { k: "qr_servico_incluso", l: "(i) Serviço Incluso", ph: "MK6 Jorney" },
+                { k: "qr_preco_total", l: "(ii) Preço Total", ph: "R$ 12.500,00" },
+                { k: "qr_forma_pagamento", l: "(iii) Forma de Pagamento", ph: "À vista / Parcelado 3x…" },
+                { k: "qr_metodo_pagamento", l: "(iv) Método de Pagamento", ph: "PIX / Cartão / Boleto" },
+                { k: "qr_primeiro_vencimento", l: "(v) Primeiro Vencimento", ph: "DD/MM/AAAA" },
+                { k: "qr_inicio_servico", l: "(vii) Início do Serviço", ph: "DD/MM/AAAA" },
+                { k: "qr_duracao_servico", l: "(viii) Duração do Serviço", ph: "3 (três) meses" },
+              ].map((f) => (
+                <div key={f.k}>
+                  <Label className="text-xs">{f.l}</Label>
+                  <Input
+                    value={qr[f.k] ?? ""}
+                    placeholder={f.ph}
+                    onChange={(e) => setQr((s) => ({ ...s, [f.k]: e.target.value }))}
                   />
                 </div>
+              ))}
+              <div className="md:col-span-2">
+                <Label className="text-xs">(vi) Obs. Pagamento</Label>
+                <Textarea
+                  rows={2}
+                  value={qr.qr_obs_pagamento ?? ""}
+                  onChange={(e) => setQr((s) => ({ ...s, qr_obs_pagamento: e.target.value }))}
+                />
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter>
