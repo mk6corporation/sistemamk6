@@ -230,7 +230,6 @@ function ContratoEditor() {
           <h1 className="text-2xl font-semibold">{form.titulo || "Contrato"}</h1>
           {q.data && <Badge className={STATUS_COLORS[q.data.status]}>{q.data.status}</Badge>}
         </div>
-        <div className="flex gap-2">
         <div className="flex flex-wrap gap-2">
           {viewLink && (
             <Button variant="outline" size="sm" asChild>
