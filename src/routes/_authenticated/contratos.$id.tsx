@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2, Wand2, MessageCircle } from "lucide-react";
+import SignatureCanvas from "react-signature-canvas";
+import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2, Wand2, MessageCircle, Eye, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { getContrato, upsertContrato, enviarContrato, cancelarContrato, listModelos } from "@/lib/contratos.functions";
+import { getContrato, upsertContrato, enviarContrato, cancelarContrato, listModelos, assinarComoAdmin } from "@/lib/contratos.functions";
 
 export const Route = createFileRoute("/_authenticated/contratos/$id")({
   component: ContratoEditor,
@@ -63,9 +65,15 @@ function ContratoEditor() {
   const enviar = useServerFn(enviarContrato);
   const cancelar = useServerFn(cancelarContrato);
   const lModelos = useServerFn(listModelos);
+  const adminSign = useServerFn(assinarComoAdmin);
 
   const q = useQuery({ queryKey: ["contrato", id], queryFn: () => get({ data: { id } }) });
   const modelos = useQuery({ queryKey: ["contrato-modelos"], queryFn: () => lModelos() });
+
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminNome, setAdminNome] = useState("");
+  const [adminDoc, setAdminDoc] = useState("");
+  const sigRef = useRef<SignatureCanvas | null>(null);
 
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   useEffect(() => {
@@ -177,6 +185,23 @@ function ContratoEditor() {
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const link = q.data?.token_publico ? `${baseUrl}/contrato/assinar/${q.data.token_publico}` : null;
+  const viewLink = q.data?.token_publico ? `${baseUrl}/contrato/ver/${q.data.token_publico}` : null;
+  const adminAssinado = !!q.data?.assinado_admin_em;
+
+  const doAdminSign = useMutation({
+    mutationFn: async () => {
+      if (!adminNome.trim()) throw new Error("Informe seu nome completo");
+      const img = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.toDataURL("image/png") : null;
+      if (!img) throw new Error("Desenhe sua assinatura");
+      return adminSign({ data: { id, nome_completo: adminNome.trim(), documento: adminDoc || null, assinatura_imagem: img, assinatura_texto: adminNome.trim() } });
+    },
+    onSuccess: () => {
+      toast.success("Contrato assinado pela CONTRATADA");
+      setAdminOpen(false);
+      qc.invalidateQueries({ queryKey: ["contrato", id] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro"),
+  });
 
   const preview = useMemo(
     () => renderVars(form.corpo, form.variaveis, { data_assinatura: new Date().toLocaleDateString("pt-BR") }),
@@ -205,7 +230,20 @@ function ContratoEditor() {
           <h1 className="text-2xl font-semibold">{form.titulo || "Contrato"}</h1>
           {q.data && <Badge className={STATUS_COLORS[q.data.status]}>{q.data.status}</Badge>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {viewLink && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={viewLink} target="_blank" rel="noopener"><Eye className="mr-1 h-4 w-4" />Ver contrato</a>
+            </Button>
+          )}
+          {q.data && q.data.status !== "cancelado" && !adminAssinado && (
+            <Button variant="secondary" size="sm" onClick={() => setAdminOpen(true)}>
+              <PenLine className="mr-1 h-4 w-4" />Assinar como CONTRATADA
+            </Button>
+          )}
+          {adminAssinado && (
+            <Badge className="bg-emerald-100 text-emerald-800">CONTRATADA assinou</Badge>
+          )}
           {!readonly && (
             <>
               <Button variant="outline" onClick={() => save.mutate()} disabled={save.isPending}>
@@ -230,12 +268,20 @@ function ContratoEditor() {
         <Card className="flex flex-wrap items-center gap-3 border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/30">
           <CheckCircle2 className="h-5 w-5 text-blue-600" />
           <div className="flex-1 min-w-[240px]">
-            <div className="text-sm font-medium">Link público de assinatura</div>
+            <div className="text-sm font-medium">Link público de assinatura (cliente)</div>
             <code className="text-xs text-muted-foreground break-all">{link}</code>
+            {viewLink && (
+              <div className="mt-1"><span className="text-xs font-medium">Link para visualização: </span><code className="text-xs text-muted-foreground break-all">{viewLink}</code></div>
+            )}
           </div>
           <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copiado"); }}>
-            <Copy className="mr-1 h-3 w-3" />Copiar
+            <Copy className="mr-1 h-3 w-3" />Copiar assinar
           </Button>
+          {viewLink && (
+            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(viewLink); toast.success("Link copiado"); }}>
+              <Copy className="mr-1 h-3 w-3" />Copiar ver
+            </Button>
+          )}
           {whatsappLink && (
             <Button size="sm" variant="outline" asChild>
               <a href={whatsappLink} target="_blank" rel="noopener"><MessageCircle className="mr-1 h-3 w-3" />WhatsApp</a>
@@ -390,6 +436,37 @@ function ContratoEditor() {
           )}
         </div>
       </div>
+
+      <Dialog open={adminOpen} onOpenChange={setAdminOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Assinar como CONTRATADA (MK6)</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome completo do responsável *</Label>
+              <Input value={adminNome} onChange={(e) => setAdminNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>CPF / Documento (opcional)</Label>
+              <Input value={adminDoc} onChange={(e) => setAdminDoc(e.target.value)} />
+            </div>
+            <div>
+              <Label>Assinatura *</Label>
+              <div className="rounded border bg-white">
+                <SignatureCanvas ref={(r) => { sigRef.current = r; }} penColor="black" canvasProps={{ className: "w-full h-40" }} />
+              </div>
+              <div className="mt-1 flex justify-end">
+                <Button size="sm" variant="ghost" onClick={() => sigRef.current?.clear()}>Limpar</Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdminOpen(false)}>Cancelar</Button>
+            <Button onClick={() => doAdminSign.mutate()} disabled={doAdminSign.isPending}>
+              <PenLine className="mr-2 h-4 w-4" />Assinar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

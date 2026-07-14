@@ -26,6 +26,7 @@ import { Route as AuthenticatedDesempenhoIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedContratosIndexRouteImport } from './routes/_authenticated/contratos.index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as NpsFormSlugRouteImport } from './routes/nps.form.$slug'
+import { Route as ContratoVerTokenRouteImport } from './routes/contrato.ver.$token'
 import { Route as ContratoAssinarTokenRouteImport } from './routes/contrato.assinar.$token'
 import { Route as AuthenticatedNpsRespostasRouteImport } from './routes/_authenticated/nps.respostas'
 import { Route as AuthenticatedNpsLinksRouteImport } from './routes/_authenticated/nps.links'
@@ -130,6 +131,11 @@ const NpsFormSlugRoute = NpsFormSlugRouteImport.update({
   path: '/nps/form/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContratoVerTokenRoute = ContratoVerTokenRouteImport.update({
+  id: '/contrato/ver/$token',
+  path: '/contrato/ver/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContratoAssinarTokenRoute = ContratoAssinarTokenRouteImport.update({
   id: '/contrato/assinar/$token',
   path: '/contrato/assinar/$token',
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
+  '/contrato/ver/$token': typeof ContratoVerTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/nps/links': typeof AuthenticatedNpsLinksRoute
   '/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
+  '/contrato/ver/$token': typeof ContratoVerTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/_authenticated/nps/links': typeof AuthenticatedNpsLinksRoute
   '/_authenticated/nps/respostas': typeof AuthenticatedNpsRespostasRoute
   '/contrato/assinar/$token': typeof ContratoAssinarTokenRoute
+  '/contrato/ver/$token': typeof ContratoVerTokenRoute
   '/nps/form/$slug': typeof NpsFormSlugRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/nps/links'
     | '/nps/respostas'
     | '/contrato/assinar/$token'
+    | '/contrato/ver/$token'
     | '/nps/form/$slug'
     | '/clientes/'
     | '/contratos/'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/nps/links'
     | '/nps/respostas'
     | '/contrato/assinar/$token'
+    | '/contrato/ver/$token'
     | '/nps/form/$slug'
     | '/clientes'
     | '/contratos'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/_authenticated/nps/links'
     | '/_authenticated/nps/respostas'
     | '/contrato/assinar/$token'
+    | '/contrato/ver/$token'
     | '/nps/form/$slug'
     | '/_authenticated/clientes/'
     | '/_authenticated/contratos/'
@@ -391,6 +403,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   VPainelRoute: typeof VPainelRoute
   ContratoAssinarTokenRoute: typeof ContratoAssinarTokenRoute
+  ContratoVerTokenRoute: typeof ContratoVerTokenRoute
   NpsFormSlugRoute: typeof NpsFormSlugRoute
   ApiPublicContratosAssinarRoute: typeof ApiPublicContratosAssinarRoute
   ApiPublicHooksBackupAutoRoute: typeof ApiPublicHooksBackupAutoRoute
@@ -517,6 +530,13 @@ declare module '@tanstack/react-router' {
       path: '/nps/form/$slug'
       fullPath: '/nps/form/$slug'
       preLoaderRoute: typeof NpsFormSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contrato/ver/$token': {
+      id: '/contrato/ver/$token'
+      path: '/contrato/ver/$token'
+      fullPath: '/contrato/ver/$token'
+      preLoaderRoute: typeof ContratoVerTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contrato/assinar/$token': {
@@ -660,6 +680,7 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   VPainelRoute: VPainelRoute,
   ContratoAssinarTokenRoute: ContratoAssinarTokenRoute,
+  ContratoVerTokenRoute: ContratoVerTokenRoute,
   NpsFormSlugRoute: NpsFormSlugRoute,
   ApiPublicContratosAssinarRoute: ApiPublicContratosAssinarRoute,
   ApiPublicHooksBackupAutoRoute: ApiPublicHooksBackupAutoRoute,

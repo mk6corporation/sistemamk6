@@ -197,3 +197,59 @@ export const deleteContrato = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============== ASSINATURA DO ADMIN (contra-assinatura) ==============
+const AdminSignInput = z.object({
+  id: z.string().uuid(),
+  nome_completo: z.string().min(2),
+  documento: z.string().nullable().optional(),
+  assinatura_imagem: z.string().nullable().optional(),
+  assinatura_texto: z.string().nullable().optional(),
+});
+
+export const assinarComoAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof AdminSignInput>) => AdminSignInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: doc, error: e1 } = await context.supabase
+      .from("contratos_documentos")
+      .select("id, documento_hash, corpo, variaveis, assinado_admin_em")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (e1) throw new Error(e1.message);
+    if (!doc) throw new Error("Contrato não encontrado");
+    if (doc.assinado_admin_em) throw new Error("Contrato já assinado pelo administrador");
+
+    // Gera hash se ainda não existe
+    let hash = doc.documento_hash;
+    if (!hash) {
+      const vars: Record<string, string> = { ...((doc.variaveis ?? {}) as Record<string, string>), data_assinatura: new Date().toLocaleDateString("pt-BR") };
+      const rendered = (doc.corpo ?? "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k: string) => (vars[k] ?? "").toString() || "__________");
+      const hashBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rendered));
+      hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    const { data: userRes } = await context.supabase.auth.getUser();
+    const email = userRes.user?.email ?? null;
+
+    const { error: e2 } = await context.supabase.from("contratos_assinaturas").insert({
+      contrato_id: data.id,
+      nome_completo: data.nome_completo,
+      documento: data.documento ?? null,
+      email,
+      assinatura_imagem: data.assinatura_imagem ?? null,
+      assinatura_texto: data.assinatura_texto ?? null,
+      documento_hash: hash,
+      aceite_termos: true,
+      tipo: "admin",
+    } as never);
+    if (e2) throw new Error(e2.message);
+
+    const { error: e3 } = await context.supabase
+      .from("contratos_documentos")
+      .update({ assinado_admin_em: new Date().toISOString(), documento_hash: hash })
+      .eq("id", data.id);
+    if (e3) throw new Error(e3.message);
+
+    return { ok: true };
+  });
