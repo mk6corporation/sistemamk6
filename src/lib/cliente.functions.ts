@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const ESTAGIOS_ATIVO = new Set(["Contrato Assinado","Financeiro","Formulário de Cliente","Onboarding","Planejamento","1° REUNIÃO CS","Cliente","UPSELL","Aviso de Churn"]);
+const ESTAGIOS_ATIVO = new Set(["Venda Concluída","Contrato Assinado","Financeiro","Formulário de Cliente","Onboarding","Planejamento","1° REUNIÃO CS","Cliente","UPSELL","Aviso de Churn"]);
 const ESTAGIOS_PAUSADO = new Set(["Pausado"]);
 const ESTAGIOS_CHURN = new Set(["Churn"]);
 const ESTAGIOS_FINALIZADO = new Set(["Projeto Finalizado (Não Churn)"]);
