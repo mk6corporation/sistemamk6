@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2, Wand2, MessageCircle } from "lucide-react";
+import SignatureCanvas from "react-signature-canvas";
+import { ArrowLeft, Save, Send, Copy, Ban, CheckCircle2, Wand2, MessageCircle, Eye, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { getContrato, upsertContrato, enviarContrato, cancelarContrato, listModelos } from "@/lib/contratos.functions";
+import { getContrato, upsertContrato, enviarContrato, cancelarContrato, listModelos, assinarComoAdmin } from "@/lib/contratos.functions";
 
 export const Route = createFileRoute("/_authenticated/contratos/$id")({
   component: ContratoEditor,
